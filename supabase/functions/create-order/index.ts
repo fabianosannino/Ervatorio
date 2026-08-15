@@ -4,6 +4,7 @@
 // de estoque e retorna o pedido com status 'pending'. O pagamento é iniciado
 // em um segundo passo (ex.: função separada que chama Mercado Pago).
 import { handleCors, jsonResponse } from '../_shared/cors.ts';
+import { exigirLigado } from '../_shared/interruptores.ts';
 import { getUserFromRequest, adminClient } from '../_shared/auth.ts';
 import { clientIp, rateLimitAllow, tooManyRequests } from '../_shared/ratelimit.ts';
 import { resolveChosenOption, type ShipmentItem } from '../_shared/shipping.ts';
@@ -61,6 +62,12 @@ Deno.serve(async (req) => {
   if (cors) return cors;
 
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
+
+  // Pagamentos desligados recusam AQUI, no servidor.
+  // A tela lê `window.SITE_SETTINGS` e esconde o botão; isso é UX. Quem
+  // virasse a variável no devtools chegava até esta função sem barreira.
+  const desligado = await exigirLigado('pagamentos');
+  if (desligado) return desligado;
 
   // Onda 6.3 (guest checkout): usuário logado OU convidado com
   // e-mail válido. Kill-switch do modo convidado: GUEST_CHECKOUT=false.

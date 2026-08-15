@@ -233,19 +233,86 @@ function admToast(msg){
 }
 
 // ── DASHBOARD ──
-async function loadPaymentsSetting(){
-  const {data}=await sb.from('site_settings').select('payments_enabled').eq('id',1).maybeSingle();
-  const el=document.getElementById('togglePayments');
-  if(el&&data!=null) el.checked=data.payments_enabled;
+// ============================================================
+// Interruptores (migration 20260815230000)
+// ============================================================
+// Cada entrada diz o que PARA DE ACONTECER ao desligar. E a informacao que
+// falta justamente na hora em que alguem precisa desligar as pressas, e sem
+// ela "a gente desabilita depois" e promessa vazia. Mesmo desenho do
+// lib/interruptores/registro.ts do Solarisis.
+//
+// Esta lista e UX. Quem recusa e o RLS (escrita) e a Edge Function (uso):
+// `payments_enabled` valia so no navegador ate agora, e quem virasse a
+// variavel no devtools chamava create-order do mesmo jeito.
+const ADM_INTERRUPTORES = [
+  {
+    chave: 'pagamentos',
+    nome: 'Pagamentos',
+    descricao: 'Habilita o checkout no marketplace.',
+    aoDesligar: 'O carrinho continua funcionando e a finalizacao recusa — no servidor, nao so na tela. Pedidos ja pagos nao sao afetados.',
+  },
+  {
+    chave: 'assinatura',
+    nome: 'Assinatura de acesso exclusivo',
+    descricao: 'Abre a venda de assinatura e o conteudo exclusivo.',
+    aoDesligar: 'A assinatura some da vitrine e o checkout dela recusa. Quem ja assinou NAO perde acesso nem para de ser cobrado.',
+  },
+  {
+    chave: 'indicacao',
+    nome: 'Indicacao (produto de terceiro)',
+    descricao: 'Mostra produtos de parceiros com link para a loja deles.',
+    aoDesligar: 'Os produtos de indicacao somem da vitrine. Os cliques ja medidos continuam registrados.',
+  },
+  {
+    chave: 'newsletter',
+    nome: 'Newsletter',
+    descricao: 'Captacao de e-mail no rodape e no modal.',
+    aoDesligar: 'O formulario some. Quem ja se inscreveu continua inscrito e continua recebendo.',
+  },
+];
+
+async function loadInterruptores(){
+  const lista=document.getElementById('interruptoresLista');
+  if(!lista)return;
+
+  const {data,error}=await sb.from('interruptores').select('chave,ligado');
+  if(error){lista.innerHTML='<div style="font-size:.75rem;color:#e08080">Nao foi possivel carregar os interruptores.</div>';return;}
+
+  const estado=Object.fromEntries((data||[]).map(l=>[l.chave,l.ligado]));
+  // So quem pode virar ve o controle. Mostrar um toggle que sempre falha
+  // transforma uma regra clara num erro sem explicacao.
+  const podeVirar=admPode('configuracoes:escrever');
+
+  lista.innerHTML=ADM_INTERRUPTORES.map(i=>{
+    const ligado=estado[i.chave]===true;
+    return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:.85rem 0;border-top:1px solid var(--adm-faint)">
+      <div style="flex:1">
+        <div style="font-size:.85rem;font-weight:500">${esc(i.nome)}</div>
+        <div style="font-size:.72rem;color:var(--adm-muted);margin-top:2px">${esc(i.descricao)}</div>
+        <div style="font-size:.68rem;color:var(--adm-muted);margin-top:6px;opacity:.85">Ao desligar: ${esc(i.aoDesligar)}</div>
+      </div>
+      ${podeVirar
+        ? `<label class="adm-toggle"><input type="checkbox" ${ligado?'checked':''} onchange="virarInterruptor('${i.chave}',this.checked)"><span class="adm-toggle-slider"></span></label>`
+        : `<span style="font-size:.72rem;color:var(--adm-muted);white-space:nowrap">${ligado?'Ligado':'Desligado'}</span>`}
+    </div>`;
+  }).join('');
 }
-async function savePaymentsSetting(enabled){
-  const {error}=await sb.from('site_settings').update({payments_enabled:enabled,updated_at:new Date().toISOString()}).eq('id',1);
-  if(error){admToast('Erro ao salvar: '+error.message);return;}
-  admToast(enabled?'Pagamentos habilitados':'Pagamentos desabilitados');
+
+async function virarInterruptor(chave,ligado){
+  const {error}=await sb.from('interruptores')
+    .update({ligado,alterado_em:new Date().toISOString(),alterado_por:admUser?.id||null})
+    .eq('chave',chave);
+
+  if(error){
+    admToast('Erro ao salvar: '+error.message);
+    loadInterruptores();   // volta o toggle ao estado real do banco
+    return;
+  }
+  admToast(ligado?'Ligado':'Desligado');
 }
 
 async function loadDashboard(){
-  loadPaymentsSetting();
+  loadInterruptores();
   const [users,herbs,products,suppliers,news]=await Promise.all([
     sb.from('user_profiles').select('id',{count:'exact',head:true}),
     sb.from('admin_herbs').select('id',{count:'exact',head:true}),

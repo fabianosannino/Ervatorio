@@ -58,17 +58,9 @@
         </div>
       </div>
       <div style="background:var(--adm-bg2);border:1px solid var(--adm-faint);border-radius:var(--adm-r);padding:1.25rem 1.5rem;margin-bottom:1.5rem">
-        <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--adm-gold);margin-bottom:.75rem">Configurações da Loja</div>
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div style="font-size:.85rem;font-weight:500">Pagamentos</div>
-            <div style="font-size:.72rem;color:var(--adm-muted);margin-top:2px">Habilita o checkout no marketplace. Desabilite durante manutenção.</div>
-          </div>
-          <label class="adm-toggle">
-            <input type="checkbox" id="togglePayments" onchange="savePaymentsSetting(this.checked)">
-            <span class="adm-toggle-slider"></span>
-          </label>
-        </div>
+        <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--adm-gold);margin-bottom:.35rem">Interruptores</div>
+        <div style="font-size:.72rem;color:var(--adm-muted);margin-bottom:1rem">Decisões de operação. Cada uma diz o que para de acontecer ao desligar, e toda mudança vai para a auditoria.</div>
+        <div id="interruptoresLista"></div>
       </div>
       <div class="adm-stats">
         <div class="adm-stat"><div class="adm-stat-val" id="statUsers">—</div><div class="adm-stat-label">Usuários</div></div>
