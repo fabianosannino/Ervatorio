@@ -13,7 +13,13 @@
 - Views que expõem dados de usuário usam `WITH (security_invoker = true)` ou não são concedidas a `authenticated`/`anon`.
 - Operações que exigem `service_role`, recálculo de preço, ou integração externa vão para Edge Function — nunca para o cliente.
 - Autorização (admin vs. usuário) é validada **no servidor** (Edge Function/RLS), nunca só no JavaScript do cliente.
-- Nota de nomenclatura: em `user_profiles`, a coluna `role` é o perfil de chá do usuário (iniciante, tea_master…) e É editável pelo dono; a coluna de privilégio é `is_admin`.
+- Nota de nomenclatura: em `user_profiles`, a coluna `role` é o perfil de chá do usuário (iniciante, tea_master…) e É editável pelo dono; as colunas de privilégio são `is_admin` e `admin_capabilities`.
+- **`is_admin` diz se ENTRA no painel; `admin_capabilities` diz o que FAZ** (migration `20260815220000`). São dois eixos, e juntá-los foi o erro original: quem despachava pedido recebia junto o poder de apagar a base de usuários.
+  - O predicado das policies é `public.tem_capacidade('<cap>')`, que exige `is_admin` **e** a capacidade — revogar o acesso ao painel basta para tirar tudo.
+  - Capacidade nova entra em `public.capacidades_conhecidas()`; o `CHECK` recusa o que não estiver lá, para que erro de digitação não vire capacidade fantasma.
+  - `admin_capabilities` é coluna de privilégio: só `service_role` escreve (trigger `trg_protect_profile_privileges`). Sem isso ela seria o caminho aberto que `is_admin` deixou de ser.
+  - A lista em `js/admin.js` é **UX**: esconde o que não adianta clicar. Se ela e o banco divergirem, **o banco vence**.
+  - Mexeu em policy ou capacidade? Rode `supabase/tests/20260815_rbac_capacidade_test.sql` — ele aplica a migration de verdade num Postgres descartável e prova as recusas.
 
 ## Segredos
 - **Nunca** coloque `service_role`, tokens de API ou secrets em arquivos servidos ao navegador, no HTML, ou no repositório.

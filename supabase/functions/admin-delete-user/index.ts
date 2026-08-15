@@ -3,7 +3,7 @@
 // o auth user órfão. Aqui usamos admin.auth.deleteUser() com service_role.
 // Chamar via POST { userId: "<uuid>" } — requer token de admin.
 import { handleCors, jsonResponse } from '../_shared/cors.ts';
-import { getUserFromRequest, adminClient } from '../_shared/auth.ts';
+import { getUserFromRequest, adminClient, temCapacidade } from '../_shared/auth.ts';
 
 Deno.serve(async (req) => {
   const cors = handleCors(req);
@@ -15,7 +15,12 @@ Deno.serve(async (req) => {
 
   const caller = await getUserFromRequest(req);
   if (!caller) return jsonResponse({ error: 'Unauthorized' }, 401);
-  if (!caller.isAdmin) return jsonResponse({ error: 'Forbidden — admin only' }, 403);
+  // Apagar conta é a operação mais destrutiva do painel, e por isso tem
+  // capacidade própria. Antes bastava `is_admin`: quem entrava para despachar
+  // pedido recebia junto o poder de apagar a base de usuários.
+  if (!temCapacidade(caller, 'usuarios:excluir')) {
+    return jsonResponse({ error: 'Forbidden — requer usuarios:excluir' }, 403);
+  }
 
   let body: { userId?: string };
   try {

@@ -68,7 +68,10 @@ test.describe('SEO estático (Onda 5)', () => {
   test('hub Ervopédia lista as ervas', async ({ page }) => {
     await page.goto('/erva/');
     await expect(page).toHaveTitle(/Ervopédia/);
-    const links = page.locator('ul.hub a');
+    // O seletor era `ul.hub`, e `class="hub"` não existe em HTML nenhum do
+    // repositório — a lista virou `ul.ervo-grid#ervoGrid` e o teste ficou
+    // para trás. Contava zero e falhava desde então, em `main` inclusive.
+    const links = page.locator('ul.ervo-grid a');
     expect(await links.count()).toBeGreaterThanOrEqual(90);
   });
 
