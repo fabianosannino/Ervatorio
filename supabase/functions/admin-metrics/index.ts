@@ -2,7 +2,7 @@
 // evitando 5+ roundtrips feitos pelo cliente e reduzindo leitura
 // desnecessária de linhas (usa count:exact com head:true).
 import { handleCors, jsonResponse } from '../_shared/cors.ts';
-import { getUserFromRequest, adminClient } from '../_shared/auth.ts';
+import { getUserFromRequest, adminClient, temCapacidade } from '../_shared/auth.ts';
 
 Deno.serve(async (req) => {
   const cors = handleCors(req);
@@ -14,7 +14,10 @@ Deno.serve(async (req) => {
 
   const caller = await getUserFromRequest(req);
   if (!caller) return jsonResponse({ error: 'Unauthorized' }, 401);
-  if (!caller.isAdmin) return jsonResponse({ error: 'Forbidden — admin only' }, 403);
+  // O painel conta pedidos e usuários: quem lê isto precisa das duas leituras.
+  if (!temCapacidade(caller, 'pedidos:ler') || !temCapacidade(caller, 'usuarios:ler')) {
+    return jsonResponse({ error: 'Forbidden — requer pedidos:ler e usuarios:ler' }, 403);
+  }
 
   const db = adminClient();
 

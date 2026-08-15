@@ -7,6 +7,24 @@ export interface AuthedUser {
   id: string;
   email: string | null;
   isAdmin: boolean;
+  /**
+   * O que este admin pode fazer. `isAdmin` diz se ele ENTRA no painel;
+   * isto diz o que ele FAZ. Ver a migration 20260815220000.
+   */
+  capabilities: string[];
+}
+
+/**
+ * O chamador tem a capacidade?
+ *
+ * Exige `isAdmin` também, e não só a presença na lista: revogar o acesso ao
+ * painel de alguém precisa bastar para tirar tudo, sem caçar cada capacidade
+ * que essa pessoa acumulou. É a mesma regra de `public.tem_capacidade()`, e as
+ * duas precisam concordar — o RLS é a barreira, isto aqui é a que responde
+ * antes, com uma mensagem melhor.
+ */
+export function temCapacidade(user: AuthedUser | null, capacidade: string): boolean {
+  return !!user?.isAdmin && user.capabilities.includes(capacidade);
 }
 
 export async function getUserFromRequest(req: Request): Promise<AuthedUser | null> {
@@ -24,7 +42,7 @@ export async function getUserFromRequest(req: Request): Promise<AuthedUser | nul
 
   const { data: profile } = await admin
     .from('user_profiles')
-    .select('is_admin')
+    .select('is_admin, admin_capabilities')
     .eq('id', userData.user.id)
     .maybeSingle();
 
@@ -32,6 +50,7 @@ export async function getUserFromRequest(req: Request): Promise<AuthedUser | nul
     id: userData.user.id,
     email: userData.user.email ?? null,
     isAdmin: !!profile?.is_admin,
+    capabilities: profile?.admin_capabilities ?? [],
   };
 }
 

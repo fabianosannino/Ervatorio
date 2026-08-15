@@ -11,6 +11,62 @@ let admUser = null;
 let currentSection = 'dashboard';
 
 // ── INIT ──
+// ============================================================
+// RBAC por capacidade (migration 20260815220000)
+// ============================================================
+// O que manda é o RLS: `tem_capacidade()` no banco recusa a escrita mesmo que
+// esta tela ofereça o botão. O que segue é UX — esconder o que não adianta
+// clicar. Mostrar um botão que sempre falha é pior do que não mostrá-lo,
+// porque transforma uma regra clara num erro sem explicação.
+//
+// Se divergirem, o banco vence. Esta lista existe para concordar com ele, não
+// para decidir.
+let admCapacidades = [];
+
+const ADM_CAPACIDADE_DA_SECAO = {
+  dashboard:  null,                      // sem capacidade própria: só resumo
+  users:      'usuarios:ler',
+  herbs:      'catalogo:escrever',
+  products:   'catalogo:escrever',
+  suppliers:  'catalogo:escrever',
+  news:       'catalogo:escrever',
+  fichas:     'catalogo:escrever',
+  chazerias:  'catalogo:escrever',
+  orders:     'pedidos:ler',
+  returns:    'devolucoes:escrever',
+  audit:      'auditoria:ler',
+};
+
+function admPode(capacidade){
+  if(!capacidade)return true;
+  return admCapacidades.includes(capacidade);
+}
+
+/** Esconde do menu o que esta pessoa não pode abrir. */
+function admAplicarCapacidades(){
+  for(const [secao,capacidade] of Object.entries(ADM_CAPACIDADE_DA_SECAO)){
+    const item=document.querySelector(`[data-sec="${secao}"]`);
+    if(item)item.style.display=admPode(capacidade)?'':'none';
+  }
+  // Apagar usuário é destrutivo e tem capacidade própria — a tela de usuários
+  // abre com `usuarios:ler`, e o botão de apagar exige mais do que isso.
+  document.body.classList.toggle('pode-excluir-usuario',admPode('usuarios:excluir'));
+}
+
+/**
+ * A primeira seção que esta pessoa pode ver.
+ *
+ * Sem isto, o painel abriria sempre no dashboard — que hoje é a única seção
+ * sem capacidade própria, mas deixaria de existir como aposta segura no dia em
+ * que ganhar uma. Perguntar é mais barato do que lembrar.
+ */
+function admPrimeiraSecaoVisivel(){
+  for(const [secao,capacidade] of Object.entries(ADM_CAPACIDADE_DA_SECAO)){
+    if(admPode(capacidade))return secao;
+  }
+  return 'dashboard';
+}
+
 async function admInit(){
   sb = window.supabase.createClient(ADM_SUPABASE_URL, ADM_SUPABASE_KEY);
   const {data:{session}} = await sb.auth.getSession();
@@ -20,7 +76,8 @@ async function admInit(){
     return;
   }
   admUser = session.user;
-  const {data:profile} = await sb.from('user_profiles').select('is_admin,display_name').eq('id',admUser.id).maybeSingle();
+  const {data:profile} = await sb.from('user_profiles').select('is_admin,display_name,admin_capabilities').eq('id',admUser.id).maybeSingle();
+  admCapacidades = profile?.admin_capabilities || [];
   if(!profile?.is_admin){
     document.getElementById('admLogin').style.display='flex';
     document.getElementById('admShell').style.display='none';
@@ -33,7 +90,8 @@ async function admInit(){
   document.getElementById('admLogin').style.display='none';
   document.getElementById('admShell').style.display='flex';
   document.getElementById('admUserName').textContent=profile.display_name||admUser.email;
-  showSection('dashboard');
+  admAplicarCapacidades();
+  showSection(admPrimeiraSecaoVisivel());
 }
 
 // ── MFA (TOTP) — exige segundo fator para o painel ──
@@ -224,7 +282,7 @@ function renderUsers(list){
     <td>${esc(u.city||'')}${u.state?', '+esc(u.state):''}</td>
     <td>${u.is_admin?'<span class="adm-badge green">Admin</span>':u.profile_completed?'<span class="adm-badge blue">Completo</span>':'<span class="adm-badge red">Pendente</span>'}</td>
     <td style="font-size:.72rem;color:var(--adm-muted)">${u.created_at?new Date(u.created_at).toLocaleDateString('pt-BR'):''}</td>
-    <td><button class="adm-btn danger" onclick="deleteUser('${u.id}','${esc(u.display_name||u.email||'')}')">Excluir</button></td>
+    <td>${admPode('usuarios:excluir')?`<button class="adm-btn danger" onclick="deleteUser('${u.id}','${esc(u.display_name||u.email||'')}')">Excluir</button>`:'<span class="adm-muted">—</span>'}</td>
   </tr>`).join('');
 }
 async function deleteUser(id,name){
