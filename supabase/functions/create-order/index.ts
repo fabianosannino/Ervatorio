@@ -221,6 +221,24 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: oErr.message }, 500);
   }
 
+  // O fato inicial. Com ele o histórico é completo desde o nascimento, e uma
+  // lista de eventos vazia volta a significar «leitura incompleta» em vez de
+  // ser o caso normal de todo pedido novo.
+  //
+  // Best-effort declarado: se falhar, o pedido existe com `status = 'pending'`
+  // pela coluna e o webhook ainda vai registrar o pagamento. Derrubar a compra
+  // porque o registro do estado inicial falhou seria trocar uma venda por uma
+  // linha de histórico.
+  const { error: eErr } = await db.from('pedido_eventos').insert({
+    order_id: order.id,
+    estado: 'pending',
+    origem: 'cliente',
+    motivo: 'Pedido criado, aguardando pagamento.',
+  });
+  if (eErr) {
+    console.error('[create-order] fato inicial não registrado', { orderId: order.id, error: eErr.message });
+  }
+
   const itemsWithOrderId = lines.map((l) => ({ ...l, order_id: order.id }));
   const { error: iErr } = await db.from('order_items').insert(itemsWithOrderId);
   if (iErr) {

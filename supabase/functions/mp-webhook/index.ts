@@ -25,6 +25,7 @@
 //   • payment        (mais comum, dispara em cada mudança de status)
 //   • merchant_order (resumo agregado de uma preferência)
 // ============================================================
+import { dataDoGateway, estadoDoPedido, fatoAvanca } from '../_shared/estado-do-pedido.ts';
 import { handleCors, jsonResponse } from '../_shared/cors.ts';
 import { adminClient } from '../_shared/auth.ts';
 import {
@@ -123,7 +124,7 @@ Deno.serve(async (req) => {
 
   const { data: order, error: oErr } = await db
     .from('orders')
-    .select('id, status, total_cents')
+    .select('id, status, total_cents, pedido_eventos(estado)')
     .eq('id', orderId)
     .maybeSingle();
   if (oErr) return jsonResponse({ error: oErr.message }, 500);
@@ -131,9 +132,16 @@ Deno.serve(async (req) => {
 
   const newStatus = mapPaymentStatus(payment.status);
 
-  if (order.status === newStatus) {
-    return jsonResponse({ ok: true, noop: true, status: newStatus });
-  }
+  // O estado vem dos FATOS, não da coluna. A diferença aparece na reentrega:
+  // antes, a comparação era `order.status === newStatus`, e um `paid` atrasado
+  // que chegasse depois de um `refunded` passava por ela — os dois valores são
+  // diferentes — e sobrescrevia o reembolso.
+  //
+  // Agora o fato é sempre gravado (a precedência o ignora se for menor) e o
+  // que se decide aqui é só o que NÃO é idempotente: e-mail e estoque.
+  const eventos = Array.isArray(order.pedido_eventos) ? order.pedido_eventos : [];
+  const estadoAtual = estadoDoPedido(eventos);
+  const avanca = fatoAvanca(estadoAtual, newStatus);
 
   const expectedReais = order.total_cents / 100;
   if (Math.abs(payment.transaction_amount - expectedReais) > 0.01 && newStatus === 'paid') {
@@ -148,8 +156,9 @@ Deno.serve(async (req) => {
     return jsonResponse({ ok: false, error: 'valor divergente' }, 400);
   }
 
+  // `status` NÃO entra aqui: é projeção do fato registrado abaixo, e o
+  // privilégio de coluna já recusaria a escrita.
   const update: Record<string, unknown> = {
-    status: newStatus,
     payment_provider: 'mercadopago',
     payment_external_id: String(payment.id),
     payment_method: payment.payment_type_id,
@@ -159,7 +168,19 @@ Deno.serve(async (req) => {
   const { error: uErr } = await db.from('orders').update(update).eq('id', orderId);
   if (uErr) return jsonResponse({ error: uErr.message }, 500);
 
-  if (newStatus === 'paid' && order.status !== 'paid') {
+  // O fato. `ocorrido_em` sai da data do GATEWAY quando ela existe: o
+  // pagamento aconteceu lá, e a linha nasce aqui — às vezes minutos depois.
+  const { error: fErr } = await db.from('pedido_eventos').insert({
+    order_id: orderId,
+    estado: newStatus,
+    origem: 'webhook',
+    referencia: String(payment.id),
+    ocorrido_em: dataDoGateway(payment.date_approved ?? payment.date_created),
+    motivo: `Mercado Pago: ${payment.status}`,
+  });
+  if (fErr) return jsonResponse({ error: fErr.message }, 500);
+
+  if (newStatus === 'paid' && avanca) {
     sendPaidEmailFor(db, orderId).catch((e) => {
       console.error('[mp-webhook] email falhou (nao-fatal)', e);
     });
@@ -180,7 +201,7 @@ Deno.serve(async (req) => {
   // notificação repetida do mesmo estado — comum no Mercado Pago — mas
   // sem esta condição um pedido que fosse de failed para failed por outro
   // caminho devolveria unidades duas vezes.
-  if (newStatus === 'failed' && order.status === 'pending') {
+  if (newStatus === 'failed' && estadoAtual === 'pending') {
     const { error: relErr } = await db.rpc('release_stock', { p_order_id: orderId });
     if (relErr) {
       // Não derruba o webhook: o status do pedido já está correto, e o
