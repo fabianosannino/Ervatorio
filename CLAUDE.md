@@ -41,6 +41,30 @@
   desligar**.
 - Mexeu em interruptor? Rode `supabase/tests/20260815_interruptores_test.sql`.
 
+## O pedido é uma máquina de estados, não uma coluna
+
+- **`orders.status` é projeção** mantida por gatilho (migration `20260816140000`).
+  A verdade é `pedido_eventos`. **Nunca escreva `status`** — registre um fato.
+- **`pedido_eventos` é append-only por gatilho**: o banco recusa `update` e
+  `delete`. Corrigir um fato é **acrescentar** o que corrige.
+- **O estado é a precedência entre os fatos, não o último a chegar.** É o que
+  faz um `paid` atrasado do Mercado Pago **não** desfazer um `refunded` — a
+  comparação antiga (`order.status === newStatus`) não pegava esse caso, porque
+  os dois valores são diferentes.
+- **A tela escreve pela função `registrar_fato_do_pedido`**, que confere
+  `pedidos:escrever` por dentro. `js/admin-orders.js` fazia `update({status})`
+  direto do navegador.
+- **O privilégio de `update` em `orders` é por coluna, nominalmente.** Coluna
+  nova que o admin edite pela tela **entra na lista da migration**, senão a tela
+  quebra com «permission denied». Atenção: `REVOKE UPDATE (coluna)` **não**
+  subtrai de um `GRANT UPDATE` de tabela inteira — são privilégios separados no
+  Postgres, e foi assim que a primeira versão desta migration deixou a porta
+  aberta sem dar erro.
+- A régua existe em **dois lugares** — `estados_do_pedido()` no banco e
+  `ESTADOS_DO_PEDIDO` em `supabase/functions/_shared/estado-do-pedido.ts`. O
+  bloco 8 do teste compara.
+- Mexeu nisso? Rode `supabase/tests/20260816_pedido_eventos_test.sql`.
+
 ## Indicação — o parceiro vende, nós encaminhamos
 
 - **`modo_de_venda` diz quem vende** (migration `20260816120000`). `proprio` =

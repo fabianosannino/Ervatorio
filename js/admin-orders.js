@@ -194,23 +194,53 @@ function closeOrderDetail() {
   document.getElementById('orderModal').classList.remove('on');
 }
 
+// O status saiu do `patch`: `orders.status` e PROJEÇÃO de `pedido_eventos`
+// (migration 20260816140000), e o privilégio de coluna recusa a escrita direta
+// daqui. Transportadora, rastreio e observação continuam colunas — sao dados do
+// pedido, nao estado.
 async function saveOrderDetail(orderId) {
   const patch = {
-    status: document.getElementById('ordDetStatus').value,
     shipping_carrier: document.getElementById('ordDetCarrier').value.trim() || null,
     shipping_tracking_code: document.getElementById('ordDetTracking').value.trim() || null,
     admin_notes: document.getElementById('ordDetNotes').value.trim() || null,
   };
   const { error } = await sb.from('orders').update(patch).eq('id', orderId);
   if (error) { admToast('Erro: ' + error.message); return; }
+
+  // O estado, se mudou, vai pelo caminho do fato.
+  const escolhido = document.getElementById('ordDetStatus').value;
+  const atual = (allOrders.find((o) => o.id === orderId) || {}).status;
+  if (escolhido && escolhido !== atual) {
+    const { error: fErr } = await registrarFatoDoPedido(orderId, escolhido);
+    if (fErr) { admToast('Erro no status: ' + fErr.message); return; }
+  }
+
   admToast('Pedido atualizado');
   closeOrderDetail();
   loadOrders();
 }
 
+/**
+ * Move o pedido acrescentando um fato.
+ *
+ * A funcao no banco confere `pedidos:escrever` por dentro — nao basta alcancar
+ * esta linha de JavaScript, que roda no navegador de quem estiver logado.
+ *
+ * Um fato que NAO avanca na regua e aceito e ignorado pela precedencia. E de
+ * proposito: recusar aqui transformaria uma reentrega de webhook em erro, e a
+ * tela ja evita oferecer o que nao muda.
+ */
+async function registrarFatoDoPedido(orderId, estado, motivo) {
+  return await sb.rpc('registrar_fato_do_pedido', {
+    p_order_id: orderId,
+    p_estado: estado,
+    p_motivo: motivo || null,
+  });
+}
+
 async function updateOrderStatus(orderId, newStatus) {
   if (!confirm(`Mudar status para "${statusLabel(newStatus)}"?`)) return;
-  const { error } = await sb.from('orders').update({ status: newStatus }).eq('id', orderId);
+  const { error } = await registrarFatoDoPedido(orderId, newStatus);
   if (error) { admToast('Erro: ' + error.message); return; }
   admToast('Status atualizado');
   closeOrderDetail();
