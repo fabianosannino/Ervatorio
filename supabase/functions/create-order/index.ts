@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
   const productIds = [...new Set(body.items.map((i) => i.product_id))];
   const { data: products, error: pErr } = await db
     .from('admin_products')
-    .select('id, name, price, unit, stock, active, weight_grams')
+    .select('id, name, price, unit, stock, active, weight_grams, modo_de_venda')
     .in('id', productIds);
   if (pErr) return jsonResponse({ error: pErr.message }, 500);
 
@@ -137,6 +137,22 @@ Deno.serve(async (req) => {
     }
     if (p.stock === 'out') {
       return jsonResponse({ error: `Produto esgotado: ${p.name}` }, 400);
+    }
+    // Produto de indicação NÃO se vende aqui: quem vende é o parceiro, na loja
+    // dele. A vitrine mostra «ver na loja do parceiro» em vez do botão de
+    // comprar, mas isso é UX — o carrinho mora no localStorage e é editável,
+    // e esta função é alcançável direto por qualquer cliente HTTP.
+    //
+    // Aceitar seria cobrar por algo que não temos, não despachamos e não
+    // podemos cancelar: o pedido nasceria válido, o estoque seria reservado
+    // sobre um `stock_qty` que nem existe, e a devolução seria um problema
+    // jurídico em vez de um bug. É a mesma razão de o preço nunca vir do
+    // cliente — só que aqui o que não pode vir de fora é a própria decisão de
+    // que aquele item é vendável.
+    if (p.modo_de_venda === 'indicacao') {
+      return jsonResponse({
+        error: `${p.name} é vendido pelo parceiro e não pode ser comprado por aqui.`,
+      }, 400);
     }
     const qty = Math.max(1, Math.min(999, Math.floor(Number(item.qty) || 0)));
     const unitCents = Math.round(Number(p.price) * 100);

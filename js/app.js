@@ -2766,7 +2766,53 @@ function initMkt(){
 // pública e do fluxo de compra. Para enxergá-los em staging/QA,
 // ligue SHOW_TEST_PRODUCTS:true em js/config.js.
 function mktIsVisible(p){
+  // Indicação só aparece com o interruptor ligado. Falha para escondido: sem a
+  // resposta do banco, `ERV_INTERRUPTORES.indicacao` é undefined e o card não
+  // entra — a rota de redirecionamento recusaria o clique de qualquer forma, e
+  // um card que não leva a lugar nenhum é pior do que card nenhum.
+  if(mktEhIndicacao(p) && window.ERV_INTERRUPTORES?.indicacao !== true) return false;
   return !p.is_test || window.ERVATORIO_CONFIG?.SHOW_TEST_PRODUCTS === true;
+}
+
+// ── Indicação: o parceiro vende, nós encaminhamos ──────────────────────
+//
+// A regra de negócio inteira cabe em três funções, e o que ela decide é o que
+// o visitante vê. Quem RECUSA a compra é a `create-order` — isto aqui é UX, e
+// a distinção importa porque o carrinho mora no localStorage e é editável.
+
+function mktEhIndicacao(p){
+  return p && p.modo_de_venda === 'indicacao';
+}
+
+/**
+ * O link do card passa pela nossa rota, com o **id do produto**.
+ *
+ * Nunca a URL do parceiro na query: isso faria um redirecionador aberto, um
+ * link que começa no nosso domínio e termina onde o atacante quiser. E nunca o
+ * `href` direto para o parceiro, porque aí não há o que medir — e sem medida a
+ * comissão vira negociação sobre memória.
+ */
+function mktLinkDeIndicacao(p){
+  const base=window.ERVATORIO_CONFIG?.FUNCTIONS_URL;
+  if(!base||!p.dbId)return '';
+  return `${base}/indicacao?produto=${encodeURIComponent(p.dbId)}`;
+}
+
+/**
+ * Por que o card de indicação NÃO mostra preço.
+ *
+ * Não é economia de espaço: o contrato do Amazon Associates proíbe exibir
+ * preço que não venha da API deles em tempo real, e o mesmo vale, com outras
+ * palavras, nos programas do Mercado Livre. Preço guardado no nosso banco
+ * envelhece — e um preço errado na vitrine é, além de quebra de contrato, a
+ * reclamação mais previsível que existe: a pessoa clica esperando um valor e
+ * encontra outro.
+ *
+ * O dia em que houver integração com a API de preço deles, isto muda. Até lá,
+ * a ausência é a informação honesta.
+ */
+function mktRotuloDeIndicacao(p){
+  return `Vendido por ${esc(p.parceiro||p.seller||'parceiro')}`;
 }
 
 // ── Onda 7 (backlog #45, #48, #52): escassez, ficha e relacionados ──
@@ -2857,15 +2903,38 @@ function mktCard(p){
       <div class="mkt-card-name">${p.name}</div>
       <div class="mkt-card-seller">${p.seller}</div>
       <div class="mkt-card-desc">${p.desc.substring(0,90)}${p.desc.length>90?'...':''}</div>
-      <div class="mkt-card-footer">
-        <div>
-          <div class="mkt-card-price">R$ ${p.price.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-          <span class="mkt-card-price-sub">${p.unit}</span>
-        </div>
-        <button class="mkt-add-btn ${inCart?'added':''}" onclick="event.stopPropagation();addMktCart(${p.id})">${inCart?'✓ Adicionado':'+ Carrinho'}</button>
-      </div>
+      <div class="mkt-card-footer">${mktCardFooter(p,inCart)}</div>
     </div>
   </div>`;
+}
+
+/**
+ * O rodapé do card muda inteiro na indicação: sai preço, sai carrinho, entra o
+ * destino. É deliberado que as duas formas não se pareçam — o visitante precisa
+ * saber ANTES de clicar que vai sair do nosso site, e um botão idêntico ao de
+ * comprar prometeria o contrário.
+ *
+ * `rel="sponsored nofollow noopener"`: `sponsored` porque é link remunerado e
+ * omitir isso é o que o Google chama de esquema de links; `noopener` porque
+ * `target=_blank` sem ele entrega ao destino um `window.opener` que consegue
+ * trocar a nossa aba de endereço.
+ */
+function mktCardFooter(p,inCart){
+  if(mktEhIndicacao(p)){
+    const href=mktLinkDeIndicacao(p);
+    if(!href)return `<div class="mkt-card-price-sub">Indisponível no momento</div>`;
+    return `<div style="min-width:0">
+        <div class="mkt-card-price-sub">${mktRotuloDeIndicacao(p)}</div>
+      </div>
+      <a class="mkt-add-btn" href="${href}" target="_blank" rel="sponsored nofollow noopener"
+         onclick="event.stopPropagation()"
+         style="text-decoration:none;display:inline-flex;align-items:center;white-space:nowrap">Ver na loja ↗</a>`;
+  }
+  return `<div>
+      <div class="mkt-card-price">R$ ${p.price.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+      <span class="mkt-card-price-sub">${p.unit}</span>
+    </div>
+    <button class="mkt-add-btn ${inCart?'added':''}" onclick="event.stopPropagation();addMktCart(${p.id})">${inCart?'✓ Adicionado':'+ Carrinho'}</button>`;
 }
 
 function cycleCardImg(mediaEl, pid){
@@ -2878,6 +2947,33 @@ function cycleCardImg(mediaEl, pid){
   img.src=p.images[next];
   img.setAttribute('data-img-idx',next);
   mediaEl.querySelectorAll('.mkt-img-dot').forEach((d,i)=>d.classList.toggle('on',i===next));
+}
+
+/**
+ * A área de compra do detalhe — a mesma bifurcação do card, e pelo mesmo
+ * motivo. Aqui o aviso é explícito: quem vende, quem cobra e quem entrega é o
+ * parceiro. Numa reclamação, «eu achei que era de vocês» é a primeira frase, e
+ * ela é evitável com uma linha de texto.
+ */
+function mktDetalheCompra(p,inCart){
+  if(mktEhIndicacao(p)){
+    const href=mktLinkDeIndicacao(p);
+    return `<div style="min-width:0">
+        <div style="font-size:.78rem;color:var(--cream2)">${mktRotuloDeIndicacao(p)}</div>
+        <span style="font-size:.65rem;color:var(--muted)">A compra, o pagamento e a entrega acontecem no site do parceiro.</span>
+      </div>
+      ${href
+        ? `<a href="${href}" target="_blank" rel="sponsored nofollow noopener" style="padding:10px 20px;background:rgba(200,168,75,.2);border:0.5px solid rgba(200,168,75,.4);border-radius:var(--r-sm);color:var(--gold2);font-size:.8rem;font-family:'Jost',sans-serif;cursor:pointer;text-decoration:none;white-space:nowrap">Ver na loja ↗</a>`
+        : `<span style="font-size:.7rem;color:var(--muted)">Indisponível no momento</span>`}`;
+  }
+  return `<div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--gold2)">R$ ${p.price.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+      <span style="font-size:.65rem;color:var(--muted)">${p.unit} · Pix ou cartão via Mercado Pago</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="mkt-add-btn ${inCart?'added':''}" id="mktDetailCartBtn" onclick="addMktCartFromDetail(${p.id})" ${p.stock==='out'?'disabled':''} style="padding:10px 20px;font-size:.8rem${p.stock==='out'?';opacity:.45;cursor:not-allowed':''}">${p.stock==='out'?'Esgotado':inCart?'✓ Adicionado':'+ Carrinho'}</button>
+      <button onclick="addMktCartFromDetail(${p.id},true)" ${p.stock==='out'?'disabled':''} style="padding:10px 20px;background:rgba(200,168,75,.2);border:0.5px solid rgba(200,168,75,.4);border-radius:var(--r-sm);color:var(--gold2);font-size:.8rem;font-family:'Jost',sans-serif;cursor:pointer${p.stock==='out'?';opacity:.45;cursor:not-allowed':''}">Comprar agora</button>
+    </div>`;
 }
 
 function openMktDetail(pid){
@@ -2913,14 +3009,7 @@ function openMktDetail(pid){
       <p style="font-size:.82rem;color:var(--cream2);line-height:1.65;margin-bottom:1.25rem">${p.desc}</p>
       ${mktFichaLink(p)}
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:1rem;border-top:0.5px solid var(--faint)">
-        <div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--gold2)">R$ ${p.price.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-          <span style="font-size:.65rem;color:var(--muted)">${p.unit} · Pix ou cartão via Mercado Pago</span>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="mkt-add-btn ${inCart?'added':''}" id="mktDetailCartBtn" onclick="addMktCartFromDetail(${p.id})" ${p.stock==='out'?'disabled':''} style="padding:10px 20px;font-size:.8rem${p.stock==='out'?';opacity:.45;cursor:not-allowed':''}">${p.stock==='out'?'Esgotado':inCart?'✓ Adicionado':'+ Carrinho'}</button>
-          <button onclick="addMktCartFromDetail(${p.id},true)" ${p.stock==='out'?'disabled':''} style="padding:10px 20px;background:rgba(200,168,75,.2);border:0.5px solid rgba(200,168,75,.4);border-radius:var(--r-sm);color:var(--gold2);font-size:.8rem;font-family:'Jost',sans-serif;cursor:pointer${p.stock==='out'?';opacity:.45;cursor:not-allowed':''}">Comprar agora</button>
-        </div>
+        ${mktDetalheCompra(p,inCart)}
       </div>
       <div id="mktReviews"></div>
       ${mktRelatedHtml(p)}
@@ -2951,6 +3040,11 @@ function addMktCartFromDetail(pid, checkout=false){
 
 function addMktCart(id){
   const p=MKT_PRODUCTS.find(x=>x.id===id); if(!p||!mktIsVisible(p))return;
+  // Indicação não entra no carrinho. A tela nem oferece o botão, mas esta
+  // função é global e alcançável — e um item de indicação no carrinho
+  // atravessaria o checkout inteiro para ser recusado só na create-order,
+  // depois de o visitante ter digitado endereço e escolhido frete.
+  if(mktEhIndicacao(p)){toast(`${p.name} é vendido pelo parceiro — abra a loja dele para comprar.`);return;}
   const ex=cart.find(c=>c.id===id);
   if(ex)ex.qty++; else cart.push({...p,qty:1});
   window.ervTrack&&ervTrack('add_to_cart',{currency:'BRL',value:p.price,items:[{item_id:String(p.dbId||p.id),item_name:p.name,price:p.price,quantity:1}]});
@@ -2968,6 +3062,11 @@ window.recomprarPedido = function(items){
   (items||[]).forEach(function(it){
     const p = MKT_PRODUCTS.find(x=>x.dbId && x.dbId===it.product_id);
     if(!p){ missing.push(it.product_name); return; }
+    // Um pedido antigo pode conter produto que DEPOIS passou a indicação —
+    // vendemos, e mais tarde passamos a só encaminhar. Recomprar o traria de
+    // volta ao carrinho por um caminho que não passa pelo card. Vai para
+    // `missing`, que é onde a tela já explica que o item não está mais à venda.
+    if(mktEhIndicacao(p)){ missing.push(it.product_name); return; }
     const qty = Math.max(1, Math.min(999, parseInt(it.qty,10)||1));
     const ex = cart.find(c=>c.id===p.id);
     if(ex) ex.qty+=qty; else cart.push({...p,qty});
