@@ -11,6 +11,7 @@
 //   3) window.location = init_point
 // ============================================================
 import { handleCors, jsonResponse } from '../_shared/cors.ts';
+import { exigirLigado } from '../_shared/interruptores.ts';
 import { getUserFromRequest, adminClient } from '../_shared/auth.ts';
 import { createPreference, getMode } from '../_shared/mercadopago.ts';
 import { clientIp, rateLimitAllow, tooManyRequests } from '../_shared/ratelimit.ts';
@@ -20,6 +21,12 @@ Deno.serve(async (req) => {
   if (cors) return cors;
 
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
+
+  // Pagamentos desligados recusam AQUI, no servidor.
+  // A tela lê `window.SITE_SETTINGS` e esconde o botão; isso é UX. Quem
+  // virasse a variável no devtools chegava até esta função sem barreira.
+  const desligado = await exigirLigado('pagamentos');
+  if (desligado) return desligado;
 
   // Onda 6.3: usuário logado OU convidado (dono do pedido guest).
   const caller = await getUserFromRequest(req);

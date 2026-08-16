@@ -21,6 +21,26 @@
   - A lista em `js/admin.js` é **UX**: esconde o que não adianta clicar. Se ela e o banco divergirem, **o banco vence**.
   - Mexeu em policy ou capacidade? Rode `supabase/tests/20260815_rbac_capacidade_test.sql` — ele aplica a migration de verdade num Postgres descartável e prova as recusas.
 
+## Interruptores — o que liga e desliga sem deploy
+
+- A tabela `interruptores` (migration `20260815230000`) guarda **só chaves de
+  operação**: decisão comercial que o admin vira. Protecão **não** entra ali —
+  mora em variável de ambiente, fora do alcance do painel. A régua: *se
+  desligar é proteção → ambiente; se ligar é decisão comercial → painel.*
+- **O servidor é quem recusa.** `payments_enabled` valia só no navegador:
+  `js/checkout.js` lia `window.SITE_SETTINGS` e nenhuma Edge Function conferia
+  — quem virasse a variável no devtools chamava `create-order` do mesmo jeito.
+  Agora `create-order` e `create-payment-preference` chamam `exigirLigado`
+  (`supabase/functions/_shared/interruptores.ts`), que **falha fechada**.
+- `site_settings.payments_enabled` virou **projeção** mantida por trigger. Os
+  cinco leitores em `js/` seguem funcionando; a verdade tem um dono só. Não
+  escreva naquela coluna — escreva no interruptor.
+- Interruptor novo entra em `public.interruptores_conhecidos()` **e** na lista
+  `ADM_INTERRUPTORES` de `js/admin.js`. O `CHECK` recusa o que não estiver na
+  primeira; a segunda é UX e cada entrada declara **o que para de acontecer ao
+  desligar**.
+- Mexeu em interruptor? Rode `supabase/tests/20260815_interruptores_test.sql`.
+
 ## Segredos
 - **Nunca** coloque `service_role`, tokens de API ou secrets em arquivos servidos ao navegador, no HTML, ou no repositório.
 - Segredos vivem em Supabase Secrets / Vercel Environment Variables. A única chave pública aceitável é a `sb_publishable_...` (anon/publishable).
