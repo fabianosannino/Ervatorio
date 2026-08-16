@@ -41,6 +41,38 @@
   desligar**.
 - Mexeu em interruptor? Rode `supabase/tests/20260815_interruptores_test.sql`.
 
+## Indicação — o parceiro vende, nós encaminhamos
+
+- **`modo_de_venda` diz quem vende** (migration `20260816120000`). `proprio` =
+  nós vendemos e entregamos; `indicacao` = o parceiro vende na loja dele
+  (Amazon, Mercado Livre), o dinheiro **não** passa por aqui e nós recebemos
+  comissão. A diferença é estrutural porque no marketplace o CDC trata a cadeia
+  como **solidária** — descobrir de qual tipo era o produto no meio de uma
+  reclamação é tarde.
+- A constraint é **bicondicional**: link sem indicação é tão errado quanto
+  indicação sem link. Um produto próprio com `link_externo` teria dois caminhos
+  de compra, e o comprador escolheria o que não gera pedido nosso.
+- **`create-order` recusa produto de indicação.** A vitrine não mostra o botão
+  de carrinho, mas isso é UX — o carrinho mora no `localStorage` e a função é
+  alcançável por qualquer cliente HTTP. Aceitar seria cobrar por algo que não
+  temos e não podemos cancelar.
+- **A rota recebe o id do produto, nunca a URL.** Aceitar a URL na query faria
+  um **redirecionador aberto**: link que começa no nosso domínio, com o nosso
+  certificado, e termina onde o atacante quiser. O link sai do cadastro e ainda
+  é conferido — em SQL (`link_de_indicacao_seguro`) e em TypeScript, pela mesma
+  regra.
+- **`cliques_de_indicacao` não guarda quem clicou.** Nem IP, nem hash, nem
+  sessão. Para faturar o parceiro basta volume; identidade seria excesso.
+  Programa de afiliados de **entrada** (alguém traz comprador para cá) é outra
+  tabela, com prazo e visitante — juntar as duas produz uma que não responde
+  nenhuma.
+- **O card de indicação não mostra preço.** Não é diagramação: os programas de
+  afiliado proíbem exibir preço que não venha da API deles em tempo real, e
+  preço guardado envelhece. Muda no dia em que houver integração de preço.
+- Mexeu nisso? Rode `supabase/tests/20260816_indicacao_test.sql`. A recusa da
+  `create-order` é TypeScript e **não** tem teste automático — confira no
+  staging.
+
 ## Segredos
 - **Nunca** coloque `service_role`, tokens de API ou secrets em arquivos servidos ao navegador, no HTML, ou no repositório.
 - Segredos vivem em Supabase Secrets / Vercel Environment Variables. A única chave pública aceitável é a `sb_publishable_...` (anon/publishable).

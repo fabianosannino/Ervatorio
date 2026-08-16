@@ -478,6 +478,40 @@
       </div>
       <div id="pfImagesPreview" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"></div>
     </div>
+    <!-- Indicação: o parceiro vende na loja dele e nós recebemos comissão.
+         O link é obrigatório neste modo e proibido no outro — o banco recusa
+         as duas combinações erradas, então o formulário só evita a ida e
+         volta. -->
+    <div class="adm-form-row">
+      <div class="adm-form-group">
+        <label class="adm-form-label" for="pfModoDeVenda">Como é vendido</label>
+        <select class="adm-form-input" id="pfModoDeVenda" onchange="syncIndicacaoFields()">
+          <option value="proprio">Nós vendemos e entregamos</option>
+          <option value="indicacao">Indicação — o parceiro vende na loja dele</option>
+        </select>
+      </div>
+    </div>
+    <div id="pfIndicacaoCampos" hidden>
+      <div class="adm-form-row">
+        <div class="adm-form-group">
+          <label class="adm-form-label" for="pfLinkExterno">Link do produto na loja do parceiro *</label>
+          <input type="url" class="adm-form-input" id="pfLinkExterno"
+                 placeholder="https://www.amazon.com.br/dp/..." inputmode="url">
+          <div style="font-size:.7rem;color:var(--muted);margin-top:4px">
+            Só <code>https</code>. Inclua a sua tag de afiliado — ela faz parte do link.
+          </div>
+        </div>
+        <div class="adm-form-group">
+          <label class="adm-form-label" for="pfParceiro">Quem vende</label>
+          <input type="text" class="adm-form-input" id="pfParceiro" placeholder="Amazon, Mercado Livre, nome da loja...">
+          <div style="font-size:.7rem;color:var(--muted);margin-top:4px">
+            Aparece no card. O preço <strong>não</strong> aparece: os programas
+            de afiliado proíbem exibir preço que não venha da API deles em
+            tempo real.
+          </div>
+        </div>
+      </div>
+    </div>
     <div style="display:flex;gap:1.5rem;margin-top:.25rem">
       <label class="adm-form-check"><input type="checkbox" id="pfActive" checked> Ativo (visível no marketplace)</label>
       <label class="adm-form-check"><input type="checkbox" id="pfIsTest"> Produto de teste</label>

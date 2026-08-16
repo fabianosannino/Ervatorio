@@ -261,7 +261,7 @@ const ADM_INTERRUPTORES = [
     chave: 'indicacao',
     nome: 'Indicacao (produto de terceiro)',
     descricao: 'Mostra produtos de parceiros com link para a loja deles.',
-    aoDesligar: 'Os produtos de indicacao somem da vitrine. Os cliques ja medidos continuam registrados.',
+    aoDesligar: 'Os produtos de indicacao somem da vitrine E a rota de redirecionamento passa a recusar — os links ja compartilhados por fora param de encaminhar, que e o ponto: desligar so a vitrine deixaria vivos justamente os links que continuam sendo clicados. Os cliques ja medidos continuam registrados.',
   },
   {
     chave: 'newsletter',
@@ -525,6 +525,10 @@ function openProductForm(p){
   syncStockFields();
   document.getElementById('pfActive').checked=p?.active!==false;
   document.getElementById('pfIsTest').checked=p?.is_test||false;
+  document.getElementById('pfModoDeVenda').value=p?.modo_de_venda||'proprio';
+  document.getElementById('pfLinkExterno').value=p?.link_externo||'';
+  document.getElementById('pfParceiro').value=p?.parceiro||'';
+  syncIndicacaoFields();
   // Populate supplier dropdown
   if(allSuppliers.length){populateSupplierDropdown(p?.supplier_id||'');}
   else{sb.from('admin_suppliers').select('id,name').eq('active',true).order('name').then(({data})=>{if(data){allSuppliers=data;populateSupplierDropdown(p?.supplier_id||'');}});}
@@ -582,6 +586,26 @@ function parseStockQty(v){
   if(!Number.isFinite(n))return null;
   return Math.max(0,Math.floor(n));
 }
+// Mostra os campos de indicação só quando eles significam alguma coisa. Com
+// `proprio` selecionado eles são PROIBIDOS pelo banco (constraint
+// bicondicional), então deixá-los à vista convidaria a preencher algo que o
+// save recusa.
+function syncIndicacaoFields(){
+  const modo=document.getElementById('pfModoDeVenda');
+  const campos=document.getElementById('pfIndicacaoCampos');
+  const preco=document.getElementById('pfPrice');
+  if(!modo||!campos)return;
+  const indicacao=modo.value==='indicacao';
+  campos.hidden=!indicacao;
+  // O preço continua obrigatório na coluna (NOT NULL, herdada), mas na
+  // indicação ele NÃO é exibido em lugar nenhum da vitrine — os programas de
+  // afiliado proíbem preço que não venha da API deles. Fica como referência
+  // interna, e a dica diz isso para ninguém achar que é o preço de venda.
+  if(preco){
+    preco.placeholder=indicacao?'Referência interna — não aparece na vitrine':'29.90';
+  }
+}
+
 function editProduct(id){openProductForm(allProducts.find(p=>p.id===id));}
 function closeProductForm(){document.getElementById('productModal').classList.remove('on');}
 async function saveProduct(){
@@ -605,6 +629,28 @@ async function saveProduct(){
     is_test:document.getElementById('pfIsTest').checked,
     images:images.length?images:null,
   };
+  // Indicação: o link é obrigatório; venda própria: o link é proibido. A
+  // constraint bicondicional do banco recusa as duas combinações erradas — o
+  // que se faz aqui é evitar a ida e volta e dar a mensagem em português, em
+  // vez do texto cru do Postgres.
+  const modoDeVenda=document.getElementById('pfModoDeVenda').value;
+  row.modo_de_venda=modoDeVenda;
+  if(modoDeVenda==='indicacao'){
+    const link=document.getElementById('pfLinkExterno').value.trim();
+    if(!/^https:\/\//i.test(link)){
+      admToast('Indicação precisa de um link https:// para a loja do parceiro');return;
+    }
+    if(/\s/.test(link)||link.slice(8).split('/')[0].includes('@')){
+      // `https://ervatorio.com.br@evil.tld` é lido pelo olho como o nosso
+      // domínio e pelo navegador como outro. O banco também recusa.
+      admToast('Link inválido: sem espaços e sem "@" antes da primeira barra');return;
+    }
+    row.link_externo=link;
+    row.parceiro=document.getElementById('pfParceiro').value.trim()||null;
+  }else{
+    row.link_externo=null;
+    row.parceiro=null;
+  }
   if(!row.name){admToast('Nome é obrigatório');return;}
   if(!row.price){admToast('Preço é obrigatório');return;}
   let error;

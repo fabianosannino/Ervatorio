@@ -77,6 +77,30 @@ const ervaria = {
         try { typeof renderCart === 'function' && renderCart(); } catch (_) {}
       }
     } catch (_) {}
+    this.loadInterruptores();
+  },
+
+  /**
+   * Estado dos interruptores para a vitrine.
+   *
+   * Só de leitura e só para decidir o que MOSTRAR — quem recusa é o servidor
+   * (`_shared/interruptores.ts`). A tabela é legível por `anon` de propósito:
+   * a vitrine precisa saber se a indicação está no ar antes de o visitante ter
+   * conta, e não há nada sensível no estado de uma capacidade que o próprio
+   * site demonstra ao ser usado.
+   *
+   * Falha para DESLIGADO. Um erro de rede não pode fazer aparecer um card que
+   * encaminha para fora — a rota recusaria o clique, e o visitante veria um
+   * link que não leva a lugar nenhum.
+   */
+  async loadInterruptores() {
+    window.ERV_INTERRUPTORES = window.ERV_INTERRUPTORES || {};
+    try {
+      const { data, error } = await this.client.from('interruptores').select('chave,ligado');
+      if (error || !data) return;
+      data.forEach((i) => { window.ERV_INTERRUPTORES[i.chave] = i.ligado === true; });
+      try { typeof renderMkt === 'function' && renderMkt(); } catch (_) {}
+    } catch (_) {}
   },
 
   applyPaymentsState() {
@@ -537,6 +561,12 @@ const ervaria = {
         else if (row.price) existing.price = parseFloat(row.price) || existing.price;
         if (row.stock) existing.stock = row.stock;
         if (row.images && row.images.length) existing.images = row.images;
+        // Indicação: quem vende é o parceiro. Sem estes três campos o card
+        // renderiza como produto nosso — com botão de carrinho — e o visitante
+        // tenta comprar algo que a create-order recusa.
+        existing.modo_de_venda = row.modo_de_venda || 'proprio';
+        existing.link_externo = row.link_externo || null;
+        existing.parceiro = row.parceiro || existing.seller || '';
         // Produtos-semente do catálogo curado (definidos em app.js) são sempre
         // itens reais da vitrine, independentemente do is_test vindo do
         // admin_products. Só sincronizamos is_test para produtos criados
@@ -566,6 +596,9 @@ const ervaria = {
         stock: row.stock || 'in',
         images: row.images || [],
         is_test: row.is_test || false,
+        modo_de_venda: row.modo_de_venda || 'proprio',
+        link_externo: row.link_externo || null,
+        parceiro: row.parceiro || row.supplier || '',
       };
       MKT_PRODUCTS.push(item);
       byName.set(normalize(row.name), item);
