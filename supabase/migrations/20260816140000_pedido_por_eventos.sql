@@ -125,10 +125,26 @@ CREATE INDEX IF NOT EXISTS pedido_eventos_order_idx
 --
 -- `ocorrido_em` sai da melhor data conhecida. Datar tudo com `now()` diria que
 -- a base inteira mudou de estado no minuto da migration.
+--
+-- ## O `::text`, e por que ele não estava aqui
+--
+-- Em produção `orders.status` **não é `text`**: é o enum `public.order_status`.
+-- Sem o cast, esta migration falha na primeira linha que a compara com o array
+-- de texto — `operator does not exist: order_status = text` —, e foi assim que
+-- ela morreu na primeira tentativa de aplicar, em 17/08.
+--
+-- O teste passava porque o arremedo em `supabase/tests/` declarava
+-- `status text`, dizendo no comentário que era «o estado em que ela está antes
+-- desta migration». Não era. O teste provou a migration contra um esquema que
+-- não existe em lugar nenhum, e deu a resposta certa pelo motivo errado — a
+-- mesma forma do que a Veridia acabou de encontrar nos privilégios: uma guarda
+-- que roda no ambiente errado passa, e o que ela mede não é o que importa.
+--
+-- O arremedo foi corrigido junto, e agora cria o enum.
 INSERT INTO public.pedido_eventos (order_id, estado, origem, ocorrido_em, motivo)
 SELECT
   o.id,
-  o.status,
+  o.status::text,
   'sistema',
   COALESCE(
     CASE o.status
@@ -142,7 +158,7 @@ SELECT
   ),
   'Estado que o pedido já tinha quando os fatos nasceram (20260816140000).'
 FROM public.orders o
-WHERE o.status = ANY(public.estados_do_pedido())
+WHERE o.status::text = ANY(public.estados_do_pedido())
   AND NOT EXISTS (
     SELECT 1 FROM public.pedido_eventos e WHERE e.order_id = o.id
   );
@@ -188,10 +204,14 @@ BEGIN
    ORDER BY array_position(public.estados_do_pedido(), e.estado) DESC
    LIMIT 1;
 
+  -- Os dois casts pelo mesmo motivo do backfill: a coluna é o enum
+  -- `public.order_status`. Na escrita o texto precisa virar enum; na comparação
+  -- o enum precisa virar texto. Sem eles a projeção não compila, e o sintoma
+  -- aparece no primeiro fato registrado — não na migration.
   UPDATE public.orders
-     SET status = COALESCE(maior, 'pending')
+     SET status = COALESCE(maior, 'pending')::public.order_status
    WHERE id = NEW.order_id
-     AND status IS DISTINCT FROM COALESCE(maior, 'pending');
+     AND status::text IS DISTINCT FROM COALESCE(maior, 'pending');
 
   RETURN NULL;
 END;

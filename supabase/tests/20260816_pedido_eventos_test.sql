@@ -41,10 +41,30 @@ $fn$;
 GRANT EXECUTE ON FUNCTION public.tem_capacidade(text) TO authenticated;
 
 -- `orders`, no estado em que ela está antes desta migration.
+--
+-- ## `status` é ENUM, e este arremedo dizia `text`
+--
+-- Dizia, e o comentário acima afirmava ser «o estado em que ela está antes
+-- desta migration». Não era: em produção a coluna é `public.order_status`, e a
+-- migration falhava na primeira comparação com o array de texto —
+-- `operator does not exist: order_status = text`.
+--
+-- O teste passava com folga, provando a migration contra um esquema que não
+-- existe em lugar nenhum. Um arremedo que simplifica o tipo não simplifica: ele
+-- troca a pergunta. Se o esquema real tem um tipo, o arremedo tem o mesmo tipo,
+-- ou não está testando a migration que vai rodar.
+DO $$ BEGIN
+  CREATE TYPE public.order_status AS ENUM (
+    'pending', 'paid', 'processing', 'shipped',
+    'delivered', 'cancelled', 'refunded', 'failed'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
 CREATE TABLE IF NOT EXISTS public.orders (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid,
-  status text NOT NULL DEFAULT 'pending',
+  status public.order_status NOT NULL DEFAULT 'pending',
   total_cents integer NOT NULL DEFAULT 0,
   created_at timestamptz NOT NULL DEFAULT now(),
   paid_at timestamptz, shipped_at timestamptz, delivered_at timestamptz,
