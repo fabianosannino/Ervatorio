@@ -1,5 +1,22 @@
 # Dívida técnica — Assinatura HMAC do webhook MP
 
+> ## ENCERRADA em 17/08/2026 — não será corrigida
+>
+> O pagamento do Ervatório será **Stripe**. O Mercado Pago está congelado, e
+> esta dívida fecha com ele. Ver `docs/estrategia/2026-08-17-congelar-mercado-pago.md`.
+>
+> **Não dispare «Simular notificação» no sandbox.** Era o único passo pendente e
+> não serve mais a nada: existia para descobrir qual variante de assinatura o MP
+> usa, e não haverá webhook do MP para conferir.
+>
+> O diagnóstico abaixo fica **inteiro**, e de propósito. As 34 variantes
+> testadas, as hipóteses não eliminadas e as quatro camadas de mitigação são o
+> valor deste documento, e nenhuma delas deixou de ser verdade. O que mudou é
+> que ele descreve, e não pede.
+>
+> **Se o MP voltar**, retome do «Próximo passo» logo abaixo — está no ponto
+> exato onde parou.
+
 **Status (16/07/2026 — Onda 1.4)**: instrumentação da hipótese principal implementada; aguardando validação em sandbox. Mudanças aplicadas:
 
 1. `mp-webhook/index.ts` agora captura o **body bruto** (`await req.text()`) ANTES de qualquer parse e o repassa à verificação.

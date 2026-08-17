@@ -107,10 +107,49 @@
 - Teste a migration em um **Supabase branch (staging)** antes de aplicar em produção.
 - Migrations nunca destroem dados sem backup verificado e passo de rollback documentado.
 
-## Pagamentos (Mercado Pago)
-- O total do pedido é **sempre** recalculado no servidor a partir do preço autoritativo do banco. Nunca confie em valor vindo do cliente.
-- Toda mudança no fluxo de pagamento é testada em **sandbox** ponta-a-ponta antes de ir a produção.
-- Não ligue pagamentos em produção enquanto a validação de assinatura do webhook não estiver funcionando ou uma decisão de risco documentada for tomada (ver `WEBHOOK_SIGNATURE_DEBT.md`).
+## Pagamentos — o Mercado Pago está congelado (17/08)
+
+**O pagamento do Ervatório será Stripe. O MP não recebe mais desenvolvimento.**
+Ver `docs/estrategia/2026-08-17-congelar-mercado-pago.md`.
+
+O que isso quer dizer na prática:
+
+- O código do MP **fica** — três funções e o módulo compartilhado. Não apague:
+  remover é trabalho de horas cujo benefício é menos código para ler, e desfazer
+  é reescrever.
+- `payments_enabled` continua **desligado**, e é assim que fica.
+- A dívida de assinatura HMAC está **encerrada como não será corrigida**. Não
+  peça a ninguém para disparar «Simular notificação» no sandbox: o passo existia
+  para descobrir a variante de assinatura do MP, e não haverá webhook do MP.
+- Não proponha o MP como próximo passo. «Pronto, faltando só o teste de
+  sandbox» é o estado que mantém um item em toda lista para sempre, cobrado de
+  quem não vai fazê-lo.
+
+Quando a Stripe entrar, o padrão a portar é o da Veridia — sem SDK:
+`lib/cobranca/assinatura-do-evento.ts` (HMAC sobre `timestamp.payload`) e
+`lib/loja/stripe.ts` (`fetch` form-encoded, `import "server-only"`).
+
+O que continua valendo, com qualquer provedor:
+
+- O total do pedido é **sempre** recalculado no servidor a partir do preço
+  autoritativo do banco. Nunca confie em valor vindo do cliente.
+- Toda mudança no fluxo de pagamento é testada em **sandbox** ponta-a-ponta
+  antes de ir a produção.
+- `pago` é escrito pelo **webhook**, nunca pela tela de sucesso.
+
+## A produção está atrás do repositório (conferido em 17/08)
+
+Quatro migrações estão aqui e **não** estão no banco — `20260815220000`
+(RBAC por capacidade), `20260815230000` (interruptores), `20260816120000`
+(indicação) e `20260816140000` (`pedido_eventos`). As Edge Functions no ar são
+de **27/07**.
+
+Não é urgência de incidente: as proteções antigas valem e não há pagamento
+ligado. Mas quem tem `is_admin` hoje tem **tudo** — a separação entre despachar
+pedido e apagar a base de usuários existe no repositório e não no banco.
+
+**Isso não depende do provedor de pagamento.** Antes de propor qualquer coisa
+nova aqui, verifique se ela não está esperando por uma dessas quatro.
 
 ## Compliance
 - Nenhum script de tracking (analytics, pixel) dispara antes do **consentimento** do usuário (LGPD / Consent Mode v2).
