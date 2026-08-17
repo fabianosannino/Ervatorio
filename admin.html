@@ -28,23 +28,23 @@
 <!-- ADMIN SHELL -->
 <div class="adm-shell" id="admShell" style="display:none">
   <!-- SIDEBAR -->
-  <aside class="adm-sidebar">
+  <nav class="adm-sidebar" aria-label="Seções da administração">
     <div class="adm-logo">Ervatório <small>Administração</small></div>
-    <div class="adm-nav-item active" data-sec="dashboard" onclick="showSection('dashboard')"><span class="icon">📊</span> Dashboard</div>
-    <div class="adm-nav-item" data-sec="users" onclick="showSection('users')"><span class="icon">👥</span> Usuários</div>
-    <div class="adm-nav-item" data-sec="herbs" onclick="showSection('herbs')"><span class="icon">🍃</span> Chás e Infusões</div>
-    <div class="adm-nav-item" data-sec="products" onclick="showSection('products')"><span class="icon">📦</span> Produtos</div>
-    <div class="adm-nav-item" data-sec="suppliers" onclick="showSection('suppliers')"><span class="icon">🏪</span> Fornecedores</div>
-    <div class="adm-nav-item" data-sec="news" onclick="showSection('news')"><span class="icon">📰</span> Notícias</div>
-    <div class="adm-nav-item" data-sec="fichas" onclick="showSection('fichas')"><span class="icon">📖</span> Fichas editoriais</div>
-    <div class="adm-nav-item" data-sec="chazerias" onclick="showSection('chazerias')"><span class="icon">🗺</span> Chazerias</div>
-    <div class="adm-nav-item" data-sec="orders" onclick="showSection('orders')"><span class="icon">🧾</span> Pedidos</div>
-    <div class="adm-nav-item" data-sec="returns" onclick="showSection('returns')"><span class="icon">↩</span> Devoluções</div>
-    <button type="button" class="adm-nav-item" data-sec="audit" onclick="showSection('audit')" style="background:none;border:0;border-left:3px solid transparent;width:100%;font:inherit;text-align:left"><span class="icon">🛡</span> Auditoria</button>
-    <div class="adm-nav-sep"></div>
-    <div class="adm-nav-item" onclick="window.location='/'"><span class="icon">🍵</span> Ir ao App</div>
-    <div class="adm-nav-item" onclick="admLogout()" style="color:var(--adm-red)"><span class="icon">⏻</span> Sair</div>
-  </aside>
+    <button type="button" class="adm-nav-item active" data-sec="dashboard" aria-current="page" onclick="showSection('dashboard')"><span class="icon" aria-hidden="true">📊</span> Dashboard</button>
+    <button type="button" class="adm-nav-item" data-sec="users" onclick="showSection('users')"><span class="icon" aria-hidden="true">👥</span> Usuários</button>
+    <button type="button" class="adm-nav-item" data-sec="herbs" onclick="showSection('herbs')"><span class="icon" aria-hidden="true">🍃</span> Chás e Infusões</button>
+    <button type="button" class="adm-nav-item" data-sec="products" onclick="showSection('products')"><span class="icon" aria-hidden="true">📦</span> Produtos</button>
+    <button type="button" class="adm-nav-item" data-sec="suppliers" onclick="showSection('suppliers')"><span class="icon" aria-hidden="true">🏪</span> Fornecedores</button>
+    <button type="button" class="adm-nav-item" data-sec="news" onclick="showSection('news')"><span class="icon" aria-hidden="true">📰</span> Notícias</button>
+    <button type="button" class="adm-nav-item" data-sec="fichas" onclick="showSection('fichas')"><span class="icon" aria-hidden="true">📖</span> Fichas editoriais</button>
+    <button type="button" class="adm-nav-item" data-sec="chazerias" onclick="showSection('chazerias')"><span class="icon" aria-hidden="true">🗺</span> Chazerias</button>
+    <button type="button" class="adm-nav-item" data-sec="orders" onclick="showSection('orders')"><span class="icon" aria-hidden="true">🧾</span> Pedidos</button>
+    <button type="button" class="adm-nav-item" data-sec="returns" onclick="showSection('returns')"><span class="icon" aria-hidden="true">↩</span> Devoluções</button>
+    <button type="button" class="adm-nav-item" data-sec="audit" onclick="showSection('audit')"><span class="icon" aria-hidden="true">🛡</span> Auditoria</button>
+    <div class="adm-nav-sep" role="presentation"></div>
+    <button type="button" class="adm-nav-item" onclick="window.location='/'"><span class="icon" aria-hidden="true">🍵</span> Ir ao App</button>
+    <button type="button" class="adm-nav-item adm-nav-sair" onclick="admLogout()"><span class="icon" aria-hidden="true">⏻</span> Sair</button>
+  </nav>
 
   <!-- MAIN CONTENT -->
   <main class="adm-main">

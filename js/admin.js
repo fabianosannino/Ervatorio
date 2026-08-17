@@ -209,9 +209,14 @@ async function admLogout(){
 function showSection(id){
   currentSection=id;
   document.querySelectorAll('.adm-section').forEach(s=>s.style.display='none');
-  document.querySelectorAll('.adm-nav-item').forEach(n=>n.classList.remove('active'));
+  // `aria-current` anda junto com a classe: a classe pinta, e é o atributo que
+  // o leitor de tela anuncia. Marcar só a classe deixava quem navega por
+  // teclado sem saber em que seção está.
+  document.querySelectorAll('.adm-nav-item').forEach(n=>{n.classList.remove('active');n.removeAttribute('aria-current')});
   document.getElementById('sec-'+id).style.display='block';
-  document.querySelector(`[data-sec="${id}"]`)?.classList.add('active');
+  const atual=document.querySelector(`[data-sec="${id}"]`);
+  atual?.classList.add('active');
+  atual?.setAttribute('aria-current','page');
   if(id==='dashboard')loadDashboard();
   if(id==='users')loadUsers();
   if(id==='herbs')loadHerbs();
