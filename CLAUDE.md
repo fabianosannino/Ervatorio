@@ -157,6 +157,21 @@ nova aqui, verifique se ela não está esperando por uma dessas quatro.
 
 ## Qualidade (Definition of Done)
 - Acessibilidade: elementos interativos são `<button>`/`<a>` reais, operáveis por teclado; modais com foco/ESC/`aria-modal`; contraste AA.
+  - **O menu do painel já foi doze `<div onclick>`** e a regra acima estava
+    escrita aqui o tempo todo — o toque funcionava, então nada reclamava. Um
+    `<div>` não recebe foco, não responde a Enter nem a Espaço, e o leitor de
+    tela não o anuncia como controle. A varredura que acha isso é
+    `npx html-validate admin.html` (regra `prefer-native-element`); ela roda no
+    CI com `|| true`, então **é preciso ler a saída**, não só ver o passo verde.
+  - **Reset de botão vive na folha, não em `style` inline.** O único item que
+    já era `<button>` carregava o reset repetido no atributo; o décimo terceiro
+    teria esquecido. Cuidado com a ordem: `border:0` zera as quatro bordas e a
+    de ativo é redeclarada logo depois — inverter apaga o indicador. E use
+    `font-family:inherit`, nunca `font:inherit`, que traz junto o `font-size`
+    do agente de usuário.
+  - **`aria-current` anda junto com a classe `active`.** A classe pinta; o
+    atributo é o que o leitor de tela anuncia. Marcar só a classe deixa quem
+    navega por teclado sem saber em que seção está.
 - Performance: nenhuma mudança piora LCP/TBT/CLS; imagens otimizadas; scripts com `defer`.
 - Observabilidade: erros logados; mudanças críticas emitem evento/metrificação.
 - Nunca quebre o checkout, o login ou o webhook de pagamento sem teste que prove o contrário.

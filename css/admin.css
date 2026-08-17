@@ -20,7 +20,15 @@ body{background:var(--adm-bg);color:var(--adm-text);font-family:'Jost',sans-seri
 /* SIDEBAR */
 .adm-logo{font-size:1.2rem;color:var(--adm-gold2);padding:0 1.25rem 1.5rem;letter-spacing:.06em;font-weight:400}
 .adm-logo small{display:block;font-size:.65rem;color:var(--adm-muted);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
-.adm-nav-item{display:flex;align-items:center;gap:10px;padding:10px 1.25rem;font-size:.82rem;color:var(--adm-muted);cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+/* Os itens do menu são <button> de verdade — eram <div onclick>, que o toque
+   opera e o teclado não alcança. O reset vive aqui, e não num `style` inline
+   repetido em cada um: era assim no único que já era botão (Auditoria), e um
+   reset por sítio diverge no primeiro item novo.
+   `font-family:inherit` e não `font:inherit` — este último levaria junto o
+   `font-size` do agente de usuário e apagaria o `.82rem` da linha abaixo. */
+.adm-nav-item{display:flex;align-items:center;gap:10px;padding:10px 1.25rem;font-size:.82rem;font-family:inherit;color:var(--adm-muted);cursor:pointer;transition:all .15s;background:none;border:0;border-left:3px solid transparent;width:100%;text-align:left}
+/* Ordem importa: o `border:0` acima zera as quatro bordas, e a de baixo é
+   redeclarada logo em seguida. Trocar a ordem apagaria o indicador de ativo. */
 .adm-nav-item:hover{background:rgba(200,168,75,.05);color:var(--adm-text)}
 .adm-nav-item.active{background:rgba(200,168,75,.08);color:var(--adm-gold2);border-left-color:var(--adm-gold)}
 .adm-nav-item .icon{font-size:1rem;width:20px;text-align:center}
@@ -129,6 +137,13 @@ select.adm-form-input{appearance:none;background-image:url("data:image/svg+xml,%
 .adm-nav-item:hover{background:rgba(197,163,96,.08);color:var(--adm-text)}
 .adm-nav-item.active{background:rgba(197,163,96,.12);color:var(--adm-gold2)}
 .adm-nav-item .icon{font-size:1.05rem;width:22px}
+/* O «Sair» é vermelho. A regra fica **depois** do bloco de refinamento e leva
+   as duas classes de propósito: onde estava antes — um `style` inline — ela
+   ganhava de tudo, e uma classe solta perderia para `.adm-nav-item:hover` e
+   para a redeclaração de cor logo acima, ficando cinza justamente na hora em
+   que o cursor está sobre ela. */
+.adm-nav-item.adm-nav-sair,
+.adm-nav-item.adm-nav-sair:hover{color:var(--adm-red)}
 .adm-header{margin-bottom:1.75rem;align-items:flex-end}
 .adm-title{font-family:'Cormorant Garamond',serif;font-size:clamp(1.9rem,4vw,2.5rem);line-height:1;color:var(--adm-text);font-weight:400;letter-spacing:-.015em}
 .adm-subtitle{font-size:.83rem;color:var(--adm-muted);line-height:1.55;margin-top:8px}
