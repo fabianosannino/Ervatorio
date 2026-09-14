@@ -7,15 +7,21 @@ Referência operacional interna. A versão pública resumida está em `privacida
 | Dado | Onde vive | Retenção | Ao fim do prazo / exclusão de conta |
 |---|---|---|---|
 | Conta Auth (e-mail, login) | `auth.users` | Enquanto a conta existir | Excluído via `user-data-rights` (delete) |
-| Perfil (nome, telefone, cidade, perfil de chá) | `user_profiles` | Enquanto a conta existir | CASCADE na exclusão da conta |
-| Preferências, favoritos, inventário, diário, blends | `user_preferences`, `user_favorites`, `user_inventory`, `tea_wheel_history`, `tasting_journal`, `saved_recipes` | Enquanto a conta existir | CASCADE na exclusão da conta |
+| Perfil (nome, e-mail, sabores e momentos preferidos) | `user_profiles`, `user_preferences` | Enquanto a conta existir | CASCADE na exclusão da conta. Telefone, cidade e país deixaram de ser pedidos em 15/09/2026 (PR 08); as colunas existem para contas antigas e saem no export/exclusão |
+| **Saúde e restrições (sensível)** — condições de lista fechada | `perfil_saude` (migration `20260915120000`) | Enquanto o consentimento durar | Retirar o consentimento = `DELETE` da linha pela própria tela (RLS do dono); CASCADE na exclusão da conta; sai no export. Nunca no `localStorage` nem no cache do SW |
+| Diário de infusões (erva, horário, sensação de lista fechada) | `diario_infusoes` (migration `20260916120000`) | Enquanto a conta existir | CASCADE; sai no export. Registro novo só com o interruptor `diario` ligado; ler e apagar não dependem dele |
+| Favoritos, inventário, histórico da roda, blends salvos | `user_favorites`, `user_inventory`, `tea_wheel_history`, `saved_recipes` | Enquanto a conta existir | CASCADE na exclusão da conta |
+| `tasting_journal` | tabela antiga, **zero linhas**, nenhum código escreve | — | Limpeza própria pendente (D21): privilégios ainda são os de default |
 | Endereços salvos | `user_addresses` | Enquanto a conta existir | CASCADE na exclusão da conta |
 | Pedidos (valores, itens, status) | `orders`, `order_items` | **5 anos** após o exercício fiscal (obrigação fiscal/CDC) | Mantidos **anonimizados**: `user_id → NULL`, snapshot de endereço reduzido a cidade/UF/país, nome → `[excluído a pedido do titular]` |
-| Payload de pagamento (auditoria) | `orders.payment_payload` | Igual ao pedido | Mantido (não contém dados além do processado pelo MP) — revisar na virada de produção |
+| Payload de pagamento (auditoria) | `orders.payment_payload` | Igual ao pedido | Vazio hoje: a loja está fechada (`pagamentos` desligado) e o Mercado Pago está congelado sem uso. Revisar quando a Stripe entrar |
 | Consentimento LGPD do cadastro | `user_profiles.lgpd_accepted_at` | Enquanto a conta existir | CASCADE; o registro de consentimento de pedidos antigos permanece implícito no pedido anonimizado |
 | Escolha de cookies | `localStorage` do navegador (`erv_consent_v1`) | Até o usuário limpar/alterar | Controlado pelo próprio titular (banner) |
+| Uso sem conta: estante, blend, blends salvos, carrinho, idioma, tema, perfil local, cache do catálogo e das fichas, monitor de cafeína (`erb_caf_<dia>`), resultado do teste de 1 minuto, opt-in da loja | `localStorage` (`erb_*`, `erv_loja_optin`) | Até o usuário limpar | Só no aparelho; nunca enviado ao servidor sem conta. O monitor de cafeína **nunca** sai do aparelho |
+| Restrições de sessão do «Encontre seu chá» | memória do navegador (`encState`) | A sessão | Não vai para o servidor nem para o `localStorage` (`encontrar.spec.mjs` confere) |
 | Newsletter (opt-in) | `user_profiles.newsletter_optin` (provedor externo na Onda 10) | Até revogação | Remoção imediata no descadastro |
-| Newsletter anônima (e-mail da landing) | `newsletter_subscribers` | **24 meses** sem interação, ou até revogação | `active = false` no descadastro; purga da linha após 24 meses inativos |
+| Newsletter anônima (e-mail, `source` = pausa/rodape/blog/checkout/admin/loja/clube/ficha/receita/encontrar, `locale`, `consent_at`) | `newsletter_subscribers` | **24 meses** sem interação, ou até revogação | `active = false` no descadastro; purga da linha após 24 meses inativos |
+| Cliques de indicação (produto + data/hora) | `cliques_de_indicacao` (migration `20260816120000`) | Indefinida, como estatística | **Não é dado pessoal**: sem IP, hash, sessão ou conta, de propósito |
 | Logs de Edge Functions | Supabase Logs | Retenção da plataforma (curta) | Automática |
 | Contadores de rate limit | `edge_rate_limits` | ~1 dia (higiene automática) | Automática |
 | Backups do banco | Supabase Backups/PITR | Janela do plano (dias) | Expiram automaticamente; dados excluídos desaparecem dos backups ao fim da janela |
@@ -42,6 +48,10 @@ Agora quem grava é o servidor: a function aceita só `email`, `source` e `local
 Vale ser exato sobre o que essa data prova: **o momento em que o formulário foi enviado, não a confirmação do titular.** Sem double opt-in, ninguém garante que o dono do endereço foi quem digitou. Para uma inscrição contestada, a defesa é fraca. O double opt-in fecha isso e está na etapa 3.
 
 Reinscrição não ressuscita quem saiu: a function usa `ignoreDuplicates`, então reenviar o formulário com um e-mail que está `active = false` **não** o reativa.
+
+## A versão pública
+
+`privacidade.html` (v1.1, 14/09/2026) é o resumo público desta tabela. **Dado novo = linha aqui e linha lá**, no mesmo PR — a política que descreve o sistema de ontem é a que não protege ninguém. O que a v1.1 diz e o código sustenta: saúde com consentimento próprio (art. 11 I) e finalidade única; restrições de sessão sem servidor; diário sem texto livre; indicação sem identidade; cadastro só com nome e e-mail; loja fechada e operador de pagamento a nomear antes da abertura (o Mercado Pago saiu do texto); medição (GTM/GA4, Clarity, Meta Pixel) só com consentimento e hoje desativada (`ANALYTICS` vazio em `js/config.js`).
 
 ## Princípios
 
