@@ -14,11 +14,13 @@ const essentialFiles = [
   'admin.html',
   'manifest.json',
   'sw.js',
+  'js/nav-data.js',
   'js/app.js',
   'js/config.js',
   'js/ervaria.js',
   'js/checkout.js',
   'js/fichas-data.js',
+  'css/nav.css',
   'css/main.css',
   // SEO (Onda 5) — gerados por npm run prerender e commitados
   'robots.txt',

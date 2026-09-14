@@ -61,7 +61,7 @@ três commits** (D2).
 | 04 | Renomeações `nav.*`; redirects de hash; `SEO_META`; copy sem emoji | **Nesta rodada** | commit `feat(nav): rotas por hash genéricas…` (1º — os CTAs precisam dos hashes novos) |
 | 02 | CTAs mortos; flag única de comércio; mapa mundi em arquivo | **Nesta rodada** | commit `fix(landing): CTAs mortos viram rotas…` (2º) |
 | 03 | Cabeçalho único: 3 grupos + Loja condicional + ícones; menu mobile; sub-navegação por grupo; landing com o mesmo vocabulário e hero por intenção | **Nesta rodada (parcial)** — o app e a landing. As páginas estáticas (`/erva/*`, `/como-se-faz/*`, `/biblioteca/*`, `/lexico/*`, `pausa.html`, legais) ficam para o 03b, porque exigem mexer no gerador `scripts/prerender.mjs` e regenerar ~100 arquivos. | commit `feat(nav): cabeçalho único…` (3º) |
-| 03b | Mesmo cabeçalho nas páginas estáticas (via `prerender.mjs`) | Próximo | `feat/unified-nav-static` |
+| 03b | Mesmo cabeçalho nas páginas estáticas (via `prerender.mjs`) | **Quarta rodada (16/09)** — ver D22–D23. | PR `feat/unified-nav-static` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 05 | «Encontre seu chá» em 3 passos, motor único de recomendação, restrição como barreira | Aguarda o roteiro de teste com usuários (README §Fase 2 §04) | `feat/encontrar` |
 | 06 | Ficha: resumo leigo, timer embutido, «Onde encontrar» (indicação), e-mail | Depois do 05 | `feat/ficha-actions` |
 | 07 | Descobrir e Preparar como abas de verdade (fusão de renderizadores) | Parte já entra no 03 como sub-navegação; a fusão fica aqui | `feat/descobrir-preparar` |
@@ -218,6 +218,14 @@ para `mailto:`, até existir `/parceiros/`.
   novo, numa tabela de antes das migrations versionadas. RLS segura (policies
   exigem `auth.uid()`), mas o privilégio não deveria existir. Limpeza à parte
   (D21).
+- **(03b) A ficha estática tinha um CTA para `/#page=search`** — hash de
+  antes do roteador genérico, que hoje não abre nada. Virou `/#ervas`. Os
+  emojis dos CTAs e do aviso de saúde saíram junto, como já tinha saído do
+  app no PR 04.
+- **(03b) `aria-label` num `<div>` sem papel** é o que `html-validate`
+  chama de `aria-label-misuse`. A sub-navegação do app tem isso em
+  `index.html` (`#ervSubnav`); nas estáticas já nasceu sem. Vale tirar do
+  app no próximo PR que tocar o cabeçalho.
 
 **D15 — O Diário de infusões não entra no PR 08.** O critério de aceite do
 handoff para o 08 é o consentimento («sem consentimento, campos desabilitados
@@ -273,6 +281,26 @@ seria herdar um esquema que ninguém desenhou para isto; o diário nasce em
 tabela própria e a antiga fica para uma limpeza à parte (revogar `anon`,
 depois decidir se some).
 
+**D22 — O menu tem uma fonte só, e ela é dado, não código.** `NAV_GROUPS` e
+`PAGE_HASH` saem de `js/app.js` para `js/nav-data.js`, um script clássico
+sem dependência, lido pelo navegador (antes do `app.js`) e por
+`scripts/nav-estatica.mjs` em Node — o mesmo truque que o `prerender` já
+usava com `fichas-data.js`. Duplicar a lista no gerador seria o segundo
+menu que o handoff mandou eliminar, só que em outro arquivo. As páginas
+estáticas antes órfãs (`/como-se-faz/`, `/lexico/`, `/biblioteca/`) entram
+no grupo «Preparar & criar» como entradas com `href`, e por isso aparecem
+também na sub-navegação do app — a parte «páginas estáticas órfãs
+linkadas» do PR 07 vem junto, porque não dava para linkar de um lado só.
+
+**D23 — Nas páginas estáticas não há Loja nem Diário.** Os dois dependem
+de interruptor; a página estática não carrega o app nem consulta o banco,
+e a régua da D3 é falhar para desligado. Quando a Loja abrir (05/10), a
+decisão volta: ou as páginas estáticas ganham uma leitura leve do
+interruptor, ou continuam sem Loja e o menu do app é a porta. Idioma, tema
+e «Entrar» também ficam de fora: as páginas são PT, tema claro fixo, sem
+Supabase. O que aparece é o que funciona sem JavaScript — e a folha do
+celular é o único pedaço com script (`js/nav-estatica.js`, 40 linhas).
+
 ## 4. Como testar esta rodada
 
 ```
@@ -314,6 +342,22 @@ npx playwright test tests/e2e/diario.spec.mjs
    `GET` e `DELETE` continuam funcionando.
 9. `user-data-rights` (após reimplantar): o export traz `diario_infusoes`.
 
+Quarta rodada (03b), além do de cima:
+
+```
+npm run prerender                              # regenera as ~190 páginas e preenche os marcadores
+npx playwright test tests/e2e/estaticas.spec.mjs
+npx html-validate erva/guarana/index.html pausa.html privacidade.html termos.html   # sem aria-label-misuse
+```
+
+10. `/erva/guarana/`, `/lexico/`, `/como-se-faz/`, `/biblioteca/`,
+    `/pausa.html`, `/privacidade.html`: o mesmo cabeçalho do app no topo,
+    verde sobre a página creme; «Descobrir» marcado na erva, «Preparar &
+    criar» nas outras três; sem Loja.
+11. No celular, ☰ abre a folha, Esc fecha e o foco volta ao ☰.
+12. No app, a sub-navegação de «Preparar & criar» mostra Como se faz,
+    Léxico e Biblioteca, e cada um abre a página estática.
+
 ## 5. Rollback
 
 Cada etapa é um commit; `git revert <sha>` desfaz uma sem tocar nas outras.
@@ -325,3 +369,7 @@ coluna ou policy é criada ou removida.
 some e o banco recusa registro novo, sem deploy. Segundo: `git revert` do
 commit. Terceiro (só com backup verificado, porque apaga registro de
 usuário): o bloco ROLLBACK no cabeçalho de `20260916120000_diario_infusoes.sql`.
+
+**03b.** `git revert` do commit e `npm run prerender` — o gerador antigo
+reescreve as páginas sem o cabeçalho; os marcadores nas páginas escritas à
+mão voltam vazios com o revert. Sem migration, sem função, sem dado.

@@ -37,22 +37,38 @@ ul{padding-left:22px}li{margin:5px 0;font-size:.95rem}
 .related a{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:6px 14px;text-decoration:none;color:var(--verde);font-size:.85rem}
 footer{background:var(--verde);color:#c3b89e;padding:22px 20px;font-size:.8rem;text-align:center}
 footer a{color:var(--ouro2)}
-@media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}
-ul.hub{list-style:none;padding:0;columns:2;column-gap:30px}
-ul.hub li{break-inside:avoid;border-bottom:1px dashed var(--line);padding:7px 0}
-ul.hub a{color:var(--verde);font-weight:700;text-decoration:none}
-.lat{font-style:italic;color:#7a6f57;font-size:.82rem;display:block}
-@media(max-width:640px){ul.hub{columns:1}}</style>
+@media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}</style>
   <link rel="stylesheet" href="/css/editorial-pages.css">
+<link rel="stylesheet" href="/css/nav.css">
 </head>
 <body>
+<nav class="erv-nav erv-estatico" aria-label="Navegação principal">
+  <div class="erv-nav-bar">
+    <button type="button" class="erv-nav-burger" aria-label="Abrir menu" aria-expanded="false" aria-controls="ervMenuSheet"><svg class="ui-ico" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <a class="erv-logo" href="/" title="Voltar à página inicial"><span class="erv-logo-mark">Ervatório</span><span class="erv-logo-sub">Ervas do Brasil e do Mundo</span></a>
+    <div class="erv-nav-groups"><a class="erv-nav-item" data-group="encontrar" href="/#encontrar">Encontre seu chá</a><a class="erv-nav-item on" data-group="descobrir" href="/erva/" aria-current="page">Descobrir</a><a class="erv-nav-item" data-group="preparar" href="/#receitas">Preparar &amp; criar</a></div>
+    <div class="erv-nav-actions">
+      <a class="erv-nav-icon erv-nav-search" href="/#encontrar" aria-label="Buscar"><svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><span class="erv-nav-icon-label">Buscar erva, sintoma ou receita</span></a>
+      <a class="erv-nav-icon" href="/#estante" aria-label="Minha estante"><svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10z"/></svg></a>
+      <a class="erv-nav-icon" href="/#perfil" aria-label="Meu Ervatório"><svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></a>
+    </div>
+  </div>
+  <div class="erv-subnav"><div class="erv-subnav-inner"><a class="erv-subnav-item on" href="/erva/" aria-current="page">Guia de Ervas</a><a class="erv-subnav-item" href="/#familias">Famílias botânicas</a><a class="erv-subnav-item" href="/#chas">Tipos de chá</a><a class="erv-subnav-item" href="/#origens">Origens</a><a class="erv-subnav-item" href="/#onde-beber">Onde beber</a><a class="erv-subnav-item" href="/#guia-sensorial">Guia de sabores</a></div></div>
+</nav>
+<div class="erv-sheet erv-estatico" id="ervMenuSheet" role="dialog" aria-modal="true" aria-label="Menu" hidden>
+  <div class="erv-sheet-top"><span class="erv-sheet-title">Menu</span><button type="button" class="erv-sheet-close" aria-label="Fechar"><svg class="ui-ico" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="erv-sheet-groups"><a class="erv-sheet-group" href="/#encontrar"><span class="erv-sheet-group-name">Encontre seu chá</span><span class="erv-sheet-group-sub">Conte como você está e veja chás para o seu momento</span></a><a class="erv-sheet-group" href="/erva/"><span class="erv-sheet-group-name">Descobrir</span><span class="erv-sheet-group-sub">Guia de Ervas, tipos de chá, origens e sabores</span></a><a class="erv-sheet-group" href="/#receitas"><span class="erv-sheet-group-name">Preparar &amp; criar</span><span class="erv-sheet-group-sub">Receitas, criar meu blend e como preparar</span></a></div>
+  <div class="erv-sheet-label">Meu Ervatório</div>
+  <div class="erv-sheet-grid"><a class="erv-sheet-cell" href="/#estante">Minha estante</a><a class="erv-sheet-cell" href="/#jornada">Minha jornada</a><a class="erv-sheet-cell" href="/#jogo">Jogo</a><a class="erv-sheet-cell" href="/#perfil">Perfil</a></div>
+  <div class="erv-sheet-foot"><a href="/#sobre">Sobre</a><span aria-hidden="true">·</span><a href="/#lp-clube">Clube</a><span aria-hidden="true">·</span><a href="/pausa.html">Cultura da Pausa</a><span aria-hidden="true">·</span><a href="/privacidade.html">Privacidade</a></div>
+</div>
 <header class="hero"><div class="wrap">
   <a class="back" href="/">← Ervatório</a>
   <h1>Ervopédia</h1>
   <p class="tagline">96 ervas do Brasil e do mundo — ciência, preparo, segurança e cultura em cada ficha.</p>
 </div></header>
 <main class="wrap">
-  <p><a class="cta gold" href="/">🌿 Abrir o Ervatório</a> <a class="cta" href="/lexico/">Léxico da Chazeria →</a> <a class="cta" href="/como-se-faz/">Como se faz →</a> <a class="cta" href="/biblioteca/">Biblioteca →</a></p>
+  <p><a class="cta gold" href="/">Abrir o Ervatório</a> <a class="cta" href="/lexico/">Léxico da Chazeria →</a> <a class="cta" href="/como-se-faz/">Como se faz →</a> <a class="cta" href="/biblioteca/">Biblioteca →</a></p>
   <div class="ervo-tools">
     <input type="search" id="ervoSearch" class="ervo-search" placeholder="Buscar por nome ou nome científico…" aria-label="Buscar erva" autocomplete="off">
     <div class="ervo-count" id="ervoCount">96 ervas</div>
@@ -157,9 +173,21 @@ ul.hub a{color:var(--verde);font-weight:700;text-decoration:none}
   </ul>
   <p class="ervo-empty" id="ervoEmpty">Nenhuma erva encontrada.</p>
 </main>
-<footer>
-  <p>© 2026 Ervatório · <a href="/">ervatorio.com.br</a> · <a href="/privacidade.html">Privacidade</a> · <a href="/termos.html">Termos</a></p>
+<footer class="erv-footer erv-estatico" aria-label="Rodapé">
+  <div class="erv-footer-inner">
+    <div class="erv-footer-links">
+      <a href="/#sobre">Sobre</a>
+      <a href="/#lp-clube">Clube</a>
+      <a href="/pausa.html">Cultura da Pausa</a>
+      <a href="/privacidade.html">Privacidade</a>
+      <a href="/termos.html">Termos</a>
+      <a href="mailto:contato@ervatorio.com.br">Contato</a>
+    </div>
+    <div>© 2026 Ervatório · Conteúdo educacional; não substitui orientação médica.</div>
+    <p class="erv-footer-aviso">Conteúdo educacional — não substitui orientação médica. Consulte um profissional antes de usar plantas medicinais, especialmente na gravidez, amamentação ou uso de medicamentos.</p>
+  </div>
 </footer>
+<script defer src="/js/nav-estatica.js"></script>
 <script>
 (function(){
   var input=document.getElementById('ervoSearch'),grid=document.getElementById('ervoGrid'),
