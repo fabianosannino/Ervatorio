@@ -33,7 +33,10 @@
 
     // Foco inicial: primeiro focável — apenas se o diálogo está
     // visível agora (overlays estáticos escondidos não roubam foco).
-    var isVisibleNow = el.offsetParent !== null;
+    // offsetParent é null também para position:fixed (a folha do menu, por
+    // exemplo) — por isso a segunda condição.
+    var isVisibleNow = el.offsetParent !== null ||
+      (getComputedStyle(el).position === 'fixed' && el.getClientRects().length > 0);
     if (isVisibleNow) {
       var focusables = el.querySelectorAll(FOCUSABLE);
       if (focusables.length) {

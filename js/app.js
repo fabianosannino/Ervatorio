@@ -23,7 +23,13 @@ const _ICON_PATHS = {
   thermometer: '<path d="M12 3a2 2 0 0 1 2 2v8a4 4 0 1 1-4 0V5a2 2 0 0 1 2-2z"/>',
   spoon: '<path d="M12 12v9"/><ellipse cx="12" cy="7" rx="3.5" ry="4.5"/>',
   calendar: '<rect x="4" y="5" width="16" height="16" rx="1.5"/><path d="M4 9h16M8 3v4M16 3v4"/>',
-  pin: '<path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>'
+  pin: '<path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>',
+  // Cabeçalho unificado (handoff 14/09)
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+  heart: '<path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10z"/>',
+  user: '<circle cx="12" cy="8.5" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>'
 };
 function svgIcon(name, size){
   const p = _ICON_PATHS[name];
@@ -124,12 +130,228 @@ let wizState = {sintomas:[],hora:'',sabor:''};
 let activeSup = 'Todos';
 let currentHerb = null;
 
+// ── NAVEGAÇÃO EM GRUPOS (handoff 14/09, PR 03) ─────────────────
+// Três grupos + Loja condicional + ícones (Buscar, Estante, Meu Ervatório).
+// O menu de 18 itens descrevia a arquitetura do app.js; este descreve a
+// pergunta de quem chega. Cada grupo tem uma página inicial e uma
+// sub-navegação com as páginas que já existem — os renderizadores não mudam.
+//
+// A lista é UX: quem decide o que aparece de comércio é lojaAtiva() (D3).
+var NAV_GROUPS = [
+  { id:'encontrar', label:'nav.functional_wheel', sub:'nav.sub_find', home:'search', pages:[
+      { id:'search',         label:'nav.functional_wheel' },
+      { id:'roda-funcional', label:'nav.wheel_advanced' },
+      { id:'roda',           label:'nav.tea_wheel' },
+      { id:'quiz',           label:'nav.quiz' } ] },
+  { id:'descobrir', label:'nav.discover', sub:'nav.sub_discover', home:'ervatorio', pages:[
+      { id:'ervatorio',      label:'nav.encyclopedia' },
+      { id:'ficha',          hidden:true },
+      { id:'familias',       label:'nav.families' },
+      { id:'familia',        hidden:true },
+      { id:'chas',           label:'nav.traditional_teas' },
+      { id:'mundo',          label:'nav.world_teas' },
+      { id:'chazerias',      label:'nav.teahouses' },
+      { id:'guia-sensorial', label:'nav.flavor_guide' } ] },
+  { id:'preparar', label:'nav.prepare', sub:'nav.sub_prepare', home:'receitas', pages:[
+      { id:'receitas',       label:'nav.recipes' },
+      { id:'blends', slug:'manual',  label:'nav.blends' },
+      { id:'blends', slug:'prontos', label:'nav.ready_blends' },
+      { id:'blend',          hidden:true },
+      { id:'ferramentas',    label:'nav.tools' },
+      { id:'ferramenta',     hidden:true } ] },
+  { id:'loja', label:'nav.marketplace', sub:'nav.sub_shop', home:'marketplace', loja:true, pages:[
+      { id:'marketplace',    label:'nav.marketplace' },
+      { id:'suppliers',      label:'nav.suppliers' },
+      { id:'pedidos',        label:'nav.orders' } ] },
+  // Meu Ervatório não é item de texto no menu: é o botão da direita e a
+  // grade da folha mobile. Continua sendo um grupo para a sub-navegação.
+  { id:'conta', label:'nav.account', home:'favs', icone:true, pages:[
+      { id:'favs',           label:'nav.favorites' },
+      { id:'caminho',        label:'nav.path' },
+      { id:'jogo',           label:'nav.game' },
+      { id:'perfil',         label:'nav.profile' },
+      { id:'sobre',          label:'nav.about' } ] },
+];
+
+function navT(key){ return (typeof t === 'function') ? t(key) : key; }
+function navGroupOf(pageId){
+  for(var i=0;i<NAV_GROUPS.length;i++){
+    var g=NAV_GROUPS[i];
+    for(var j=0;j<g.pages.length;j++) if(g.pages[j].id===pageId) return g;
+  }
+  return null;
+}
+function navHref(p){ return pageHash(p.id, p.slug); }
+
+// Barra do desktop: um botão por grupo. Loja só com lojaAtiva() (o atributo
+// data-loja deixa o CSS esconder e o applyLojaState remover).
+function renderNav(){
+  var el=document.getElementById('ervNavGroups'); if(!el) return;
+  el.innerHTML=NAV_GROUPS.filter(function(g){ return !g.icone && (!g.loja || lojaAtiva()); }).map(function(g){
+    var home=g.pages[0];
+    return '<a class="erv-nav-item" data-group="'+g.id+'" href="'+navHref(home)+'"'+(g.loja?' data-loja':'')+'>'+esc(navT(g.label))+'</a>';
+  }).join('');
+  var fav=document.getElementById('navFavCount');
+  if(fav){ var n=(typeof favorites!=='undefined'&&Array.isArray(favorites))?favorites.length:0; fav.textContent=n?String(n):''; fav.hidden=!n; }
+  updateNavState(window._currentPage, window._currentSlug);
+}
+
+// Sub-navegação: as páginas do grupo da tela atual. aria-current anda junto
+// com a classe `on` — a classe pinta, o atributo é o que o leitor de tela anuncia.
+function renderSubnav(pageId, slug){
+  var el=document.getElementById('ervSubnav'); if(!el) return;
+  var g=navGroupOf(pageId);
+  if(!g){ el.innerHTML=''; el.hidden=true; return; }
+  var items=g.pages.filter(function(p){ return !p.hidden; });
+  if(items.length<2){ el.innerHTML=''; el.hidden=true; return; }
+  el.hidden=false;
+  el.innerHTML='<div class="erv-subnav-inner">'+items.map(function(p){
+    var on = p.id===pageId && (!p.slug || p.slug===slug || (!slug && p.slug==='prontos'));
+    return '<a class="erv-subnav-item'+(on?' on':'')+'" href="'+navHref(p)+'"'+(on?' aria-current="page"':'')+'>'+esc(navT(p.label))+'</a>';
+  }).join('')+'</div>';
+}
+
+function updateNavState(pageId, slug){
+  var g=navGroupOf(pageId);
+  document.querySelectorAll('.erv-nav-item').forEach(function(b){
+    var on = !!g && b.getAttribute('data-group')===g.id;
+    b.classList.toggle('on', on);
+    if(on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+  });
+  var conta=document.getElementById('ervNavConta');
+  if(conta){ var onC = !!g && g.id==='conta'; conta.classList.toggle('on', onC); if(onC) conta.setAttribute('aria-current','page'); else conta.removeAttribute('aria-current'); }
+  renderSubnav(pageId, slug);
+}
+
+// Folha do menu (mobile): tela cheia, 4 grupos de 56 px, grade de Meu
+// Ervatório, rodapé com Sobre · Clube · Pausa · Privacidade. a11yDialog cuida
+// de ESC, foco inicial, focus-trap e devolução do foco.
+function openMenuSheet(){
+  if(document.getElementById('ervMenuSheet')) return;
+  window._sheetOpener = document.activeElement;
+  var conta=NAV_GROUPS.filter(function(g){ return g.id==='conta'; })[0];
+  var sheet=document.createElement('div');
+  sheet.id='ervMenuSheet'; sheet.className='erv-sheet';
+  sheet.innerHTML=
+    '<div class="erv-sheet-top"><span class="erv-sheet-title">'+esc(navT('nav.menu'))+'</span>'+
+    '<button type="button" class="erv-sheet-close" aria-label="'+esc(navT('nav.close'))+'" onclick="closeMenuSheet()">'+svgIcon('close',22)+'</button></div>'+
+    '<div class="erv-sheet-groups">'+NAV_GROUPS.filter(function(g){ return !g.icone && (!g.loja || lojaAtiva()); }).map(function(g){
+      return '<a class="erv-sheet-group" href="'+navHref(g.pages[0])+'"><span class="erv-sheet-group-name">'+esc(navT(g.label))+'</span>'+(g.sub?'<span class="erv-sheet-group-sub">'+esc(navT(g.sub))+'</span>':'')+'</a>';
+    }).join('')+'</div>'+
+    '<div class="erv-sheet-label">'+esc(navT('nav.account'))+'</div>'+
+    '<div class="erv-sheet-grid">'+conta.pages.filter(function(p){ return p.id!=='sobre'; }).map(function(p){
+      return '<a class="erv-sheet-cell" href="'+navHref(p)+'">'+esc(navT(p.label))+'</a>';
+    }).join('')+'</div>'+
+    '<div class="erv-sheet-foot">'+
+      '<a href="'+pageHash('sobre')+'">'+esc(navT('footer.sobre'))+'</a><span aria-hidden="true">·</span>'+
+      '<a href="/#lp-clube">'+esc(navT('footer.clube'))+'</a><span aria-hidden="true">·</span>'+
+      '<a href="/pausa.html">'+esc(navT('footer.pausa'))+'</a><span aria-hidden="true">·</span>'+
+      '<a href="/privacidade.html">'+esc(navT('footer.privacidade'))+'</a>'+
+      '<span class="erv-sheet-langs" id="sheetLangSwitcher"></span>'+
+    '</div>';
+  document.body.appendChild(sheet);
+  document.body.classList.add('erv-sheet-open');
+  // Fecha DEPOIS do clique terminar: remover o <a> durante o dispatch cancela
+  // a navegação do próprio link no Chromium.
+  sheet.addEventListener('click', function(e){ var a=e.target.closest('a[href]'); if(a) setTimeout(closeMenuSheet, 0); });
+  // Seletor de idioma dentro da folha (mesmo markup do header).
+  var ls=document.getElementById('sheetLangSwitcher');
+  var src=document.querySelector('.lang-switcher');
+  if(ls && src) ls.innerHTML=src.innerHTML;
+  document.querySelectorAll('[aria-controls="ervMenuSheet"]').forEach(function(b){ b.setAttribute('aria-expanded','true'); });
+  if(typeof a11yDialog==='function') a11yDialog(sheet, { label: navT('nav.menu'), onClose: closeMenuSheet });
+  // a11yDialog só foca quando `offsetParent` existe — e a folha é position:fixed
+  // (offsetParent null). Foco explícito no ✕ para que Esc e Tab caiam dentro.
+  var close=sheet.querySelector('.erv-sheet-close'); if(close) try{ close.focus(); }catch(e){}
+}
+function closeMenuSheet(){
+  var sheet=document.getElementById('ervMenuSheet');
+  if(!sheet) return;
+  sheet.remove();
+  document.body.classList.remove('erv-sheet-open');
+  document.querySelectorAll('[aria-controls="ervMenuSheet"]').forEach(function(b){ b.setAttribute('aria-expanded','false'); });
+  // Devolve o foco a quem abriu (o ☰), se ainda estiver na tela.
+  var op=window._sheetOpener; window._sheetOpener=null;
+  if(op && op.focus && document.body.contains(op)) try{ op.focus(); }catch(e){}
+}
+
+// ── LOJA: um interruptor, uma função ─────────────────────────
+// D3/D4 em docs/estrategia/2026-09-14-plano-handoff-ux.md.
+//
+// `loja_ativa` do handoff É o interruptor `pagamentos` (migration
+// 20260815230000), que já projeta `site_settings.payments_enabled`. Aqui no
+// cliente **só esta função** decide o que aparece. Quem recusa a compra é o
+// servidor (`exigirLigado`) — isto é UX.
+//
+// Falha para DESLIGADO: sem resposta do banco, nada de compra aparece.
+function lojaAtiva(){
+  var i = window.ERV_INTERRUPTORES;
+  if(i && typeof i.pagamentos === 'boolean') return i.pagamentos;
+  if(window.SITE_SETTINGS) return window.SITE_SETTINGS.payments_enabled === true;
+  return false;
+}
+var LOJA_PAGES = ['marketplace','suppliers','pedidos'];
+
+// Chamada quando os interruptores respondem (ervaria.loadInterruptores) e no
+// boot. Ligado → a classe `loja-on` no <html> revela os blocos [data-loja].
+// Desligado → os blocos saem do DOM: nenhum carrinho, nenhuma Loja, nenhum
+// "Meus pedidos" para clicar e falhar.
+// `confirmado`: a resposta do banco chegou. Sem ela (rede fora, CDN
+// bloqueado), os blocos ficam só escondidos — remover e depois receber
+// "ligado" deixaria a loja sem tela até o próximo reload.
+function applyLojaState(confirmado){
+  var on = lojaAtiva();
+  document.documentElement.classList.toggle('loja-on', on);
+  if(!on){
+    if(confirmado) document.querySelectorAll('[data-loja]').forEach(function(el){ el.remove(); });
+    // Sem carrinho no DOM, o que estiver no localStorage não tem para onde ir —
+    // e o contador (se ainda existir em algum lugar) não deve dizer "3".
+    if(LOJA_PAGES.indexOf(window._currentPage) !== -1) goPage('search');
+  } else {
+    if(typeof updateCartCount === 'function') updateCartCount();
+  }
+  document.querySelectorAll('[data-loja-href]').forEach(function(a){
+    a.setAttribute('href', on ? a.getAttribute('data-loja-href') : (a.getAttribute('data-loja-href-off') || '#lp-loja'));
+  });
+  renderNav();
+}
+
+// "Avise-me quando a loja abrir" (home). Mesmo contrato de pausa.html:
+// fetch para newsletter-subscribe, resposta igual para novo e duplicado.
+function subscribeLojaAviso(form){
+  var cfg = window.ERVATORIO_CONFIG || {};
+  var input = form.querySelector('input[type="email"]');
+  var btn = form.querySelector('button[type="submit"]');
+  var msg = form.parentElement.querySelector('[data-loja-msg]');
+  var v = (input.value || '').trim().toLowerCase();
+  var _t = typeof t === 'function' ? t : function(k, fb){ return fb; };
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ input.focus(); input.setAttribute('aria-invalid','true'); return false; }
+  input.removeAttribute('aria-invalid');
+  if(btn) btn.disabled = true;
+  var locale = 'pt';
+  try { locale = localStorage.getItem('erb_lang') || 'pt'; } catch(e){}
+  if(['pt','en','es'].indexOf(locale) === -1) locale = 'pt';
+  fetch(cfg.FUNCTIONS_URL + '/newsletter-subscribe', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', apikey: cfg.SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + cfg.SUPABASE_PUBLISHABLE_KEY },
+    body: JSON.stringify({ email: v, source: 'loja', locale: locale })
+  }).then(function(res){
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    form.style.display = 'none';
+    if(msg){ msg.textContent = _t('lp.loja.ok', 'Anotado. Você será avisado primeiro.'); msg.hidden = false; }
+    try { localStorage.setItem('erv_loja_optin', '1'); } catch(e){}
+  }).catch(function(err){
+    console.error('[Loja/avise-me]', err);
+    if(btn) btn.disabled = false;
+    if(msg){ msg.textContent = _t('lp.loja.err', 'Não consegui salvar agora. Tente de novo em instantes.'); msg.hidden = false; }
+  });
+  return false;
+}
+
 // ── NAVIGATION ──
 function goPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('on'));
   document.getElementById('page-'+id).classList.add('on');
-  if(btn) btn.classList.add('on');
   if(id==='favs') renderFavs();
   if(id==='suppliers') renderSuppliers();
   if(id==='roda') initRoda();
@@ -449,7 +671,7 @@ function aplicarIntencao(intencao){
     'imunidade':  {cat:'Todos',    safe:'',           momento:'', search:'imunidade'},
     'explorar':   null,
   };
-  if(intencao==='explorar'){ goPage('roda',document.querySelector('.nav-tab:nth-child(2)')); return; }
+  if(intencao==='explorar'){ goPage('roda'); return; }
   const filtros = mapa[intencao];
   if(!filtros) return;
   activeFilters.cat = filtros.cat;
@@ -919,11 +1141,15 @@ function closeModal(e){
 }
 
 // ── FAVORITES ──
+function updateNavFavCount(){
+  var fav=document.getElementById('navFavCount'); if(!fav) return;
+  var n=Array.isArray(favorites)?favorites.length:0; fav.textContent=n?String(n):''; fav.hidden=!n;
+}
 function toggleFav(e,id){
   e.stopPropagation();
   if(favorites.includes(id)) favorites=favorites.filter(f=>f!==id);
   else { favorites.push(id); if(typeof trackAction==='function') trackAction('fav-herb', id); }
-  localStorage.setItem('erb_favs',JSON.stringify(favorites));
+  localStorage.setItem('erb_favs',JSON.stringify(favorites)); updateNavFavCount();
   renderHerbs();
   const now=favorites.includes(id);
   document.querySelectorAll(`[data-fav-herb="${id}"]`).forEach(btn=>{
@@ -981,7 +1207,7 @@ function deleteSavedRecipe(i){
 function toggleFichaFav(id){
   if(favorites.includes(id)) favorites=favorites.filter(f=>f!==id);
   else favorites.push(id);
-  localStorage.setItem('erb_favs',JSON.stringify(favorites));
+  localStorage.setItem('erb_favs',JSON.stringify(favorites)); updateNavFavCount();
   renderHerbs();
   const now=favorites.includes(id);
   document.querySelectorAll(`[data-fav-herb="${id}"]`).forEach(btn=>{
@@ -1282,7 +1508,6 @@ function filterShopBySup(supId){
   const searchInput=document.getElementById('mktSearch');
   if(searchInput) searchInput.value=sup?sup.name:'';
   goPage('marketplace');
-  document.querySelectorAll('.nav-tab').forEach(t=>{ t.classList.toggle('on', (t.getAttribute('onclick')||'').includes("goPage('marketplace'")); });
 }
 
 function updateCartCount(){
@@ -2134,15 +2359,33 @@ function hideLanding(){
 function goPage(id,btn,slug){
   // Cerimônia foi integrada em #page-chas — redireciona deep links antigos.
   if(id==='cerimonia') id='chas';
-  // Criar Blend foi unificado em Blends com sub-abas (Prontos/Assistente/Manual).
-  // Deep links antigos para 'criarblend' caem na aba Assistente.
+  // O hub "Sabores" saiu (D13): dois cards e conteudo nenhum. Quem chega por
+  // ele cai no Guia de sabores; a Roda dos Chas continua em #roda.
+  if(id==='sabores') id='guia-sensorial';
+  // Blends tem sub-abas (Prontos/Assistente/Manual). A aba vem no slug
+  // (#blends/manual); 'criarblend' legado abre o Assistente.
   var _blendOpenTab = null;
   if(id==='criarblend'){ id='blends'; _blendOpenTab='assistente'; }
+  if(id==='blends'){
+    if(slug==='manual'||slug==='prontos'||slug==='assistente') _blendOpenTab=slug;
+    slug=_blendOpenTab||undefined;
+  }
+  // #encontrar/<intencao>: a tela de intencoes ja abre com a intencao aplicada
+  // (chips do hero da landing). Ver D8.
+  var _intent = null;
+  if(id==='search' && slug){ _intent=slug; slug=undefined; }
   // Gate: quem já entrou no app (login real OU "continuar sem login") pode
   // navegar livremente entre as páginas. Features que exigem conta real
   // (sync de favoritos, salvar blend no cloud, etc.) checam ervaria.user
   // individualmente dentro de cada renderizador.
   const baseId = id.split('/')[0];
+  // Loja desligada: as telas de comércio não existem (D4). Deep link cai na
+  // home com o aviso — o servidor já recusava; a tela não oferece mais.
+  if(LOJA_PAGES.indexOf(baseId) !== -1 && !lojaAtiva()){
+    id = 'search'; slug = undefined;
+    if(typeof t === 'function') toast(t('lp.loja.soon'));
+    setTimeout(function(){ var el = document.getElementById('lp-loja'); if(el && typeof backToLanding === 'function'){ backToLanding(); el.scrollIntoView({behavior:'smooth',block:'start'}); } }, 60);
+  }
   const hasEntered = (window.ervaria && ervaria.user)
                   || localStorage.getItem('erb_auth')
                   || localStorage.getItem('erb_entered');
@@ -2152,13 +2395,14 @@ function goPage(id,btn,slug){
   }
   hideLanding();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('on'));
   document.getElementById('page-'+id).classList.add('on');
-  if(btn)btn.classList.add('on');
+  window._currentSlug = slug;
+  if(typeof closeMenuSheet==='function') closeMenuSheet();
   if(id==='favs')renderFavs();
   if(id==='suppliers')renderSuppliers();
   if(id==='roda')window.initRoda();
   if(id==='perfil')renderPerfil();
+  if(id==='search' && _intent && typeof aplicarIntencao==='function') setTimeout(function(){ aplicarIntencao(_intent); }, 50);
   if(id==='blends'){
     // Inicializa todas as sub-abas (barato o bastante para rodar sempre)
     buildWizard();renderTray();
@@ -2185,63 +2429,95 @@ function goPage(id,btn,slug){
   if(id==='caminho' && typeof initCaminho==='function') initCaminho();
   if(id==='jogo' && typeof initJogo==='function') initJogo();
 
-  // i18n + SEO — update on every navigation
+  // i18n + SEO + estado do menu — update on every navigation
   window._currentPage = id;
   if(typeof applyI18n==='function') applyI18n();
   if(typeof updateSEO==='function') updateSEO(id);
+  updateNavState(id, slug);
+  window.scrollTo({ top: 0 });
 
   // Registra a navegação no histórico do browser para que o botão Voltar funcione.
+  // A URL usa o nome canonico (PAGE_HASH); vindo de hashchange (alias ou
+  // link), substitui a entrada em vez de empilhar.
   if(!window._goPageFromHistory){
-    var newHash='#'+id+(slug?'/'+slug:'');
-    if(window.location.hash!==newHash)
-      history.pushState({page:id,slug:slug||null},''  ,newHash);
-    else
+    var newHash=pageHash(id,slug);
+    if(window._goPageFromHash || window.location.hash===newHash)
       history.replaceState({page:id,slug:slug||null},'',newHash);
+    else
+      history.pushState({page:id,slug:slug||null},''  ,newHash);
   }
 }
 
-// Hash route handler for parameterized Ervatorio v1.1 routes
-(function(){
-  // Inclui as rotas SPA novas: ferramentas, ferramenta/<slug>, familias, familia/<slug>,
-  // chazerias, quiz, quiz/resultado/<slug>
-  var SPA_ROUTE_RE = /^#(ficha|blend|ervatorio|blends|roda-funcional|ferramentas|ferramenta|familias|familia|chazerias|quiz|chas|mundo|receitas|jogo)(\/.+)?$/;
-  function handleHash(){
-    var hash = window.location.hash || '';
-    if(SPA_ROUTE_RE.test(hash)) hideLanding();
-    var m;
-    if((m = hash.match(/^#ficha\/([a-z0-9-]+)$/))) {
-      goPage('ficha', null, m[1]);
-    } else if((m = hash.match(/^#blend\/([a-z0-9-]+)$/))) {
-      goPage('blend', null, m[1]);
-    } else if((m = hash.match(/^#ferramenta\/([a-z0-9-]+)$/))) {
-      goPage('ferramenta', null, m[1]);
-    } else if((m = hash.match(/^#familia\/([a-z0-9-]+)$/))) {
-      goPage('familia', null, m[1]);
-    } else if((m = hash.match(/^#quiz\/(.+)$/))) {
-      goPage('quiz', null, m[1]);
-    } else if(hash === '#ervatorio') {
-      goPage('ervatorio');
-    } else if(hash === '#blends') {
-      goPage('blends');
-    } else if(hash === '#roda-funcional') {
-      goPage('roda-funcional');
-    } else if(hash === '#ferramentas') {
-      goPage('ferramentas');
-    } else if(hash === '#familias') {
-      goPage('familias');
-    } else if(hash === '#chazerias') {
-      goPage('chazerias');
-    } else if(hash === '#quiz') {
-      goPage('quiz');
-    }
+// ── ROTAS POR HASH ──────────────────────────────────────────────
+// Decisões D6–D8 em docs/estrategia/2026-09-14-plano-handoff-ux.md.
+//
+// Qualquer `#<pagina>[/<slug>]` cujo `#page-<pagina>` exista abre a tela —
+// antes, `#chas`, `#mundo`, `#receitas` e `#jogo` escondiam a landing mas
+// nao abriam a pagina, porque o roteador era uma lista fechada.
+//
+// HASH_ALIASES: nome que aparece na URL -> id da pagina (com sub-aba opcional).
+// Os nomes novos vem do handoff de UX (14/09); os antigos continuam
+// funcionando para nao quebrar link ja compartilhado.
+var HASH_ALIASES = {
+  // vocabulario novo
+  'encontrar':'search', 'ervas':'ervatorio', 'origens':'mundo', 'onde-beber':'chazerias',
+  'como-preparar':'ferramentas', 'criar-blend':'blends/manual', 'loja':'marketplace',
+  'produtores':'suppliers', 'estante':'favs', 'jornada':'caminho', 'conta':'favs',
+  // hashes antigos e atalhos
+  'sabores':'guia-sensorial', 'shop':'marketplace', 'cerimonia':'chas', 'criarblend':'blends/manual',
+};
+// Inverso: id da pagina -> nome canonico na URL. Quem nao esta aqui usa o proprio id.
+var PAGE_HASH = {
+  search:'encontrar', ervatorio:'ervas', mundo:'origens', chazerias:'onde-beber',
+  ferramentas:'como-preparar', marketplace:'loja', suppliers:'produtores', favs:'estante', caminho:'jornada',
+};
+// Secoes da landing (D7): os ids no HTML tem prefixo `lp-`; estes sao os
+// nomes antigos, que ainda podem chegar por link. Nao ha pagina — o navegador rola.
+var LANDING_ANCHORS = { 'clube':'lp-clube', 'colecoes':'lp-colecoes', 'mapa':'lp-mapa', 'diario':'lp-diario' };
+
+function pageHash(id, slug){
+  return '#' + (PAGE_HASH[id] || id) + (slug ? '/' + slug : '');
+}
+
+function resolveHash(hash){
+  var m = String(hash || '').match(/^#([a-z0-9-]+)(?:\/(.+))?$/i);
+  if(!m) return null;
+  var id = m[1].toLowerCase(), slug = m[2] || '';
+  if(LANDING_ANCHORS[id]) return { landing: LANDING_ANCHORS[id] };
+  if(id.indexOf('lp-') === 0) return null;
+  var target = HASH_ALIASES[id] || id;
+  var parts = target.split('/');
+  var page = parts[0];
+  if(!slug && parts[1]) slug = parts[1];
+  if(!document.getElementById('page-' + page)) return null;
+  return { page: page, slug: slug };
+}
+
+function handleHash(){
+  var r = resolveHash(window.location.hash);
+  if(!r) return;
+  if(r.landing){
+    // Link antigo para uma secao da landing: mostra a landing (se o app
+    // estiver por cima) e rola ate ela.
+    if(typeof backToLanding === 'function') backToLanding();
+    var el = document.getElementById(r.landing);
+    if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
   }
-  window.addEventListener('hashchange', handleHash);
-  // Handle initial load with hash
-  if(window.location.hash && SPA_ROUTE_RE.test(window.location.hash)){
-    hideLanding();
-    setTimeout(handleHash, 300);
-  }
-})();
+  hideLanding();
+  // A URL ja mudou (clique em <a href="#…">, digitacao, alias): goPage
+  // substitui a entrada em vez de empilhar outra.
+  window._goPageFromHash = true;
+  try { goPage(r.page, null, r.slug || undefined); }
+  finally { window._goPageFromHash = false; }
+}
+window.addEventListener('hashchange', handleHash);
+// Carga inicial com hash: o roteador so roda depois que os scripts `defer`
+// seguintes (ervatorio-pages, receitas, quiz…) registraram seus renderizadores.
+if(window.location.hash && resolveHash(window.location.hash) && !resolveHash(window.location.hash).landing){
+  hideLanding();
+  setTimeout(handleHash, 300);
+}
 
 // Botão Voltar/Avançar do browser
 window.addEventListener('popstate', function(e){
@@ -3405,6 +3681,12 @@ function renderSobre(){
 
 // ── INIT ──
 if(typeof initI18n==='function') initI18n();
+renderNav();
+window._currentPage = window._currentPage || 'search';
+updateNavState(window._currentPage);
+// Estado inicial da loja: o CSS já esconde [data-loja]; aqui só sincroniza os
+// hrefs. A remoção do DOM acontece quando os interruptores respondem.
+document.querySelectorAll('[data-loja-href]').forEach(function(a){ a.setAttribute('href', a.getAttribute('data-loja-href-off') || '#lp-loja'); });
 if(typeof updateSEO==='function') updateSEO('search');
 buildFilters();
 renderHerbs();

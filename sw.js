@@ -1,8 +1,7 @@
-// v47: revisão visual (app) — helper svgIcon() e troca de emojis por ícones de
-// linha editoriais nos pontos de UI: faixa do hero, card sensorial, carrinho,
-// banners "em breve", ficha (bioma/restrições/preparo/blend), roda (combo/
-// vazio), receitas (dica/remover/editar), timer e mapa mundi (região/ervas).
-const CACHE_NAME = 'ervatorio-v47';
+// v48: handoff de UX (14/09) — rotas por hash com aliases, navegação em três
+// grupos, Loja fora do DOM quando desligada, mapa mundi em arquivo (o
+// index.html cai de 1,5 MB para ~130 KB e o precache junto).
+const CACHE_NAME = 'ervatorio-v48';
 const OFFLINE_URL = '/';
 
 const PRECACHE_ASSETS = [

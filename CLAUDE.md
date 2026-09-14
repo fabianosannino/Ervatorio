@@ -137,19 +137,37 @@ O que continua valendo, com qualquer provedor:
   antes de ir a produção.
 - `pago` é escrito pelo **webhook**, nunca pela tela de sucesso.
 
-## A produção está atrás do repositório (conferido em 17/08)
+## A produção alcançou o repositório (conferido em 14/09)
 
-Quatro migrações estão aqui e **não** estão no banco — `20260815220000`
-(RBAC por capacidade), `20260815230000` (interruptores), `20260816120000`
-(indicação) e `20260816140000` (`pedido_eventos`). As Edge Functions no ar são
-de **27/07**.
+As quatro migrações que este arquivo dizia faltar — `20260815220000` (RBAC por
+capacidade), `20260815230000` (interruptores), `20260816120000` (indicação) e
+`20260816140000` (`pedido_eventos`) — **foram aplicadas em 17/08** e as Edge
+Functions `create-order`, `indicacao`, `admin-delete-user` e `admin-metrics`
+foram reimplantadas na mesma data. `tem_capacidade()` e `interruptores` existem
+em produção.
 
-Não é urgência de incidente: as proteções antigas valem e não há pagamento
-ligado. Mas quem tem `is_admin` hoje tem **tudo** — a separação entre despachar
-pedido e apagar a base de usuários existe no repositório e não no banco.
+O que ainda é de **27/07** no ar: `create-payment-preference`, `mp-webhook`,
+`create-return`, `user-data-rights`, `calculate-shipping`. Só a primeira tem
+diferença que importa (o `exigirLigado`), e o MP está congelado com
+`pagamentos` desligado — reimplantar junto com a próxima função que tocar
+pagamento.
 
-**Isso não depende do provedor de pagamento.** Antes de propor qualquer coisa
-nova aqui, verifique se ela não está esperando por uma dessas quatro.
+## O handoff de UX (14/09) e o que decidimos sobre ele
+
+Ver `docs/estrategia/2026-09-14-plano-handoff-ux.md`: avaliação, ordem dos PRs
+e as decisões D1–D14. As que mais mudam o jeito de trabalhar aqui:
+
+- **`loja_ativa` é o interruptor `pagamentos`.** No cliente, **só**
+  `lojaAtiva()` (`js/app.js`) decide o que aparece; falha para desligado.
+  Bloco de comércio novo no HTML leva `data-loja` — com a loja desligada ele
+  é removido do DOM no boot.
+- **Rotas continuam por hash.** `handleHash` é genérico (`#<pagina>[/<slug>]`)
+  e tem um mapa de aliases para os hashes antigos. Tela nova = `id="page-x"`
+  no HTML e, se tiver nome novo, uma linha no mapa. Seção da landing usa
+  prefixo `lp-` para não colidir com página do app.
+- **A Roda Funcional continua página própria até o `feat/encontrar`.**
+  `#encontrar` abre a tela de intenções; `#encontrar/<intencao>` já aplica a
+  intenção.
 
 ## Compliance
 - Nenhum script de tracking (analytics, pixel) dispara antes do **consentimento** do usuário (LGPD / Consent Mode v2).

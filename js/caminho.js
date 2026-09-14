@@ -3,14 +3,17 @@
 // ════════════════════════════════════════════════════════════════
 
 // ─── Níveis de progressão ────────────────────────────────────────
+// Niveis em texto, sem emoji (handoff 14/09): a identidade e serifada e
+// sobria, e o leitor de tela anuncia "planta em vaso" no lugar do nivel.
+// `icon` guarda a inicial em serifa para o circulo do nivel.
 const CAMINHO_LEVELS = [
-  { id: 'semente',  name: 'Semente',  icon: '🌰', min: 0,  color: '#8c7a5e' },
-  { id: 'broto',    name: 'Broto',    icon: '🌱', min: 3,  color: '#5a8c5a' },
-  { id: 'raiz',     name: 'Raiz',     icon: '🪴', min: 6,  color: '#4a7a4a' },
-  { id: 'caule',    name: 'Caule',    icon: '🌿', min: 10, color: '#3d6b4f' },
-  { id: 'folha',    name: 'Folha',    icon: '🍃', min: 15, color: '#2d5a3d' },
-  { id: 'flor',     name: 'Flor',     icon: '🌸', min: 20, color: '#b8965a' },
-  { id: 'fruto',    name: 'Mestre Chazeiro', icon: '👑', min: 25, color: '#c8a04a' },
+  { id: 'semente',  name: 'Semente',  icon: 'I',   min: 0,  color: '#8c7a5e' },
+  { id: 'broto',    name: 'Broto',    icon: 'II',  min: 3,  color: '#5a8c5a' },
+  { id: 'raiz',     name: 'Raiz',     icon: 'III', min: 6,  color: '#4a7a4a' },
+  { id: 'caule',    name: 'Caule',    icon: 'IV',  min: 10, color: '#3d6b4f' },
+  { id: 'folha',    name: 'Folha',    icon: 'V',   min: 15, color: '#2d5a3d' },
+  { id: 'flor',     name: 'Flor',     icon: 'VI',  min: 20, color: '#b8965a' },
+  { id: 'fruto',    name: 'Mestre Chazeiro', icon: 'VII', min: 25, color: '#c8a04a' },
 ];
 
 // ─── Definição dos 25 badges ────────────────────────────────────
@@ -322,8 +325,8 @@ function renderCaminho() {
           <div class="caminho-progress-fill" style="width:${pct}%;background:${level.color}"></div>
         </div>
         <div class="caminho-progress-labels">
-          <span>${level.icon} ${level.name}</span>
-          ${nextLevel ? `<span>${nextLevel.icon} ${nextLevel.name} (${nextMin - count} selos)</span>` : '<span>👑 Coleção completa!</span>'}
+          <span>${level.name}</span>
+          ${nextLevel ? `<span>${nextLevel.name} (${nextMin - count} selos)</span>` : '<span>Coleção completa</span>'}
         </div>
       </div>
 
