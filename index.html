@@ -243,8 +243,10 @@
   /* ── HERO ─────────────────────────────────────────── */
   .hero {
     position: relative;
-    height: 92vh;
-    min-height: 600px;
+    /* Altura mínima, não fixa: com os chips de intenção o bloco de texto
+       cresceu e, alinhado ao rodapé do hero, o topo sumia sob o cabeçalho. */
+    min-height: 92vh;
+    padding-top: 72px;
     overflow: hidden;
     display: flex;
     align-items: flex-end;
@@ -837,6 +839,32 @@
   }
 
 
+
+  /* ── HERO — chips de intenção (handoff 14/09) ───────── */
+  .hero-chips-label { font-family: 'Jost', sans-serif; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--ouro-claro); margin: 0 0 12px; }
+  .hero-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; max-width: 640px; }
+  .hero-chip {
+    display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px;
+    border-radius: 999px; border: 1px solid rgba(212,175,122,.55); background: rgba(245,237,224,.06);
+    color: var(--creme); font-family: 'Jost', sans-serif; font-size: 14px; text-decoration: none;
+    transition: background .2s, border-color .2s, color .2s;
+  }
+  .hero-chip:hover, .hero-chip:focus-visible { background: rgba(212,175,122,.18); border-color: var(--ouro-claro); color: #fff; }
+  .hero-ctas { align-items: center; }
+  .hero-quiz-link { font-family: 'Jost', sans-serif; font-size: 13px; color: var(--ouro-claro); text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+  .hero-quiz-link:hover { text-decoration: underline; }
+  .landing-burger { display: none; }
+  .footer-col .link-btn { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+  @media (max-width: 768px) {
+    .landing-burger {
+      display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+      border: 1px solid var(--cinza-suave); border-radius: 6px; background: transparent; color: var(--verde-profundo); cursor: pointer;
+    }
+    .hero-chips { gap: 8px; }
+    .hero-chip { width: 100%; justify-content: space-between; min-height: 48px; }
+    .hero-chip::after { content: '→'; color: var(--ouro-claro); }
+  }
+
   /* ── LOJA CURADA — AVISE-ME ───────────────────────── */
   .loja-aviso {
     background: var(--verde-profundo);
@@ -1258,7 +1286,7 @@
   }
   .footer-top {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
+    grid-template-columns: 1.6fr repeat(4, minmax(140px, 1fr));
     gap: 60px;
     margin-bottom: 60px;
   }
@@ -1353,8 +1381,9 @@
     .clube-tiers { grid-template-columns: 1fr; }
   }
   @media (max-width: 768px) {
-    .header-inner { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding-inline: 20px; }
+    .header-inner { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; padding-inline: 16px; }
     nav.main-nav { display: none; }
+    .logo { justify-self: center; text-align: center; }
     .header-actions { gap: 8px; min-width: 0; }
     .header-actions > a { display: none; }
     .landing .landing-lang .lang-btn { padding: 3px 6px; }
@@ -1495,19 +1524,18 @@
 <!-- HEADER -->
 <header>
   <div class="header-inner">
-    <nav class="main-nav">
-      <a href="#lp-colecoes" data-i18n="lp.nav.collections">Coleções</a>
-      <a href="#lp-mapa" data-i18n="lp.nav.origins">Origens</a>
-      <a href="#lp-roda" data-i18n="lp.nav.wheel">Roda dos Chás</a>
-      <a href="#lp-diario" data-i18n="lp.nav.diary">Diário</a>
-      <a href="/pausa.html" data-i18n="lp.nav.pause">Pausa</a>
+    <nav class="main-nav" aria-label="Navegação da página inicial">
+      <a href="#encontrar" data-i18n="nav.functional_wheel">Encontre seu chá</a>
+      <a href="#ervas" data-i18n="nav.discover">Descobrir</a>
+      <a href="#receitas" data-i18n="nav.prepare">Preparar &amp; criar</a>
+      <a href="#loja" data-i18n="nav.marketplace" data-loja>Loja</a>
     </nav>
+    <button type="button" class="landing-burger" aria-label="Abrir menu" data-i18n-aria="nav.open_menu" aria-expanded="false" aria-controls="ervMenuSheet" onclick="openMenuSheet()"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <a href="/" class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'});return false">
       <span class="logo-mark">Ervatório</span>
       <span class="logo-sub" data-i18n="lp.logo.sub">Ervas do Brasil e do Mundo</span>
     </a>
     <div class="header-actions">
-      <a href="#lp-mapa" data-i18n="lp.actions.map">Mapa</a>
       <div id="landingLangSwitcher" class="lang-switcher landing-lang"></div>
       <button id="landingThemeToggle" class="landing-theme-toggle" onclick="toggleTheme()" title="Alternar tema claro/escuro" aria-label="Alternar tema claro/escuro">☀</button>
       <a href="#conta" data-i18n="lp.actions.enter">Meu Ervatório</a>
@@ -1555,9 +1583,18 @@
         Descubra ervas, sabores e histórias que combinam com o seu
         momento — e transforme alguns minutos em presença.
       </p>
+      <p class="hero-chips-label" data-i18n="lp.hero.chips_label">Como você está hoje?</p>
+      <div class="hero-chips">
+        <a href="#encontrar/sono" class="hero-chip" data-i18n="intent.sleep">Quero dormir melhor</a>
+        <a href="#encontrar/foco" class="hero-chip" data-i18n="intent.focus">Preciso de foco e energia</a>
+        <a href="#encontrar/digestao" class="hero-chip" data-i18n="intent.digestive">Barriga pesada ou desconforto</a>
+        <a href="#encontrar/ansiedade" class="hero-chip" data-i18n="intent.anxiety">Estou ansioso ou estressado</a>
+        <a href="#encontrar/imunidade" class="hero-chip" data-i18n="intent.immunity">Fortalecer a imunidade</a>
+        <a href="#encontrar/explorar" class="hero-chip" data-i18n="intent.explore">Me ajuda a escolher</a>
+      </div>
       <div class="hero-ctas">
-        <a href="#encontrar" class="btn-primary" data-i18n="lp.hero.cta_primary">Encontre seu chá</a>
-        <a href="#ervas" class="btn-outline" data-i18n="lp.hero.cta_outline">Ver todas as ervas</a>
+        <a href="#ervas" class="btn-outline" data-i18n="lp.hero.all_herbs">Ver todas as ervas →</a>
+        <a href="#quiz" class="hero-quiz-link" data-i18n="lp.hero.quiz_link">Não sabe por onde começar? Faça o teste de 1 minuto →</a>
       </div>
     </div>
 
@@ -2217,57 +2254,60 @@
 </section>
 
 <!-- FOOTER -->
-<footer>
+<footer aria-label="Rodapé da página inicial">
   <div class="footer-inner">
     <div class="footer-top">
       <div class="footer-brand">
         <span class="logo-mark">Ervatório</span>
         <span class="logo-sub">Ervas do Brasil e do Mundo</span>
         <p class="footer-about">
-          Do Amazonas ao Cerrado, do Japão à Índia, da Etiópia ao 
-          Ceilão. Curadoria botânica global com orgulho especial 
+          Do Amazonas ao Cerrado, do Japão à Índia, da Etiópia ao
+          Ceilão. Curadoria botânica global com orgulho especial
           pelas ervas únicas do Brasil.
         </p>
+        <div id="footerLangSwitcher" class="lang-switcher landing-lang"></div>
       </div>
       <div class="footer-col">
-        <h4>Portal</h4>
+        <h4>Sobre</h4>
         <ul>
-          <li><a href="#lp-mapa">Mapa Mundi dos Chás</a></li>
-          <li><a href="#lp-roda">Roda dos Chás</a></li>
-          <li><a href="#lp-sabores">Roda dos Sabores</a></li>
-          <li><a href="#lp-diario">Diário de Infusões</a></li>
+          <li><a href="#sobre">Quem somos</a></li>
+          <li><a href="#sobre">Método de curadoria</a></li>
+          <li><a href="/biblioteca/">Ciência e fontes</a></li>
+          <li><a href="#lp-clube">Clube</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Ajuda</h4>
+        <ul>
+          <li><a href="mailto:contato@ervatorio.com.br">Contato</a></li>
+          <li><a href="/como-se-faz/">Como se faz</a></li>
+          <li><a href="#lp-aviso-saude">Aviso de saúde</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Parceiros</h4>
+        <ul>
+          <li><a href="mailto:contato@ervatorio.com.br?subject=Parceria%20%E2%80%94%20produtores%20e%20casas%20de%20ch%C3%A1">Para produtores e casas de chá</a></li>
+          <li><a href="mailto:contato@ervatorio.com.br?subject=Indica%C3%A7%C3%A3o%20de%20produtos">Indicação de produtos</a></li>
           <li><a href="#lp-loja" data-loja-href="#loja" data-loja-href-off="#lp-loja">Loja curada</a></li>
         </ul>
       </div>
       <div class="footer-col">
-        <h4>Coleções</h4>
+        <h4>Legal</h4>
         <ul>
-          <li><a href="#origens">Linha Amazônia</a></li>
-          <li><a href="#origens">Cerrado & Mata Atlântica</a></li>
-          <li><a href="#ervas">Linha Phyto — Botânica Funcional</a></li>
-          <li><a href="#origens">Globais & Clássicos</a></li>
-          <li><a href="#blends">Blends Exclusivos</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Clube</h4>
-        <ul>
-          <li><a href="#lp-clube">Clube das Chazerias</a></li>
-          <li><a href="#lp-clube">Eventos</a></li>
-          <li><a href="#sobre">Nossa história</a></li>
-          <li><a href="#lp-clube">Chazerias parceiras</a></li>
-          <li><a href="mailto:contato@ervatorio.com.br">contato@ervatorio.com.br</a></li>
+          <li><a href="/privacidade.html">Privacidade</a></li>
+          <li><a href="/termos.html">Termos</a></li>
+          <li><button type="button" class="link-btn" onclick="window.__consent&&window.__consent.open()">Preferências de cookies</button></li>
+          <li><a href="#conta">Meus dados</a></li>
         </ul>
       </div>
     </div>
 
     <div class="footer-bottom">
-      <p>© 2026 Ervatório · <a href="https://ervatorio.com.br">ervatorio.com.br</a></p>
-      <p><a href="/privacidade.html">Política de Privacidade</a> · <a href="/termos.html">Termos de Uso</a> · <button type="button" class="link-btn" onclick="window.__consent&&window.__consent.open()">Preferências de cookies</button></p>
-      <p>Curadoria botânica global — Com orgulho das ervas do Brasil</p>
+      <p>© 2026 Ervatório · Conteúdo educacional; não substitui orientação médica.</p>
     </div>
 
-    <p class="footer-disclaimer">
+    <p class="footer-disclaimer" id="lp-aviso-saude">
       O Ervatório não se responsabiliza por efeitos adversos decorrentes do uso inadequado das plantas e infusões descritas neste portal. As informações disponibilizadas têm finalidade exclusivamente educacional e não constituem prescrição, diagnóstico ou aconselhamento médico. O uso de qualquer planta medicinal deve ser precedido de consulta a profissional de saúde qualificado, especialmente em casos de gravidez, amamentação, uso de medicamentos controlados ou doenças preexistentes.
     </p>
   </div>
@@ -2277,34 +2317,23 @@
 <!-- APP (hidden until user clicks "Entrar") -->
 <div id="appContainer" style="display:none">
 
-<nav aria-label="Navegação principal">
-  <div class="nav-top">
-    <a class="logo" href="/" onclick="backToLanding();return false" style="cursor:pointer;text-decoration:none" title="Voltar à página inicial">Ervatório</a>
-    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+<nav class="erv-nav" aria-label="Navegação principal">
+  <div class="erv-nav-bar">
+    <button type="button" class="erv-nav-burger" aria-label="Abrir menu" data-i18n-aria="nav.open_menu" aria-expanded="false" aria-controls="ervMenuSheet" onclick="openMenuSheet()"><svg class="ui-ico" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <a class="erv-logo" href="/" onclick="backToLanding();return false" title="Voltar à página inicial">
+      <span class="erv-logo-mark">Ervatório</span>
+      <span class="erv-logo-sub" data-i18n="lp.logo.sub">Ervas do Brasil e do Mundo</span>
+    </a>
+    <div class="erv-nav-groups" id="ervNavGroups"></div>
+    <div class="erv-nav-actions">
+      <a class="erv-nav-icon erv-nav-search" href="#encontrar" aria-label="Buscar" data-i18n-aria="nav.search"><svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><span class="erv-nav-icon-label" data-i18n="nav.search_hint">Buscar erva, sintoma ou receita</span></a>
+      <a class="erv-nav-icon" href="#estante" aria-label="Minha estante" data-i18n-aria="nav.favorites"><svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10z"/></svg><span class="erv-nav-count" id="navFavCount" hidden></span></a>
       <div id="langSwitcher" class="lang-switcher"></div>
-      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Alternar tema claro/escuro" aria-label="Alternar tema claro/escuro">☀</button>
-      <button id="ervaria-auth-btn" class="auth-btn" onclick="ervaria.showAuthModal()" data-i18n="ui.login">⚷ Entrar</button>
+      <button type="button" class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Alternar tema claro/escuro" aria-label="Alternar tema claro/escuro">☀</button>
+      <button type="button" id="ervaria-auth-btn" class="auth-btn" onclick="ervaria.showAuthModal()">Entrar</button>
     </div>
   </div>
-  <div class="nav-tabs">
-    <button class="nav-tab on" onclick="goPage('search',this)" data-i18n="nav.search">Busca</button>
-    <button class="nav-tab" onclick="goPage('roda-funcional',this)" data-i18n="nav.functional_wheel">Roda Funcional</button>
-    <button class="nav-tab" onclick="goPage('blends',this)" data-i18n="nav.blends">Blends</button>
-    <button class="nav-tab" onclick="goPage('chas',this)" data-i18n="nav.traditional_teas">Chás Tradicionais</button>
-    <button class="nav-tab" onclick="goPage('mundo',this)" data-i18n="nav.world_teas">Chás do Mundo</button>
-    <button class="nav-tab" onclick="goPage('chazerias',this)" data-i18n="nav.teahouses">Chazerias</button>
-    <button class="nav-tab" onclick="goPage('ferramentas',this)" data-i18n="nav.tools">Ferramentas</button>
-    <button class="nav-tab" onclick="goPage('quiz',this)" data-i18n="nav.quiz">Quiz</button>
-    <button class="nav-tab" onclick="goPage('receitas',this)" data-i18n="nav.recipes">Receitas</button>
-    <button class="nav-tab" onclick="goPage('jogo',this)" data-i18n="nav.game">Jogo</button>
-    <button class="nav-tab" onclick="goPage('favs',this)" data-i18n="nav.favorites">Favoritos</button>
-    <button class="nav-tab" onclick="goPage('suppliers',this)" data-i18n="nav.suppliers" data-loja>Nossos produtores</button>
-    <button class="nav-tab" onclick="goPage('marketplace',this)" data-i18n="nav.marketplace" data-loja>Loja</button>
-    <button class="nav-tab" onclick="goPage('perfil',this)" data-i18n="nav.profile">Perfil</button>
-    <button class="nav-tab" onclick="goPage('ervatorio',this)" data-i18n="nav.encyclopedia">Ervopedia</button>
-    <button class="nav-tab" onclick="goPage('sobre',this)" data-i18n="nav.about">Sobre</button>
-    <button class="nav-tab" onclick="goPage('caminho',this)" data-i18n="nav.path">Caminho</button>
-  </div>
+  <div class="erv-subnav" id="ervSubnav" aria-label="Seções" data-i18n-aria="nav.sections" hidden></div>
 </nav>
 
 <!-- CHÁS DO MUNDO PAGE -->
@@ -2773,6 +2802,22 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<footer class="erv-footer" aria-label="Rodapé do app">
+  <div class="erv-footer-inner">
+    <div class="erv-footer-links">
+      <a href="#sobre" data-i18n="footer.sobre">Sobre</a>
+      <a href="/#lp-clube" data-i18n="footer.clube">Clube</a>
+      <a href="/pausa.html" data-i18n="footer.pausa">Cultura da Pausa</a>
+      <a href="/privacidade.html" data-i18n="footer.privacidade">Privacidade</a>
+      <a href="/termos.html" data-i18n="footer.termos">Termos</a>
+      <button type="button" onclick="window.__consent&&window.__consent.open()" data-i18n="footer.cookies">Preferências de cookies</button>
+      <a href="mailto:contato@ervatorio.com.br" data-i18n="footer.contato">Contato</a>
+    </div>
+    <div data-i18n="footer.linha">© 2026 Ervatório · Conteúdo educacional; não substitui orientação médica.</div>
+    <p class="erv-footer-aviso" data-i18n="health.disclaimer">Conteúdo educacional — não substitui orientação médica. Consulte um profissional antes de usar plantas medicinais, especialmente na gravidez, amamentação ou uso de medicamentos.</p>
+  </div>
+</footer>
 
 <script defer src="/js/consent.js"></script>
 <script defer src="/js/a11y.js"></script>

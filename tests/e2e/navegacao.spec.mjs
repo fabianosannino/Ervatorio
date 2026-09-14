@@ -152,3 +152,89 @@ test.describe('CTAs e comércio (PR 02 do handoff)', () => {
     expect(r.ok()).toBeTruthy();
   });
 });
+
+test.describe('cabeçalho único (PR 03 do handoff)', () => {
+  test('desktop: três grupos, Loja ausente com a loja desligada, ícones com rótulo', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/#ervas', { waitUntil: 'domcontentloaded' });
+    const grupos = page.locator('#ervNavGroups .erv-nav-item');
+    await expect(grupos).toHaveCount(3);
+    await expect(grupos.nth(0)).toHaveText(/Encontre seu chá|Find your tea/);
+    await expect(grupos.nth(1)).toHaveText(/Descobrir|Discover/);
+    await expect(grupos.nth(2)).toHaveText(/Preparar|Brew/);
+    // Grupo ativo anuncia aria-current junto com a classe.
+    await expect(grupos.nth(1)).toHaveClass(/\bon\b/);
+    await expect(grupos.nth(1)).toHaveAttribute('aria-current', 'page');
+    // Sub-navegação do grupo Descobrir, com a página atual marcada.
+    const sub = page.locator('#ervSubnav .erv-subnav-item');
+    expect(await sub.count()).toBeGreaterThanOrEqual(5);
+    await expect(page.locator('#ervSubnav .erv-subnav-item[aria-current="page"]')).toHaveText(/Guia de Ervas|Herb Guide/);
+    // Todo ícone tem rótulo acessível.
+    for (const el of await page.locator('.erv-nav-icon, .erv-nav-burger').all()) {
+      const label = (await el.getAttribute('aria-label')) || (await el.innerText());
+      expect(label.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  test('loja ligada: o grupo Loja entra no menu', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/#ervas', { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => { window.ERV_INTERRUPTORES = { pagamentos: true }; applyLojaState(true); });
+    await expect(page.locator('#ervNavGroups .erv-nav-item')).toHaveCount(4);
+    await expect(page.locator('#ervNavGroups .erv-nav-item[data-group="loja"]')).toBeVisible();
+  });
+
+  test('teclado: Tab chega ao menu e Enter navega', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/#ervas', { waitUntil: 'domcontentloaded' });
+    await page.locator('#ervNavGroups .erv-nav-item[data-group="preparar"]').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#page-receitas')).toHaveClass(/\bon\b/);
+    await expect(page.locator('#ervNavGroups .erv-nav-item[data-group="preparar"]')).toHaveAttribute('aria-current', 'page');
+  });
+
+  test('mobile: ☰ abre a folha, Esc fecha e devolve o foco', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 780 });
+    await entrar(page);
+    await page.goto('/#ervas', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#page-ervatorio')).toHaveClass(/\bon\b/);
+    const burger = page.locator('.erv-nav-burger');
+    await expect(burger).toBeVisible();
+    await expect(page.locator('#ervNavGroups')).toBeHidden();
+    await burger.focus();
+    await page.keyboard.press('Enter');
+    const sheet = page.locator('#ervMenuSheet');
+    await expect(sheet).toBeVisible();
+    await expect(burger).toHaveAttribute('aria-expanded', 'true');
+    expect(await sheet.locator('.erv-sheet-group').count()).toBe(3);
+    await page.keyboard.press('Escape');
+    await expect(sheet).toHaveCount(0);
+    await expect(burger).toHaveAttribute('aria-expanded', 'false');
+    expect(await page.evaluate(() => document.activeElement && document.activeElement.className)).toContain('erv-nav-burger');
+  });
+
+  test('mobile: link da folha navega e fecha a folha', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 780 });
+    await entrar(page);
+    await page.goto('/#ervas', { waitUntil: 'domcontentloaded' });
+    // O roteador inicial (300 ms após o load) chama goPage, que fecha a folha:
+    // espera a tela abrir antes de mexer no menu.
+    await expect(page.locator('#page-ervatorio')).toHaveClass(/\bon\b/);
+    await page.locator('.erv-nav-burger').click();
+    await page.locator('#ervMenuSheet .erv-sheet-cell', { hasText: /jornada|journey/i }).click();
+    await expect(page.locator('#page-caminho')).toHaveClass(/\bon\b/);
+    await expect(page.locator('#ervMenuSheet')).toHaveCount(0);
+  });
+
+  test('landing: cabeçalho com o mesmo vocabulário e chips de intenção', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    const nav = page.locator('#landingPage nav.main-nav a');
+    await expect(nav.nth(0)).toHaveAttribute('href', '#encontrar');
+    await expect(nav.nth(1)).toHaveAttribute('href', '#ervas');
+    await expect(nav.nth(2)).toHaveAttribute('href', '#receitas');
+    expect(await page.locator('.hero-chips .hero-chip').count()).toBe(6);
+    await page.locator('.hero-chips .hero-chip').first().click();
+    await expect(page.locator('#page-search')).toHaveClass(/\bon\b/);
+    await expect.poll(() => page.evaluate(() => activeFilters.cat)).toBe('Sono');
+  });
+});

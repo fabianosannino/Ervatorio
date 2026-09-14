@@ -58,9 +58,9 @@ três commits** (D2).
 | # | Escopo | Estado | Onde |
 |---|---|---|---|
 | 01 | Migrações pendentes + redeploy | **Feito em 17/08** | — |
-| 02 | CTAs mortos; flag única de comércio; mapa mundi em arquivo | **Nesta rodada** | commit «Etapa 1» |
-| 04 | Renomeações `nav.*`; redirects de hash; `SEO_META`; copy sem emoji | **Nesta rodada** | commit «Etapa 2» |
-| 03 | Cabeçalho único: 3 grupos + Loja condicional + ícones; menu mobile; sub-navegação por grupo; landing com o mesmo vocabulário e hero por intenção | **Nesta rodada (parcial)** — o app e a landing. As páginas estáticas (`/erva/*`, `/como-se-faz/*`, `/biblioteca/*`, `/lexico/*`, `pausa.html`, legais) ficam para o 03b, porque exigem mexer no gerador `scripts/prerender.mjs` e regenerar ~100 arquivos. | commit «Etapa 3» |
+| 04 | Renomeações `nav.*`; redirects de hash; `SEO_META`; copy sem emoji | **Nesta rodada** | commit `feat(nav): rotas por hash genéricas…` (1º — os CTAs precisam dos hashes novos) |
+| 02 | CTAs mortos; flag única de comércio; mapa mundi em arquivo | **Nesta rodada** | commit `fix(landing): CTAs mortos viram rotas…` (2º) |
+| 03 | Cabeçalho único: 3 grupos + Loja condicional + ícones; menu mobile; sub-navegação por grupo; landing com o mesmo vocabulário e hero por intenção | **Nesta rodada (parcial)** — o app e a landing. As páginas estáticas (`/erva/*`, `/como-se-faz/*`, `/biblioteca/*`, `/lexico/*`, `pausa.html`, legais) ficam para o 03b, porque exigem mexer no gerador `scripts/prerender.mjs` e regenerar ~100 arquivos. | commit `feat(nav): cabeçalho único…` (3º) |
 | 03b | Mesmo cabeçalho nas páginas estáticas (via `prerender.mjs`) | Próximo | `feat/unified-nav-static` |
 | 05 | «Encontre seu chá» em 3 passos, motor único de recomendação, restrição como barreira | Aguarda o roteiro de teste com usuários (README §Fase 2 §04) | `feat/encontrar` |
 | 06 | Ficha: resumo leigo, timer embutido, «Onde encontrar» (indicação), e-mail | Depois do 05 | `feat/ficha-actions` |
@@ -86,7 +86,9 @@ corrigido para não mandar ninguém procurar por uma pendência que fechou.
 (`claude/awesome-ride-gugauv`). A regra «um PR = uma mudança» continua valendo
 como norma; aqui a concessão é explícita: cada etapa é um commit com escopo
 fechado e mensagem própria, revisável em separado. Reverter uma etapa é
-reverter um commit.
+reverter um commit. A ordem dos commits inverte a numeração do handoff (04
+antes de 02) porque os CTAs da landing apontam para os hashes novos que só
+existem depois do roteador.
 
 **D3 — `loja_ativa` do handoff = interruptor `pagamentos` que já existe.**
 O handoff pede um interruptor `loja_ativa` «que projeta `payments_enabled`».
@@ -99,10 +101,12 @@ banco, nada de compra aparece.
 **D4 — «Nenhum elemento de compra no DOM» é feito em dois tempos.** O HTML
 nasce com os blocos de comércio marcados `data-loja` e escondidos por CSS
 (`html:not(.loja-on) [data-loja]{display:none}`). Quando o interruptor
-responde: ligado → a classe `loja-on` entra e tudo aparece; desligado (ou
-sem resposta) → os nós são **removidos** do DOM. O critério de aceite do
-handoff («com flag OFF nenhum elemento de compra no DOM») vale depois do
-boot; antes dele, nada é visível. Deep link para `#loja` com a flag
+responde: ligado → a classe `loja-on` entra e tudo aparece; **desligado,
+confirmado pelo banco** → os nós são **removidos** do DOM; sem resposta (rede
+fora, CDN bloqueado) → continuam só escondidos, porque remover e depois
+receber «ligado» deixaria a loja sem tela até o próximo reload. O critério de
+aceite do handoff («com flag OFF nenhum elemento de compra no DOM») vale
+depois do boot; antes dele, nada é visível. Deep link para `#loja` com a flag
 desligada cai na home com um aviso — o servidor já recusava (`exigirLigado`);
 agora a tela não oferece o que ele recusa.
 
@@ -182,6 +186,23 @@ mantido). O link B2B «Para produtores e casas de chá» fica no rodapé apontan
 para `mailto:`, até existir `/parceiros/`.
 
 ---
+
+### Descobertas ao implementar (ficam para os próximos PRs)
+
+- **Os selos da Jornada ainda usam emoji** (`BADGES` em `js/caminho.js`, ~25
+  itens). Os níveis já são texto; os selos pedem ícones de linha
+  (`svgIcon`) — entra no PR 08 junto com «Minha jornada».
+- **`a11yDialog` não focava nem devolvia o foco em diálogos `position:fixed`**
+  (`offsetParent` é null). Corrigido aqui, e vale para `checkoutOverlay` e
+  `cartOverlay` também.
+- **Os testes E2E dependiam da rede externa**: fontes do Google e o CDN do
+  Supabase são `defer` e seguram o `DOMContentLoaded`; sem saída para a
+  internet cada página levava 12 s. `tests/e2e/navegacao.spec.mjs` aborta
+  essas requisições; o `smoke.spec.mjs` antigo não, e por isso é lento fora
+  do CI. Vale alinhar no próximo PR de testes.
+- **`html-validate index.html` acusava dois `<nav>` e dois `<footer>` com o
+  mesmo nome** (landing + app no mesmo documento). Nomeados; some quando a
+  landing virar a home (PR 03b/05).
 
 ## 4. Como testar esta rodada
 

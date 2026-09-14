@@ -23,7 +23,13 @@ const _ICON_PATHS = {
   thermometer: '<path d="M12 3a2 2 0 0 1 2 2v8a4 4 0 1 1-4 0V5a2 2 0 0 1 2-2z"/>',
   spoon: '<path d="M12 12v9"/><ellipse cx="12" cy="7" rx="3.5" ry="4.5"/>',
   calendar: '<rect x="4" y="5" width="16" height="16" rx="1.5"/><path d="M4 9h16M8 3v4M16 3v4"/>',
-  pin: '<path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>'
+  pin: '<path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>',
+  // Cabeçalho unificado (handoff 14/09)
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+  heart: '<path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10z"/>',
+  user: '<circle cx="12" cy="8.5" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>'
 };
 function svgIcon(name, size){
   const p = _ICON_PATHS[name];
@@ -124,6 +130,151 @@ let wizState = {sintomas:[],hora:'',sabor:''};
 let activeSup = 'Todos';
 let currentHerb = null;
 
+// ── NAVEGAÇÃO EM GRUPOS (handoff 14/09, PR 03) ─────────────────
+// Três grupos + Loja condicional + ícones (Buscar, Estante, Meu Ervatório).
+// O menu de 18 itens descrevia a arquitetura do app.js; este descreve a
+// pergunta de quem chega. Cada grupo tem uma página inicial e uma
+// sub-navegação com as páginas que já existem — os renderizadores não mudam.
+//
+// A lista é UX: quem decide o que aparece de comércio é lojaAtiva() (D3).
+var NAV_GROUPS = [
+  { id:'encontrar', label:'nav.functional_wheel', sub:'nav.sub_find', home:'search', pages:[
+      { id:'search',         label:'nav.functional_wheel' },
+      { id:'roda-funcional', label:'nav.wheel_advanced' },
+      { id:'roda',           label:'nav.tea_wheel' },
+      { id:'quiz',           label:'nav.quiz' } ] },
+  { id:'descobrir', label:'nav.discover', sub:'nav.sub_discover', home:'ervatorio', pages:[
+      { id:'ervatorio',      label:'nav.encyclopedia' },
+      { id:'ficha',          hidden:true },
+      { id:'familias',       label:'nav.families' },
+      { id:'familia',        hidden:true },
+      { id:'chas',           label:'nav.traditional_teas' },
+      { id:'mundo',          label:'nav.world_teas' },
+      { id:'chazerias',      label:'nav.teahouses' },
+      { id:'guia-sensorial', label:'nav.flavor_guide' } ] },
+  { id:'preparar', label:'nav.prepare', sub:'nav.sub_prepare', home:'receitas', pages:[
+      { id:'receitas',       label:'nav.recipes' },
+      { id:'blends', slug:'manual',  label:'nav.blends' },
+      { id:'blends', slug:'prontos', label:'nav.ready_blends' },
+      { id:'blend',          hidden:true },
+      { id:'ferramentas',    label:'nav.tools' },
+      { id:'ferramenta',     hidden:true } ] },
+  { id:'loja', label:'nav.marketplace', sub:'nav.sub_shop', home:'marketplace', loja:true, pages:[
+      { id:'marketplace',    label:'nav.marketplace' },
+      { id:'suppliers',      label:'nav.suppliers' },
+      { id:'pedidos',        label:'nav.orders' } ] },
+  // Meu Ervatório não é item de texto no menu: é o botão da direita e a
+  // grade da folha mobile. Continua sendo um grupo para a sub-navegação.
+  { id:'conta', label:'nav.account', home:'favs', icone:true, pages:[
+      { id:'favs',           label:'nav.favorites' },
+      { id:'caminho',        label:'nav.path' },
+      { id:'jogo',           label:'nav.game' },
+      { id:'perfil',         label:'nav.profile' },
+      { id:'sobre',          label:'nav.about' } ] },
+];
+
+function navT(key){ return (typeof t === 'function') ? t(key) : key; }
+function navGroupOf(pageId){
+  for(var i=0;i<NAV_GROUPS.length;i++){
+    var g=NAV_GROUPS[i];
+    for(var j=0;j<g.pages.length;j++) if(g.pages[j].id===pageId) return g;
+  }
+  return null;
+}
+function navHref(p){ return pageHash(p.id, p.slug); }
+
+// Barra do desktop: um botão por grupo. Loja só com lojaAtiva() (o atributo
+// data-loja deixa o CSS esconder e o applyLojaState remover).
+function renderNav(){
+  var el=document.getElementById('ervNavGroups'); if(!el) return;
+  el.innerHTML=NAV_GROUPS.filter(function(g){ return !g.icone && (!g.loja || lojaAtiva()); }).map(function(g){
+    var home=g.pages[0];
+    return '<a class="erv-nav-item" data-group="'+g.id+'" href="'+navHref(home)+'"'+(g.loja?' data-loja':'')+'>'+esc(navT(g.label))+'</a>';
+  }).join('');
+  var fav=document.getElementById('navFavCount');
+  if(fav){ var n=(typeof favorites!=='undefined'&&Array.isArray(favorites))?favorites.length:0; fav.textContent=n?String(n):''; fav.hidden=!n; }
+  updateNavState(window._currentPage, window._currentSlug);
+}
+
+// Sub-navegação: as páginas do grupo da tela atual. aria-current anda junto
+// com a classe `on` — a classe pinta, o atributo é o que o leitor de tela anuncia.
+function renderSubnav(pageId, slug){
+  var el=document.getElementById('ervSubnav'); if(!el) return;
+  var g=navGroupOf(pageId);
+  if(!g){ el.innerHTML=''; el.hidden=true; return; }
+  var items=g.pages.filter(function(p){ return !p.hidden; });
+  if(items.length<2){ el.innerHTML=''; el.hidden=true; return; }
+  el.hidden=false;
+  el.innerHTML='<div class="erv-subnav-inner">'+items.map(function(p){
+    var on = p.id===pageId && (!p.slug || p.slug===slug || (!slug && p.slug==='prontos'));
+    return '<a class="erv-subnav-item'+(on?' on':'')+'" href="'+navHref(p)+'"'+(on?' aria-current="page"':'')+'>'+esc(navT(p.label))+'</a>';
+  }).join('')+'</div>';
+}
+
+function updateNavState(pageId, slug){
+  var g=navGroupOf(pageId);
+  document.querySelectorAll('.erv-nav-item').forEach(function(b){
+    var on = !!g && b.getAttribute('data-group')===g.id;
+    b.classList.toggle('on', on);
+    if(on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+  });
+  var conta=document.getElementById('ervNavConta');
+  if(conta){ var onC = !!g && g.id==='conta'; conta.classList.toggle('on', onC); if(onC) conta.setAttribute('aria-current','page'); else conta.removeAttribute('aria-current'); }
+  renderSubnav(pageId, slug);
+}
+
+// Folha do menu (mobile): tela cheia, 4 grupos de 56 px, grade de Meu
+// Ervatório, rodapé com Sobre · Clube · Pausa · Privacidade. a11yDialog cuida
+// de ESC, foco inicial, focus-trap e devolução do foco.
+function openMenuSheet(){
+  if(document.getElementById('ervMenuSheet')) return;
+  window._sheetOpener = document.activeElement;
+  var conta=NAV_GROUPS.filter(function(g){ return g.id==='conta'; })[0];
+  var sheet=document.createElement('div');
+  sheet.id='ervMenuSheet'; sheet.className='erv-sheet';
+  sheet.innerHTML=
+    '<div class="erv-sheet-top"><span class="erv-sheet-title">'+esc(navT('nav.menu'))+'</span>'+
+    '<button type="button" class="erv-sheet-close" aria-label="'+esc(navT('nav.close'))+'" onclick="closeMenuSheet()">'+svgIcon('close',22)+'</button></div>'+
+    '<div class="erv-sheet-groups">'+NAV_GROUPS.filter(function(g){ return !g.icone && (!g.loja || lojaAtiva()); }).map(function(g){
+      return '<a class="erv-sheet-group" href="'+navHref(g.pages[0])+'"><span class="erv-sheet-group-name">'+esc(navT(g.label))+'</span>'+(g.sub?'<span class="erv-sheet-group-sub">'+esc(navT(g.sub))+'</span>':'')+'</a>';
+    }).join('')+'</div>'+
+    '<div class="erv-sheet-label">'+esc(navT('nav.account'))+'</div>'+
+    '<div class="erv-sheet-grid">'+conta.pages.filter(function(p){ return p.id!=='sobre'; }).map(function(p){
+      return '<a class="erv-sheet-cell" href="'+navHref(p)+'">'+esc(navT(p.label))+'</a>';
+    }).join('')+'</div>'+
+    '<div class="erv-sheet-foot">'+
+      '<a href="'+pageHash('sobre')+'">'+esc(navT('footer.sobre'))+'</a><span aria-hidden="true">·</span>'+
+      '<a href="/#lp-clube">'+esc(navT('footer.clube'))+'</a><span aria-hidden="true">·</span>'+
+      '<a href="/pausa.html">'+esc(navT('footer.pausa'))+'</a><span aria-hidden="true">·</span>'+
+      '<a href="/privacidade.html">'+esc(navT('footer.privacidade'))+'</a>'+
+      '<span class="erv-sheet-langs" id="sheetLangSwitcher"></span>'+
+    '</div>';
+  document.body.appendChild(sheet);
+  document.body.classList.add('erv-sheet-open');
+  // Fecha DEPOIS do clique terminar: remover o <a> durante o dispatch cancela
+  // a navegação do próprio link no Chromium.
+  sheet.addEventListener('click', function(e){ var a=e.target.closest('a[href]'); if(a) setTimeout(closeMenuSheet, 0); });
+  // Seletor de idioma dentro da folha (mesmo markup do header).
+  var ls=document.getElementById('sheetLangSwitcher');
+  var src=document.querySelector('.lang-switcher');
+  if(ls && src) ls.innerHTML=src.innerHTML;
+  document.querySelectorAll('[aria-controls="ervMenuSheet"]').forEach(function(b){ b.setAttribute('aria-expanded','true'); });
+  if(typeof a11yDialog==='function') a11yDialog(sheet, { label: navT('nav.menu'), onClose: closeMenuSheet });
+  // a11yDialog só foca quando `offsetParent` existe — e a folha é position:fixed
+  // (offsetParent null). Foco explícito no ✕ para que Esc e Tab caiam dentro.
+  var close=sheet.querySelector('.erv-sheet-close'); if(close) try{ close.focus(); }catch(e){}
+}
+function closeMenuSheet(){
+  var sheet=document.getElementById('ervMenuSheet');
+  if(!sheet) return;
+  sheet.remove();
+  document.body.classList.remove('erv-sheet-open');
+  document.querySelectorAll('[aria-controls="ervMenuSheet"]').forEach(function(b){ b.setAttribute('aria-expanded','false'); });
+  // Devolve o foco a quem abriu (o ☰), se ainda estiver na tela.
+  var op=window._sheetOpener; window._sheetOpener=null;
+  if(op && op.focus && document.body.contains(op)) try{ op.focus(); }catch(e){}
+}
+
 // ── LOJA: um interruptor, uma função ─────────────────────────
 // D3/D4 em docs/estrategia/2026-09-14-plano-handoff-ux.md.
 //
@@ -162,6 +313,7 @@ function applyLojaState(confirmado){
   document.querySelectorAll('[data-loja-href]').forEach(function(a){
     a.setAttribute('href', on ? a.getAttribute('data-loja-href') : (a.getAttribute('data-loja-href-off') || '#lp-loja'));
   });
+  renderNav();
 }
 
 // "Avise-me quando a loja abrir" (home). Mesmo contrato de pausa.html:
@@ -199,9 +351,7 @@ function subscribeLojaAviso(form){
 // ── NAVIGATION ──
 function goPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('on'));
   document.getElementById('page-'+id).classList.add('on');
-  if(btn) btn.classList.add('on');
   if(id==='favs') renderFavs();
   if(id==='suppliers') renderSuppliers();
   if(id==='roda') initRoda();
@@ -991,11 +1141,15 @@ function closeModal(e){
 }
 
 // ── FAVORITES ──
+function updateNavFavCount(){
+  var fav=document.getElementById('navFavCount'); if(!fav) return;
+  var n=Array.isArray(favorites)?favorites.length:0; fav.textContent=n?String(n):''; fav.hidden=!n;
+}
 function toggleFav(e,id){
   e.stopPropagation();
   if(favorites.includes(id)) favorites=favorites.filter(f=>f!==id);
   else { favorites.push(id); if(typeof trackAction==='function') trackAction('fav-herb', id); }
-  localStorage.setItem('erb_favs',JSON.stringify(favorites));
+  localStorage.setItem('erb_favs',JSON.stringify(favorites)); updateNavFavCount();
   renderHerbs();
   const now=favorites.includes(id);
   document.querySelectorAll(`[data-fav-herb="${id}"]`).forEach(btn=>{
@@ -1053,7 +1207,7 @@ function deleteSavedRecipe(i){
 function toggleFichaFav(id){
   if(favorites.includes(id)) favorites=favorites.filter(f=>f!==id);
   else favorites.push(id);
-  localStorage.setItem('erb_favs',JSON.stringify(favorites));
+  localStorage.setItem('erb_favs',JSON.stringify(favorites)); updateNavFavCount();
   renderHerbs();
   const now=favorites.includes(id);
   document.querySelectorAll(`[data-fav-herb="${id}"]`).forEach(btn=>{
@@ -2241,9 +2395,9 @@ function goPage(id,btn,slug){
   }
   hideLanding();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('on'));
   document.getElementById('page-'+id).classList.add('on');
-  if(btn)btn.classList.add('on');
+  window._currentSlug = slug;
+  if(typeof closeMenuSheet==='function') closeMenuSheet();
   if(id==='favs')renderFavs();
   if(id==='suppliers')renderSuppliers();
   if(id==='roda')window.initRoda();
@@ -2275,10 +2429,12 @@ function goPage(id,btn,slug){
   if(id==='caminho' && typeof initCaminho==='function') initCaminho();
   if(id==='jogo' && typeof initJogo==='function') initJogo();
 
-  // i18n + SEO — update on every navigation
+  // i18n + SEO + estado do menu — update on every navigation
   window._currentPage = id;
   if(typeof applyI18n==='function') applyI18n();
   if(typeof updateSEO==='function') updateSEO(id);
+  updateNavState(id, slug);
+  window.scrollTo({ top: 0 });
 
   // Registra a navegação no histórico do browser para que o botão Voltar funcione.
   // A URL usa o nome canonico (PAGE_HASH); vindo de hashchange (alias ou
@@ -3525,6 +3681,9 @@ function renderSobre(){
 
 // ── INIT ──
 if(typeof initI18n==='function') initI18n();
+renderNav();
+window._currentPage = window._currentPage || 'search';
+updateNavState(window._currentPage);
 // Estado inicial da loja: o CSS já esconde [data-loja]; aqui só sincroniza os
 // hrefs. A remoção do DOM acontece quando os interruptores respondem.
 document.querySelectorAll('[data-loja-href]').forEach(function(a){ a.setAttribute('href', a.getAttribute('data-loja-href-off') || '#lp-loja'); });
