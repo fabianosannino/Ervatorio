@@ -174,7 +174,9 @@ function renderSubnav(pageId, slug){
   if(items.length<2){ el.innerHTML=''; el.hidden=true; return; }
   el.hidden=false;
   el.innerHTML='<div class="erv-subnav-inner">'+items.map(function(p){
-    var on = p.id===pageId && (!p.slug || p.slug===slug || (!slug && p.slug==='prontos'));
+    // Entrada com slug marca só a sua visão (blends/manual, mundo/beber);
+    // entrada sem slug marca a tela sem slug. Blends sem slug abre em Prontos.
+    var on = p.id===pageId && (p.slug ? (p.slug===slug || (!slug && p.slug==='prontos')) : !slug);
     return '<a class="erv-subnav-item'+(on?' on':'')+'" href="'+navHref(p)+'"'+(on?' aria-current="page"':'')+'>'+esc(navT(p.label))+'</a>';
   }).join('')+'</div>';
 }
@@ -2640,7 +2642,7 @@ function saveBlendFromCtr(){
 
 // ── override goPage to handle all pages ──
 // Pages accessible without login
-const PUBLIC_PAGES = ['search','ervatorio','ficha','blends','blend','sabores','guia-sensorial','roda','chazerias','ferramentas','ferramenta','familias','familia','quiz','chas','mundo','receitas','jogo','caminho'];
+const PUBLIC_PAGES = ['search','ervatorio','ficha','blends','blend','sabores','guia-sensorial','roda','ferramentas','ferramenta','familias','familia','quiz','chas','mundo','receitas','jogo','caminho'];
 
 // Esconde a landing e expõe o container do app. Idempotente.
 // Usado por goPage() e pelo hash handler para que deep links
@@ -2709,14 +2711,13 @@ function goPage(id,btn,slug){
   if(id==='chas'){initChas();initCerimonia();}
   if(id==='guia-sensorial'&&typeof initFlavorWheel==='function')initFlavorWheel();
   if(id==='marketplace')initMkt();
-  if(id==='mundo')initMundo();
+  if(id==='mundo')initMundo(slug);
   // Ervatorio v1.1 pages
   if(id==='ervatorio' && typeof renderIndiceCatalogo==='function') renderIndiceCatalogo();
   if(id==='ficha' && slug && typeof renderFichaPage==='function') renderFichaPage(slug);
   // NB: o render da biblioteca é disparado pela switchBlendTab('prontos') acima.
   if(id==='blend' && slug && typeof renderBlendPage==='function') renderBlendPage(slug);
   if(id==='roda-funcional' && typeof renderRodaFuncional==='function') renderRodaFuncional();
-  if(id==='chazerias' && typeof initChazerias==='function') initChazerias();
   if(id==='ferramentas' && typeof initFerramentas==='function') initFerramentas();
   if(id==='ferramenta' && typeof initFerramentas==='function') initFerramentas(slug);
   if(id==='familias' && typeof initFamilias==='function') initFamilias();
@@ -2757,11 +2758,13 @@ function goPage(id,btn,slug){
 // funcionando para nao quebrar link ja compartilhado.
 var HASH_ALIASES = {
   // vocabulario novo
-  'encontrar':'search', 'ervas':'ervatorio', 'origens':'mundo', 'onde-beber':'chazerias',
+  'encontrar':'search', 'ervas':'ervatorio', 'origens':'mundo', 'onde-beber':'mundo/beber',
   'como-preparar':'ferramentas', 'criar-blend':'blends/manual', 'loja':'marketplace',
   'produtores':'suppliers', 'estante':'favs', 'jornada':'caminho', 'conta':'favs',
   // hashes antigos e atalhos
   'sabores':'guia-sensorial', 'shop':'marketplace', 'cerimonia':'chas', 'criarblend':'blends/manual',
+  // Onde beber virou visão de Origens (PR 07); o hash antigo segue valendo.
+  'chazerias':'mundo/beber',
 };
 // Inverso: id da pagina -> nome canonico na URL. Quem nao esta aqui usa o proprio id.
 // PAGE_HASH: ver js/nav-data.js.
@@ -2772,6 +2775,8 @@ var HASH_ALIASES = {
 var LANDING_ANCHORS = { 'clube':'lp-clube', 'colecoes':'lp-colecoes', 'mapa':'lp-mapa' };
 
 function pageHash(id, slug){
+  // Tela + slug com nome próprio (mundo/beber → #onde-beber) vem antes.
+  if(slug && PAGE_HASH[id + '/' + slug]) return '#' + PAGE_HASH[id + '/' + slug];
   return '#' + (PAGE_HASH[id] || id) + (slug ? '/' + slug : '');
 }
 
@@ -3679,8 +3684,10 @@ const MUNDO_REGIONS=[
 
 let mundoView='mapa', mundoRegionActive=null, mundoListFilter='Todos';
 
-function initMundo(){
-  setMundoView('mapa', document.getElementById('btnMapa'));
+// #origens abre o mapa; #onde-beber (= mundo/beber) abre a 4ª visão.
+function initMundo(slug){
+  var v = slug==='beber' ? 'beber' : 'mapa';
+  setMundoView(v, document.getElementById(v==='beber' ? 'btnBeber' : 'btnMapa'));
 }
 
 function setMundoView(v,btn){
@@ -3690,6 +3697,16 @@ function setMundoView(v,btn){
   document.getElementById('mundoMapView').style.display=v==='mapa'?'block':'none';
   document.getElementById('mundoListView').style.display=v==='lista'?'block':'none';
   document.getElementById('mundoBrasilView').style.display=v==='brasil'?'block':'none';
+  var beber=document.getElementById('mundoBeberView'); if(beber) beber.style.display=v==='beber'?'block':'none';
+  // O hash e a sub-navegação acompanham a visão: «Onde beber» tem hash
+  // próprio (#onde-beber) e entrada própria no grupo Descobrir.
+  if(window._currentPage==='mundo'){
+    var slugBeber = v==='beber' ? 'beber' : undefined;
+    window._currentSlug = slugBeber;
+    try { history.replaceState(null, '', pageHash('mundo', slugBeber)); } catch(e){}
+    if(typeof updateNavState==='function') updateNavState('mundo', slugBeber);
+  }
+  if(v==='beber' && !window._chazeriasCarregadas && typeof initChazerias==='function'){ window._chazeriasCarregadas=true; initChazerias(); }
   if(v==='mapa') drawMundoMap();
   if(v==='lista'){buildMundoListFilter();renderMundoList();}
   if(v==='brasil'){ renderBrasilContent(); if(typeof trackAction==='function') trackAction('visit-brasil'); }

@@ -190,28 +190,17 @@ e as decisões D1–D14. As que mais mudam o jeito de trabalhar aqui:
     fora — as páginas estáticas são PT, tema claro fixo, sem Supabase.
   - `tests/e2e/estaticas.spec.mjs` confere tudo isso, incluindo a folha do
     celular (`js/nav-estatica.js`: foco no ✕, Tab preso, Esc devolve o foco).
-- **O cabeçalho é um só, e a fonte dele é `js/nav-data.js`** (PR 03b).
-  `NAV_GROUPS` e `PAGE_HASH` moram lá, como script clássico sem dependência,
-  porque dois leitores usam o mesmo arquivo: `js/app.js` no navegador e
-  `scripts/nav-estatica.mjs` em Node, que gera o cabeçalho em HTML puro para
-  `/erva/*`, `/lexico/*`, `/como-se-faz/*`, `/biblioteca/*`, `pausa.html` e
-  as legais. Entrada de grupo tem `id` (tela do app) **ou** `href` (página
-  estática); `estatico` numa tela do app é a gêmea estática dela.
-  - As regras CSS do cabeçalho, da folha e do rodapé vivem em `css/nav.css`,
-    carregada **antes** de `main.css` no `index.html` e sozinha nas páginas
-    estáticas, onde `.erv-estatico` traz os tokens do tema escuro só para
-    esses componentes (`pausa.html` usa `--bg` para o fundo creme da página;
-    tokens em `:root` quebrariam isso).
-  - Mexeu no menu? `npm run prerender` regenera as ~190 páginas **e**
-    preenche os marcadores (`<!-- erv-nav-css -->`, `<!-- erv-nav-estatica -->`,
-    `<!-- erv-rodape-estatico -->`) em `pausa.html`, `privacidade.html` e
-    `termos.html`. Marcador ausente é erro, não silêncio.
-  - **Loja e Diário não aparecem nas páginas estáticas** (D23): dependem de
-    interruptor, e sem o JavaScript do app não há como saber se estão ligados.
-    A régua é falhar para desligado. Idioma, tema e «Entrar» também ficam de
-    fora — as páginas estáticas são PT, tema claro fixo, sem Supabase.
-  - `tests/e2e/estaticas.spec.mjs` confere tudo isso, incluindo a folha do
-    celular (`js/nav-estatica.js`: foco no ✕, Tab preso, Esc devolve o foco).
+- **Tela com visões que têm hash próprio** (PR 07): `#onde-beber` é
+  `mundo/beber` — a 4ª visão de Origens, não uma página. `PAGE_HASH` aceita
+  a chave `tela/slug` e `pageHash()` a consulta primeiro; a entrada em
+  `NAV_GROUPS` é `{ id:'mundo', slug:'beber' }`. Quem troca a visão dentro
+  da tela chama `history.replaceState` + `updateNavState`, para hash e
+  sub-navegação não mentirem. Renderizador pesado (Leaflet) carrega só
+  quando a visão abre.
+- **HTML que nasce em JavaScript não passa pelo `html-validate`.** O hub de
+  ferramentas tinha quatro `<div onclick>` e ninguém viu. Card clicável é
+  `<a>` (ou `<button>`), e o teste E2E da tela conta `[onclick]` e exige
+  zero.
 
 ## Dado de saúde — tabela própria, consentimento próprio (PR 08 do handoff)
 
