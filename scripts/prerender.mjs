@@ -31,6 +31,19 @@ const fichasSrc = readFileSync('js/fichas-data.js', 'utf8');
 const FICHAS = new Function(`${fichasSrc}; return FICHAS_ANCORA;`)();
 const slugs = Object.keys(FICHAS);
 
+// ── Catálogo do app e o resumo leigo (PR 06): a ficha estática monta o
+// mesmo bloco «para que serve · como preparar · quem deve evitar» que a
+// ficha do app, pela mesma função.
+const herbsSrc = readFileSync('js/herbs-data.js', 'utf8');
+const HERBS = new Function(`${herbsSrc}; return HERBS;`)();
+const resumoSrc = readFileSync('js/ficha-resumo.js', 'utf8');
+const { fichaResumo } = new Function(`const window = {}; ${resumoSrc}; return { fichaResumo: window.fichaResumo };`)();
+const _nrm = (v) => String(v || '').normalize('NFC').toLowerCase().trim();
+function herbDaFicha(f) {
+  return HERBS.find((h) => _nrm(h.n) === _nrm(f.nome_popular) ||
+    (h.lat && f.nome_cientifico && _nrm(f.nome_cientifico).startsWith(_nrm(h.lat.split(' ').slice(0, 2).join(' '))))) || null;
+}
+
 // ── Léxico da Chazeria (Onda 2.1) — glossário estático indexável
 const lexicoSrc = readFileSync('js/lexico-data.js', 'utf8');
 const { LEXICO_TERMOS, LEXICO_CATEGORIAS } =
@@ -134,6 +147,17 @@ footer a{color:var(--ouro2)}
 @media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}
 `.trim();
 
+// Só a ficha usa: o bloco-resumo, as caixas de alerta e o título do técnico (PR 06).
+const FICHA_CSS = `.resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:26px 0 14px}
+.resumo h3{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#8c6a2f;margin:0 0 6px}
+.resumo p{font-size:.95rem;margin:0 0 6px}.resumo ul{padding-left:18px;margin:0 0 6px}.resumo li{font-size:.92rem;margin:2px 0}
+.resumo .det{font-size:.82rem;color:#6b5a2e}
+.alerta{background:#fff3e0;border:1px solid #e0b060;border-left:4px solid #b8965a;border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;font-size:.92rem}
+.alerta ul{margin-top:6px}
+h2.tecnico{margin-top:30px;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;color:#6b5a2e;border-bottom:2px solid var(--ouro)}
+.mute{color:#8b7e68;font-style:italic}
+`.trim();
+
 function fichaPage(slug, f, idx) {
   const nome = f.nome_popular || slug;
   const latin = f.nome_cientifico || '';
@@ -147,6 +171,9 @@ function fichaPage(slug, f, idx) {
 
   const id = f.identificacao || {}, c = f.caracterizacao || {}, p = f.preparo || {};
   const a = f.acoes_e_seguranca || {}, cu = f.cultura || {}, r = f.regulacao || {};
+  const R = fichaResumo(f, herbDaFicha(f));
+  const sec = R.secoes;
+  const cap = (v) => { v = String(v || ''); return v.charAt(0).toUpperCase() + v.slice(1); };
 
   const jsonld = {
     '@context': 'https://schema.org',
@@ -173,6 +200,26 @@ function fichaPage(slug, f, idx) {
     ],
   };
 
+
+  // Bloco-resumo: o que um leigo precisa antes de qualquer coisa.
+  const prep = R.preparo.texto ? esc(R.preparo.texto)
+    : [R.preparo.temp, R.preparo.tempo, R.preparo.dose].filter(has).map(esc).join(' · ') +
+      (has(R.preparo.freq) ? `<br><span class="det">${esc(R.preparo.freq)}</span>` : '') +
+      (has(R.preparo.metodo) ? `<br><span class="det">${esc(R.preparo.metodo)}</span>` : '');
+  const evitar = R.evitar.length
+    ? `<ul>${R.evitar.map((x) => `<li>${esc(cap(x))}</li>`).join('')}</ul>`
+    : '<p>Nenhuma contraindicação registrada nesta ficha.</p>';
+  const resumo = `<section class="resumo" aria-label="Resumo">
+    <div><h3>Para que serve</h3><p>${esc(cap(R.serve))}</p>${has(R.serveDetalhe) ? `<p class="det">${esc(R.serveDetalhe)}</p>` : ''}</div>
+    <div><h3>Como preparar</h3><p>${prep}</p></div>
+    <div><h3>Quem deve evitar</h3>${evitar}${R.seguro.length ? `<p class="det">Seguro para: ${R.seguro.map(esc).join(', ')}</p>` : ''}${R.interacoes ? `<p class="det">Toma remédio? Há ${R.interacoes} interações conhecidas — veja abaixo.</p>` : ''}</div>
+  </section>`;
+
+  const alertas = [
+    a.alerta_critico ? `<div class="alerta"><strong>${esc(a.alerta_critico.titulo || 'Atenção')}</strong>${has(a.alerta_critico.titulo2) ? ` — ${esc(a.alerta_critico.titulo2)}` : ''}<p>${esc(a.alerta_critico.corpo || '')}</p></div>` : '',
+    ...sec.alertas.map((al) => `<div class="alerta"><strong>${esc(al.titulo)}</strong>${ul(al.itens)}</div>`),
+  ].join('');
+
   const body = [
     section('Identificação', dl([
       ['Nome científico', latin],
@@ -195,10 +242,16 @@ function fichaPage(slug, f, idx) {
       ['Melhor momento', p.melhor_momento],
       ['Combina com', p.combina_com],
     ])),
-    section('Ações principais', ul((a.acoes_principais || []).filter((x) => !/:$/.test(String(x).trim())))),
-    section('Componentes ativos', labeledList(a.componentes_ativos)),
-    section('Contraindicações e cuidados', ul((a.contraindicacoes || []).filter((x) => !/:$/.test(String(x).trim())))),
-    section('Interações', labeledList(a.interacoes)),
+    // Ações sem as contraindicações que o schema 1.1 deixou vazar (fichaSecoes).
+    section('Ações principais', ul(sec.acoes)),
+    section('Componentes ativos', labeledList(a.componentes_ativos) + (sec.notas_componentes.length ? sec.notas_componentes.map((x) => `<p>${esc(x)}</p>`).join('') : '')),
+    section('Contraindicações e cuidados', ul(sec.contraindicacoes)),
+    section('Interações', labeledList(sec.interacoes_estruturadas) + ul(sec.interacoes)),
+    section('Efeitos adversos e dose máxima', dl([
+      ['Efeitos adversos', sec.efeitos_adversos],
+      ['Dose máxima', sec.dose_maxima],
+    ])),
+    ...sec.notas.map((n) => section(n.titulo, ul(n.itens))),
     has(cu.historia) || has(cu.brasil)
       ? section('História e cultura', `${has(cu.historia) ? `<p>${esc(cu.historia)}</p>` : ''}${has(cu.brasil) ? `<p>${esc(cu.brasil)}</p>` : ''}`)
       : '',
@@ -208,7 +261,8 @@ function fichaPage(slug, f, idx) {
       ['FDA (EUA)', r.status_fda],
       ['Sazonalidade', r.sazonalidade],
     ])),
-    section('Fontes', ul(a.fontes)),
+    // Sem fonte a seção não some: diz que está em revisão.
+    `<section><h2>Fontes</h2>${R.fontes.length ? ul(R.fontes) : '<p class="mute">Fontes em revisão.</p>'}</section>`,
   ].join('\n');
 
   return `<!DOCTYPE html>
@@ -230,7 +284,8 @@ function fichaPage(slug, f, idx) {
 <meta name="twitter:description" content="${esc(desc)}">
 <meta name="twitter:image" content="${esc(img)}">
 <script type="application/ld+json">${JSON.stringify(jsonld)}</script>
-<style>${CSS}</style>
+<style>${CSS}
+${FICHA_CSS}</style>
 </head>
 <body>
 <header class="hero"><div class="wrap">
@@ -240,12 +295,15 @@ function fichaPage(slug, f, idx) {
   ${has(f.tagline) ? `<p class="tagline">${esc(f.tagline)}</p>` : ''}
 </div></header>
 <main class="wrap">
+  ${resumo}
   <p>
     <a class="cta gold" href="/#ficha/${esc(slug)}">Abrir no Ervatório</a>
     <a class="cta" href="/#ervas">Explorar todas as ervas</a>
   </p>
-  ${body}
+  ${alertas}
   <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+  <h2 class="tecnico">Detalhe técnico</h2>
+  ${body}
   <section><h2>Ervas relacionadas</h2><div class="related">${related}</div></section>
 </main>
 <footer>

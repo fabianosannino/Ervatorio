@@ -63,7 +63,7 @@ três commits** (D2).
 | 03 | Cabeçalho único: 3 grupos + Loja condicional + ícones; menu mobile; sub-navegação por grupo; landing com o mesmo vocabulário e hero por intenção | **Nesta rodada (parcial)** — o app e a landing. As páginas estáticas (`/erva/*`, `/como-se-faz/*`, `/biblioteca/*`, `/lexico/*`, `pausa.html`, legais) ficam para o 03b, porque exigem mexer no gerador `scripts/prerender.mjs` e regenerar ~100 arquivos. | commit `feat(nav): cabeçalho único…` (3º) |
 | 03b | Mesmo cabeçalho nas páginas estáticas (via `prerender.mjs`) | **Quarta rodada (16/09)** — ver D22–D23. | PR `feat/unified-nav-static` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 05 | «Encontre seu chá» em 3 passos, motor único de recomendação, restrição como barreira | **Sexta rodada (16/09)** — sem o teste com usuários, por decisão do dono (D27). Ver D27–D30. | PR `feat/encontrar` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
-| 06 | Ficha: resumo leigo, timer embutido, «Onde encontrar» (indicação), e-mail | Depois do 05 | `feat/ficha-actions` |
+| 06 | Ficha: resumo leigo, timer embutido, «Onde encontrar» (indicação), e-mail | **Sétima rodada (16/09)** — ver D31–D34. | PR `feat/ficha-actions` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 07 | Descobrir e Preparar como abas de verdade (fusão de renderizadores) | **Quinta rodada (16/09)** — Origens absorve Onde beber; hub «Como preparar» com seis cards. Ver D24–D25 para o que fica. | PR `feat/descobrir-preparar` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 08 | Meu Ervatório + `perfil_saude` (tabela própria, RLS, consentimento com timestamp); cadastro reduzido; «Excluir meus dados» | **Segunda rodada (15/09)** — ver D15–D17. O Diário fica para o 08b. | PR `feat/conta-e-consentimento` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 08b | Diário de infusões (`diario_infusoes`, RLS dono, interruptor `diario`) | **Terceira rodada (16/09)** — ver D19–D21. | PR `feat/diario-infusoes` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
@@ -230,6 +230,37 @@ para `mailto:`, até existir `/parceiros/`.
   mesmo defeito que o CLAUDE.md descreve no menu do painel, num lugar que
   o `html-validate` não alcança porque o HTML nasce em JavaScript. Agora são
   `<a>`; o teste E2E conta `[onclick]` dentro da página e exige zero.
+- **(06) `#ficha/<slug>` exigia o Supabase** — `renderFichaPage` só lia
+  `admin_herb_fichas`, e as mesmas 96 fichas estão em `js/fichas-data.js`,
+  de onde saem as páginas `/erva/`. Sem rede, «Ficha não encontrada»; com
+  rede, uma ida ao banco para dado que já estava no aparelho. Agora o pacote
+  local vem primeiro (D34). O modal da erva, por sua vez, abria a ficha num
+  **overlay** (`renderFichaModal`), um segundo renderizador do mesmo JSON —
+  e o botão dele estava quebrado desde sempre (`onclick="…("guarana")"`,
+  aspas dentro de aspas). Saiu (D33).
+- **(06) O schema 1.1 mistura seções em `acoes_principais`**: 92 das 96
+  fichas trazem «Componentes ativos:», 40 «Indicações com evidência:», 36
+  «Contraindicações:» e 2 «Interações:» como *itens* da lista, seguidos do
+  conteúdo daquela seção; «Efeitos adversos: …» e «Dose máxima: …» idem. E
+  o campo próprio `contraindicacoes` também recebeu isso em várias fichas.
+  Não migramos os dados: `fichaSecoes()` lê os marcadores e devolve cada
+  coisa na sua seção, nos dois renderizadores. A migração de dados que o
+  handoff pede continua valendo; quando acontecer, a função vira
+  passagem direta.
+- **(06) Só 20 das 96 fichas dizem o tempo de infusão** (em `preparo`);
+  o catálogo do app (`HERBS`, 42 ervas) cobre parte. Sem tempo, o botão é
+  «Iniciar preparo» sem minutos e o timer nasce em 8 min, avisando que é
+  sugestão e deixando ajustar. Só 1 ficha tem `fontes` — a seção «Fontes»
+  aparece sempre, com «Fontes em revisão» nas outras, como o handoff pede.
+- **(06) Não há dado que diga «não é para beber»** (copaíba, barbatimão,
+  andiroba, jurema são uso tópico). O handoff quer esse aviso no topo; sem
+  um campo no schema seria adivinhação por palavra-chave. Fica para a
+  migração de dados; `recomendar()` não as sugere porque elas não estão em
+  `HERBS`.
+- **(06) Caixas de aviso com fundo fixo `#3a2a1a` e texto `--cream2`**
+  (`.enc-aviso` do 05, `.perfil-rec-saude` do 08) ficavam ilegíveis no
+  tema claro, que remapeia `--cream2` para tinta escura. Trocadas por
+  fundo de token (`rgba(200,168,75,.1)`), junto com as da ficha.
 - **(07) A sub-navegação marcava a entrada sem slug junto com a de slug**
   (`!p.slug` era verdadeiro sempre). Não aparecia porque só Blends tinha
   duas entradas na mesma tela e as duas têm slug. Com Origens/Onde beber
@@ -377,6 +408,41 @@ para algum grupo (gestantes, hipertensos, anticoagulantes, crianças,
 lactantes) que o usuário **não** declarou; «Seguro», as demais. O teste
 E2E compara o que está na tela com o que a função devolve.
 
+**D31 — O resumo leigo é derivado, com uma porta para o texto escrito à mão.**
+O handoff pede «para que serve» em duas frases sem farmacologia, e dá o
+guaraná reescrito como exemplo. Reescrever 96 fichas à mão não cabe num
+PR; inventar a tradução por regex seria pior. `fichaResumo(ficha, herb)`
+monta o bloco a partir do que já existe: `ef`, `detail`, `temp`, `tempo`,
+`dose`, `freq`, `safe` do catálogo do app quando a erva está lá, e os
+campos de `preparo` e as contraindicações separadas quando não está. Uma
+ficha pode trazer `resumo: { para_que_serve, como_preparar,
+quem_deve_evitar }` e ele vence tudo — é assim que o texto leigo entra,
+ficha a ficha, sem esperar o lote. A mesma função monta a ficha do app e a
+estática (`scripts/prerender.mjs`), por isso `HERBS` saiu de `js/app.js`
+para `js/herbs-data.js`, script de dados como `nav-data.js`.
+
+**D32 — O e-mail da ficha assina a Pausa, e a copy diz isso.** O handoff
+rotula «Receber esta ficha por e-mail», mas o único destino que existe é
+`newsletter-subscribe` com `source: "ficha"` (D10) — nada envia a ficha.
+Prometer o que não acontece é pior do que pedir menos: o bloco chama-se
+«Fichas e receitas por e-mail» e diz «uma pausa por semana». Quando houver
+envio da ficha (Edge Function + Resend), a copy muda junto.
+
+**D33 — A ficha tem uma tela só.** `openFicha`/`openFichaAncora` navegam
+para `#ficha/<slug>`; o overlay e o CSS dele saíram. Dois renderizadores
+do mesmo JSON eram duas chances de divergir — e o resumo, o timer e o
+«Onde encontrar» teriam de existir nos dois.
+
+**D34 — A ficha carrega do pacote primeiro; o Supabase é fallback.**
+`FICHAS_ANCORA` (js/fichas-data.js) é a mesma fonte das páginas `/erva/`
+e do `prerender`; consultar `admin_herb_fichas` para o que já está no
+aparelho custava uma ida ao banco e quebrava offline. O banco entra para
+slug que não está no pacote e para o que só ele tem (produtos com
+`slug_ficha`, blends que referenciam a erva), que chegam depois e só
+acrescentam à lateral. Se a ficha for editada no painel sem regenerar o
+pacote, o app e a estática mostram a versão do pacote — igual ao que já
+acontecia nas `/erva/`.
+
 ## 4. Como testar esta rodada
 
 ```
@@ -463,6 +529,38 @@ npx playwright test tests/e2e/encontrar.spec.mjs   # 6 cenários
     e `/#criarblend` caem em `#encontrar`.
 20. Chips do hero da landing e «Não sabe por onde começar?» continuam
     funcionando.
+21. `/#ficha/guarana` **sem rede**: abre na hora, com «← Guia de Ervas»,
+    o bloco-resumo (para que serve · 85°C · 5 min · quem deve evitar com
+    «Hipertensão arterial não controlada»), os três botões, o aviso de
+    saúde e «Detalhe técnico» recolhido. Abrir o detalhe: «Ações
+    principais» não tem linha terminada em «:» nem contraindicação;
+    «Contraindicações» e «Interações» têm as suas. «Fontes» lista cinco.
+22. `/#ficha/andiroba`: «Fontes em revisão»; «Iniciar preparo» sem minutos
+    abre o timer em 08:00 com a nota de tempo sugerido; +1 min → 09:00.
+23. «Iniciar preparo · 5 min» no guaraná: contagem no lugar, pausa,
+    recomeçar; ao zerar, toast «Pronto — sua pausa está servida.» O mesmo
+    botão fecha o timer.
+24. «♡ Salvar» vira «♥ Salvo» e entra em `erb_favs`; «Adicionar ao meu
+    blend» vira «✓ No meu blend» e entra em `erb_tray`.
+25. «Onde encontrar» sem parceiro diz isso e aponta para «Casas de chá no
+    guia». Com o interruptor `indicacao` ligado e um produto
+    `modo_de_venda = indicacao` casado com a erva, aparece «Parceiros de
+    confiança…» e o link `…/indicacao?produto=<id>` (nunca a URL do
+    parceiro, nunca preço). Com a loja ligada e produto próprio, «Comprar
+    na Loja Ervatório».
+26. E-mail na lateral: `POST newsletter-subscribe` com `source: "ficha"`;
+    resposta «Anotado…»; o formulário some.
+27. Abrir uma erva no Guia e clicar «Ver ficha completa»: vai para
+    `#ficha/<slug>`, sem overlay. `/#ficha/27` (id antigo) vira
+    `#ficha/guarana`.
+28. `/#ficha/gengibre`: «Receitas com Gengibre» lista «Chai Brasileiro»;
+    clicar abre a receita em `#receitas/chai-brasileiro`.
+29. `/erva/guarana/` (estática): o mesmo resumo no topo, aviso de saúde
+    antes de «Detalhe técnico», «Ações principais» limpas,
+    «Contraindicações e cuidados» e «Interações» próprias, «Fontes».
+    `/erva/copaiba/`: «Fontes em revisão».
+30. Tema claro (☾): o aviso de saúde, as caixas de alerta e o aviso do
+    passo 3 do Encontre seu chá continuam legíveis.
 
 ## 5. Rollback
 
@@ -487,3 +585,8 @@ migration, sem função, sem dado.
 **05.** `git revert` do commit. Sem migration, sem função, sem dado; o
 `localStorage` não muda de formato (`erb_tray`, `erb_recipes`, `erb_favs`
 continuam iguais).
+
+**06.** `git revert` do commit e `npm run prerender` (as `/erva/` voltam à
+ordem antiga). Sem migration, sem função, sem dado novo: o e-mail da ficha
+usa a `source: "ficha"` que a migration `20260914120000` já aceita. O
+`localStorage` não muda de formato.

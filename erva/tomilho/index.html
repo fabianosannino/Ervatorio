@@ -40,7 +40,15 @@ ul{padding-left:22px}li{margin:5px 0;font-size:.95rem}
 .related a{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:6px 14px;text-decoration:none;color:var(--verde);font-size:.85rem}
 footer{background:var(--verde);color:#c3b89e;padding:22px 20px;font-size:.8rem;text-align:center}
 footer a{color:var(--ouro2)}
-@media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}</style>
+@media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}
+.resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:26px 0 14px}
+.resumo h3{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#8c6a2f;margin:0 0 6px}
+.resumo p{font-size:.95rem;margin:0 0 6px}.resumo ul{padding-left:18px;margin:0 0 6px}.resumo li{font-size:.92rem;margin:2px 0}
+.resumo .det{font-size:.82rem;color:#6b5a2e}
+.alerta{background:#fff3e0;border:1px solid #e0b060;border-left:4px solid #b8965a;border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;font-size:.92rem}
+.alerta ul{margin-top:6px}
+h2.tecnico{margin-top:30px;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;color:#6b5a2e;border-bottom:2px solid var(--ouro)}
+.mute{color:#8b7e68;font-style:italic}</style>
 <link rel="stylesheet" href="/css/nav.css">
 </head>
 <body>
@@ -71,21 +79,29 @@ footer a{color:var(--ouro2)}
   <p class="tagline">O antisséptico aromático do mediterrâneo — expectorante e antimicrobiano de primeira linha com evidência clínica para bronquite aguda superior a muitos fármacos convencionais.</p>
 </div></header>
 <main class="wrap">
+  <section class="resumo" aria-label="Resumo">
+    <div><h3>Para que serve</h3><p>Expectorante, antisséptico, tosse, bronquite</p><p class="det">Timol: antisséptico pulmonar potente. Usado como xarope na Europa há séculos. Dissolve muco e desinfeta vias aéreas.</p></div>
+    <div><h3>Como preparar</h3><p>90°C · 8 min · 1 col. sopa / 250ml<br><span class="det">3x ao dia</span></p></div>
+    <div><h3>Quem deve evitar</h3><ul><li>Alergia às Lamiaceae</li><li>Gestação em doses de OE — timol emenagogo; infusão segura moderadamente</li><li>Hipotireoidismo — cautela em uso regular intenso</li></ul><p class="det">Seguro para: hipertensos</p></div>
+  </section>
   <p>
     <a class="cta gold" href="/#ficha/tomilho">Abrir no Ervatório</a>
     <a class="cta" href="/#ervas">Explorar todas as ervas</a>
   </p>
+  
+  <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+  <h2 class="tecnico">Detalhe técnico</h2>
   <section><h2>Identificação</h2><dl><div class="row"><dt>Nome científico</dt><dd>Thymus vulgaris L.</dd></div><div class="row"><dt>Família botânica</dt><dd>Lamiaceae</dd></div><div class="row"><dt>Tipo</dt><dd>Fitoterápico expectorante / antimicrobiano / antisséptico</dd></div><div class="row"><dt>Parte usada</dt><dd>Partes aéreas (folhas e flores), frescas ou secas.</dd></div></dl><ul><li>Tomilho · tomilho-comum · tomilho-vulgar</li><li>Thyme (inglês) · Thym (francês) · Thymian (alemão)</li><li>Timo (italiano/espanhol)</li></ul></section>
 <section><h2>Características</h2><dl><div class="row"><dt>Sabor</dt><dd>Aromático-herbáceo quente, levemente picante, timol característico, levemente amargo, persistente e aquecedor.</dd></div><div class="row"><dt>Aroma</dt><dd>Timol pungente e quente, herbal-mediterrâneo intenso, carvacrol, leve floral.</dd></div><div class="row"><dt>Cor da infusão</dt><dd>Verde-amarelado a âmbar. #C8B04A</dd></div><div class="row"><dt>Intensidade</dt><dd>3–4/5 — aromático dominante.</dd></div></dl></section>
 <section><h2>Como preparar</h2><dl><div class="row"><dt>Temperatura</dt><dd>85–90 °C (timol volátil — não ferver).</dd></div><div class="row"><dt>Quantidade</dt><dd>1–2 g de partes aéreas secas para 250 ml.</dd></div><div class="row"><dt>Método</dt><dd>Infusão coberta.</dd></div><div class="row"><dt>Melhor momento</dt><dd>3x ao dia em episódios respiratórios agudos.</dd></div><div class="row"><dt>Combina com</dt><dd>Mel · Limão · Gengibre · Sabugueiro · Guaco · Eucalipto (blends respiratórios)</dd></div></dl></section>
-<section><h2>Ações principais</h2><ul><li>Expectorante (fluidifica muco brônquico)</li><li>Antisséptico respiratório (timol — antimicrobiano de mucosas)</li><li>Antitussígeno</li><li>Broncodilatador leve</li><li>Antimicrobiano potente (timol — bactérias e fungos)</li><li>Anti-inflamatório</li><li>Antioxidante</li><li>Alergia às Lamiaceae</li><li>Gestação em doses de OE — timol emenagogo; infusão segura moderadamente</li><li>Hipotireoidismo — cautela em uso regular intenso</li></ul></section>
+<section><h2>Ações principais</h2><ul><li>Expectorante (fluidifica muco brônquico)</li><li>Antisséptico respiratório (timol — antimicrobiano de mucosas)</li><li>Antitussígeno</li><li>Broncodilatador leve</li><li>Antimicrobiano potente (timol — bactérias e fungos)</li><li>Anti-inflamatório</li><li>Antioxidante</li></ul></section>
 <section><h2>Componentes ativos</h2><ul><li><strong>TIMOL</strong> — 20–54% do OE — Antimicrobiano potente, expectorante, antisséptico</li><li><strong>CARVACROL</strong> — 1–10% do OE — Antimicrobiano, anti-inflamatório</li><li><strong>P-CIMENO</strong> — Presente — Antimicrobiano</li><li><strong>ÁCIDO ROSMARÍNICO</strong> — Presente — Antioxidante, anti-inflamatório</li><li><strong>TIMOSINA</strong> — Flavonoide — presente — Anti-inflamatório</li></ul></section>
 <section><h2>Contraindicações e cuidados</h2><ul><li>Alergia às Lamiaceae</li><li>Gestação em doses de OE — timol emenagogo; infusão segura moderadamente</li><li>Hipotireoidismo — cautela em uso regular intenso</li></ul></section>
 
+
 <section><h2>História e cultura</h2><p>O timol do tomilho foi o principal antisséptico clínico antes da era dos antibióticos — o Listerine original continha timol como princípio ativo (ainda contém). Hospitais europeus do século XIX usavam vapores de tomilho para &quot;purificar o ar&quot; das enfermarias — empirismo que a farmacologia confirmou: timol é bactericida de amplo espectro. Os egípcios usavam timol no processo de mumificação — preservativo antimicrobiano natural.</p></section>
 <section><h2>Status regulatório</h2><dl><div class="row"><dt>ANVISA (Brasil)</dt><dd>Monografia oficial. Indicações: expectorante, antisséptico respiratório.</dd></div><div class="row"><dt>EMA (Europa)</dt><dd>Monografia HMPC — well-established use para bronquite e tosse.</dd></div><div class="row"><dt>Sazonalidade</dt><dd>Folhas disponíveis o ano todo (cultivo perene)</dd></div></dl></section>
-
-  <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+<section><h2>Fontes</h2><p class="mute">Fontes em revisão.</p></section>
   <section><h2>Ervas relacionadas</h2><div class="related"><a href="/erva/equinacea/">Equinácea</a><a href="/erva/sabugueiro/">Sabugueiro</a><a href="/erva/erva-de-sao-joao/">Erva-de-São-João</a><a href="/erva/dente-de-leao/">Dente-de-Leão</a></div></section>
 </main>
 <footer class="erv-footer erv-estatico" aria-label="Rodapé">

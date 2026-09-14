@@ -40,7 +40,15 @@ ul{padding-left:22px}li{margin:5px 0;font-size:.95rem}
 .related a{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:6px 14px;text-decoration:none;color:var(--verde);font-size:.85rem}
 footer{background:var(--verde);color:#c3b89e;padding:22px 20px;font-size:.8rem;text-align:center}
 footer a{color:var(--ouro2)}
-@media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}</style>
+@media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}
+.resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:26px 0 14px}
+.resumo h3{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#8c6a2f;margin:0 0 6px}
+.resumo p{font-size:.95rem;margin:0 0 6px}.resumo ul{padding-left:18px;margin:0 0 6px}.resumo li{font-size:.92rem;margin:2px 0}
+.resumo .det{font-size:.82rem;color:#6b5a2e}
+.alerta{background:#fff3e0;border:1px solid #e0b060;border-left:4px solid #b8965a;border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;font-size:.92rem}
+.alerta ul{margin-top:6px}
+h2.tecnico{margin-top:30px;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;color:#6b5a2e;border-bottom:2px solid var(--ouro)}
+.mute{color:#8b7e68;font-style:italic}</style>
 <link rel="stylesheet" href="/css/nav.css">
 </head>
 <body>
@@ -71,21 +79,29 @@ footer a{color:var(--ouro2)}
   <p class="tagline">A orquídea do México — o único membro da família das orquídeas com uso alimentar global, com farmacologia de vanilina que vai muito além do aroma e uma história de cultivo artesanal extraordinária.</p>
 </div></header>
 <main class="wrap">
+  <section class="resumo" aria-label="Resumo">
+    <div><h3>Para que serve</h3><p>A orquídea do México — o único membro da família das orquídeas com uso alimentar global, com farmacologia de vanilina que vai muito além do aroma e uma história de cultivo artesanal extraordinária.</p><p class="det">Ansiolítico leve. Antioxidante</p></div>
+    <div><h3>Como preparar</h3><p></p></div>
+    <div><h3>Quem deve evitar</h3><p>Nenhuma contraindicação registrada nesta ficha.</p></div>
+  </section>
   <p>
     <a class="cta gold" href="/#ficha/baunilha">Abrir no Ervatório</a>
     <a class="cta" href="/#ervas">Explorar todas as ervas</a>
   </p>
+  
+  <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+  <h2 class="tecnico">Detalhe técnico</h2>
   <section><h2>Identificação</h2><dl><div class="row"><dt>Nome científico</dt><dd>Vanilla planifolia Andrews (sin.: V. fragrans)</dd></div><div class="row"><dt>Família botânica</dt><dd>Orchidaceae (orquídeas — família mais diversa das angiospermas)</dd></div><div class="row"><dt>Tipo</dt><dd>Especiaria aromática / ansiolítica / antioxidante</dd></div><div class="row"><dt>Parte usada</dt><dd>Vagens (favas) curadas — o processo de cura (fermentação enzimática) produz a vanilina e todos os compostos aromáticos. Vagem verde não tem aroma.</dd></div></dl><ul><li>Baunilha · baunilha-do-méxico · vanila</li><li>Vanilla (inglês/francês/espanhol/alemão — universalmente emprestado do náhuatl tlilxochitl)</li><li>Tlilxochitl (náhuatl — &quot;flor preta&quot;)</li></ul></section>
 <section><h2>Características</h2><dl><div class="row"><dt>Sabor</dt><dd>Doce-cremoso suave, floral-amadeirado, vanilina quente, levemente defumado-curado. O doce mais reconhecível e amado do mundo.</dd></div><div class="row"><dt>Aroma</dt><dd>Vanilina intensa (doce-floral-cremoso), heliotropina, coumarina leve, âmbar-madeira.</dd></div><div class="row"><dt>Cor da infusão</dt><dd>Âmbar-dourado pálido. #E0C878</dd></div><div class="row"><dt>Intensidade</dt><dd>3/5 — doce dominante, aromático sedante.</dd></div></dl></section>
 <section><h2>Como preparar</h2><dl><div class="row"><dt>Combina com</dt><dd>Cacau · Canela · Cardamomo · Leite de coco · Mel · Cúrcuma · Açafrão (blends premium quentes)</dd></div></dl></section>
-<section><h2>Ações principais</h2><ul><li>Ansiolítico leve (vanilina — modulação GABAérgica)</li><li>Antioxidante (vanilina — captadora de radicais livres)</li><li>Antimicrobiano (vanilina — conservante natural)</li><li>Anti-inflamatório</li><li>Neuroprotetor (estudos preliminares com vanilina)</li><li>Contraindicações: Alergia à baunilha (rara). Sem contraindicações relevantes.</li></ul></section>
-<section><h2>Componentes ativos</h2><ul><li><strong>VANILINA</strong> — Antioxidante, antimicrobiano, ansiolítico, flavorizante universal</li><li><strong>P-HIDROXIBENZALDEÍDO</strong> — Antioxidante, antimicrobiano</li><li><strong>ÁCIDO VANÍLICO</strong> — Antioxidante, neuroprotetor</li><li><strong>HELIOTROPINA</strong> — Aromático, sedativo suave</li><li><strong>GUAIACOL</strong> — Antimicrobiano, defumado aromático</li></ul></section>
+<section><h2>Ações principais</h2><ul><li>Ansiolítico leve (vanilina — modulação GABAérgica)</li><li>Antioxidante (vanilina — captadora de radicais livres)</li><li>Antimicrobiano (vanilina — conservante natural)</li><li>Anti-inflamatório</li><li>Neuroprotetor (estudos preliminares com vanilina)</li></ul></section>
+<section><h2>Componentes ativos</h2><ul><li><strong>VANILINA</strong> — Antioxidante, antimicrobiano, ansiolítico, flavorizante universal</li><li><strong>P-HIDROXIBENZALDEÍDO</strong> — Antioxidante, antimicrobiano</li><li><strong>ÁCIDO VANÍLICO</strong> — Antioxidante, neuroprotetor</li><li><strong>HELIOTROPINA</strong> — Aromático, sedativo suave</li><li><strong>GUAIACOL</strong> — Antimicrobiano, defumado aromático</li></ul><p>Contraindicações: Alergia à baunilha (rara). Sem contraindicações relevantes.</p></section>
+
 
 
 <section><h2>História e cultura</h2><p>A baunilha é a única especiaria nativa das Américas que conquistou o mundo inteiro — cravo e pimenta vieram da Ásia, canela do Ceilão, cardamomo da Índia. A baunilha saiu do México com os astecas que a usavam no xocolatl (chocolate) e chegou à Europa com Hernán Cortés em 1520.  O desafio da baunilha é a polinização — sua flor tem barreira física entre antera e estigma que impede autopolinização. No México, uma abelha nativa (Eulaema) realiza a polinização. Fora do México, sem esse inseto, a polinização é manual — cada flor, aberta apenas um dia, polinizada à mão. Em Madagascar (maior produtor mundial), centenas de agricultores polinizam à mão cada flor da produção. É o trabalho humano mais delicado da agricultura global.</p><p>A maior parte da &quot;baunilha&quot; consumida no Brasil é vanilina sintética (produto petroquímico) — sem a complexidade aromática da baunilha natural. O Brasil tem potencial de cultivo no AM e PA que quase não foi explorado.</p></section>
 <section><h2>Status regulatório</h2><dl><div class="row"><dt>ANVISA (Brasil)</dt><dd>Uso alimentar. Vanilina sintética: amplamente regulada.</dd></div><div class="row"><dt>Sazonalidade</dt><dd>Cura das favas: 3–6 meses após colheita</dd></div></dl></section>
-
-  <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+<section><h2>Fontes</h2><p class="mute">Fontes em revisão.</p></section>
   <section><h2>Ervas relacionadas</h2><div class="related"><a href="/erva/noz-moscada/">Noz-moscada</a><a href="/erva/acafrao-verdadeiro/">Açafrão-Verdadeiro</a><a href="/erva/hibisco-rosa/">Hibisco-Rosa</a><a href="/erva/capim-santo/">Capim-Santo</a></div></section>
 </main>
 <footer class="erv-footer erv-estatico" aria-label="Rodapé">

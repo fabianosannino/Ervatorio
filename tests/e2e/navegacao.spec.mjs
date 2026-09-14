@@ -60,6 +60,7 @@ test.describe('rotas por hash (D6)', () => {
     ['#criarblend',     'page-search',        '#encontrar'],
     ['#quiz',           'page-quiz',          '#quiz'],
     ['#perfil',         'page-perfil',        '#perfil'],
+    ['#ficha/guarana',  'page-ficha',         '#ficha/guarana'],
   ];
   for (const [pedido, pagina, canonico] of casos) {
     test(`${pedido} abre ${pagina}`, async ({ page }) => {

@@ -15,6 +15,8 @@ const essentialFiles = [
   'manifest.json',
   'sw.js',
   'js/nav-data.js',
+  'js/herbs-data.js',
+  'js/ficha-resumo.js',
   'js/app.js',
   'js/config.js',
   'js/ervaria.js',

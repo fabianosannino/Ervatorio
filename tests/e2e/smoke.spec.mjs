@@ -78,7 +78,8 @@ test.describe('SEO estático (Onda 5)', () => {
   test('página de erva tem conteúdo real e JSON-LD válido', async ({ page }) => {
     await page.goto('/erva/guarana/');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Guaraná/);
-    await expect(page.getByText(/Como preparar/)).toBeVisible();
+    // «Como preparar» aparece no resumo e no detalhe técnico (PR 06).
+    await expect(page.getByText(/Como preparar/).first()).toBeVisible();
     const ld = await page.locator('script[type="application/ld+json"]').textContent();
     const parsed = JSON.parse(ld);
     expect(JSON.stringify(parsed)).toContain('BreadcrumbList');
