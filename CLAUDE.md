@@ -335,9 +335,10 @@ e as decisões D1–D14. As que mais mudam o jeito de trabalhar aqui:
   É o resumo público de `docs/compliance/retencao.md`; **dado novo = linha nos
   dois, no mesmo PR** que o cria. A política só afirma o que o código faz —
   o que falta (double opt-in, link de descadastro, operador de pagamento) é
-  dito como pendente. Só CNPJ e encarregado ficam `[DEFINIR]`, por decisão
-  do dono; `tests/e2e/legal.spec.mjs` conta os placeholders e recusa
-  «Mercado Pago» nas páginas legais.
+  dito como pendente. **Não há mais `[DEFINIR]` nas páginas legais** (v1.2,
+  14/09): controlador (CNPJ 20.507.723/0001-99), encarregado, regime fiscal,
+  canal de atendimento e foro estão preenchidos, e `tests/e2e/legal.spec.mjs`
+  recusa tanto um placeholder de volta quanto «Mercado Pago».
 
 ## Qualidade (Definition of Done)
 - Acessibilidade: elementos interativos são `<button>`/`<a>` reais, operáveis por teclado; modais com foco/ESC/`aria-modal`; contraste AA.

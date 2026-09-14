@@ -67,7 +67,7 @@ três commits** (D2).
 | 07 | Descobrir e Preparar como abas de verdade (fusão de renderizadores) | **Quinta rodada (16/09)** — Origens absorve Onde beber; hub «Como preparar» com seis cards. Ver D24–D25 para o que fica. | PR `feat/descobrir-preparar` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 08 | Meu Ervatório + `perfil_saude` (tabela própria, RLS, consentimento com timestamp); cadastro reduzido; «Excluir meus dados» | **Segunda rodada (15/09)** — ver D15–D17. O Diário fica para o 08b. | PR `feat/conta-e-consentimento` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 08b | Diário de infusões (`diario_infusoes`, RLS dono, interruptor `diario`) | **Terceira rodada (16/09)** — ver D19–D21. | PR `feat/diario-infusoes` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
-| 09 | `privacidade.html`: CNPJ/DPO, dado de saúde, base legal, retenção | **Oitava rodada (16/09)** — tudo, menos CNPJ e nome do encarregado, que continuam `[DEFINIR]` por decisão pendente do dono (D35). | PR `docs/privacy-update` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
+| 09 | `privacidade.html`: CNPJ/DPO, dado de saúde, base legal, retenção | **Concluído** — os seis `[DEFINIR]` das duas páginas legais foram preenchidos pelo dono no mesmo dia (v1.2); ver D35. | PR `docs/privacy-update` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 10 | Páginas estáticas para receitas, blends, tipos de chá | **Nona rodada (16/09)** — ver D36. | PR `feat/static-pages-recipes-blends` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 11 | Clube (lista de espera → pré-venda → Stripe) | Depois | `feat/clube-waitlist` → `feat/stripe-checkout` |
 
@@ -488,6 +488,14 @@ página (o script é autossuficiente) em vez de mandar para o app. A
 política lista só o que o código faz; o que ainda não faz (double opt-in,
 link de descadastro, operador de pagamento) está dito como pendente, não
 prometido.
+
+> **Fechado no mesmo dia.** O dono informou os valores e a v1.2 das duas
+> páginas os traz: controlador e operador = CNPJ 20.507.723/0001-99,
+> Alameda Campinas, 696 — São Paulo/SP; encarregado = Fabiano Sannino
+> (`fsannino@collabz.com.br`); NF-e em regime normal; atendimento por
+> WhatsApp (11) 98999-1358; foro da comarca de São Paulo/SP. O teste
+> passou a recusar qualquer `[DEFINIR]` nas duas páginas — placeholder
+> que volta a uma página legal publicada é regressão, não pendência.
 
 **D36 — Página estática só do que está no repositório, com o mesmo gerador
 e a mesma moldura.** `/receitas/<id>/` (23), `/blends/<slug>/` (12, os
