@@ -16,6 +16,7 @@ Referência operacional interna. A versão pública resumida está em `privacida
 | Pedidos (valores, itens, status) | `orders`, `order_items` | **5 anos** após o exercício fiscal (obrigação fiscal/CDC) | Mantidos **anonimizados**: `user_id → NULL`, snapshot de endereço reduzido a cidade/UF/país, nome → `[excluído a pedido do titular]` |
 | Payload de pagamento (auditoria) | `orders.payment_payload` | Igual ao pedido | Vazio hoje: a loja está fechada (`pagamentos` desligado) e o Mercado Pago está congelado sem uso. Revisar quando a Stripe entrar |
 | Consentimento LGPD do cadastro | `user_profiles.lgpd_accepted_at` | Enquanto a conta existir | CASCADE; o registro de consentimento de pedidos antigos permanece implícito no pedido anonimizado |
+| Saída da newsletter (`descadastrado_em`, `token_descadastro`) | `newsletter_subscribers` (migration `20260917120000`) | Enquanto a linha existir | `descadastrado_em` é o fato e a prova da saída; `active` é projeção mantida por gatilho — **não escreva `active`**. O token é capacidade de sair, não identidade: a Edge Function nunca devolve o e-mail a quem o apresenta |
 | Escolha de cookies | `localStorage` do navegador (`erv_consent_v1`) | Até o usuário limpar/alterar | Controlado pelo próprio titular (banner) |
 | Uso sem conta: estante, blend, blends salvos, carrinho, idioma, tema, perfil local, cache do catálogo e das fichas, monitor de cafeína (`erb_caf_<dia>`), resultado do teste de 1 minuto, opt-in da loja | `localStorage` (`erb_*`, `erv_loja_optin`) | Até o usuário limpar | Só no aparelho; nunca enviado ao servidor sem conta. O monitor de cafeína **nunca** sai do aparelho |
 | Restrições de sessão do «Encontre seu chá» | memória do navegador (`encState`) | A sessão | Não vai para o servidor nem para o `localStorage` (`encontrar.spec.mjs` confere) |
@@ -31,13 +32,29 @@ Referência operacional interna. A versão pública resumida está em `privacida
 1. **Autoatendimento**: menu do perfil → "Excluir minha conta" → Edge Function `user-data-rights` (anonimiza pedidos → deleta Auth user → CASCADE).
 2. **Via encarregado (DPO)**: solicitação pelo canal da Política de Privacidade → admin executa a mesma function (ou `admin-delete-user` após anonimização) em até 15 dias.
 3. **Backups**: a exclusão não remove o dado de backups já existentes; ele expira com a janela de retenção do backup. Em caso de solicitação expressa, documentar essa janela na resposta ao titular.
-4. **Newsletter anônima** (`newsletter_subscribers`): **hoje é processo manual**. O inscrito não tem conta, e nenhuma policy permite que ele mesmo se descadastre — só admin. Ao receber o pedido pelo canal da Política de Privacidade, executar como `service_role`:
+4. **Newsletter anônima** (`newsletter_subscribers`): **autoatendimento pelo link do e-mail** (migration `20260917120000`). Cada linha tem um `token_descadastro`, e o link `https://ervatorio.com.br/descadastro.html?t=<token>` leva à página onde o titular confirma com um clique — a Edge Function `newsletter-unsubscribe` grava `descadastrado_em`. Prazo: imediato.
+
+   **Todo e-mail de campanha precisa trazer esse link**, com o token da própria linha. A consulta que monta a lista de envio, como `service_role`:
 
    ```sql
-   delete from public.newsletter_subscribers where email = '<e-mail do titular>';
+   select email, locale,
+          'https://ervatorio.com.br/descadastro.html?t=' || token_descadastro as link_descadastro
+     from public.newsletter_subscribers
+    where active
+    order by created_at;
    ```
 
-   Prazo: 15 dias, igual aos demais. **Isto continua sendo uma lacuna conhecida.** A Edge Function `newsletter-subscribe` já existe, mas ela cobriu a captação, não o descadastro — o link com token ficou para a etapa 3. Enquanto não existir, todo e-mail de campanha precisa trazer o endereço do encarregado em vez de um link de unsubscribe.
+   Vale também pôr o cabeçalho `List-Unsubscribe: <…>` com a mesma URL, que é o que faz o botão nativo do Gmail e do Outlook funcionar.
+
+   Quem perdeu o e-mail continua atendido pelo canal do encarregado, em até 15 dias — aí o caminho é registrar o fato, não apagar a linha:
+
+   ```sql
+   update public.newsletter_subscribers
+      set descadastrado_em = now()
+    where email = '<e-mail do titular>';
+   ```
+
+   Exclusão de verdade (`delete`) só se o titular pedir exclusão, não descadastro: o `descadastrado_em` é a prova de que ele pediu para sair, e apagar a linha apaga a prova junto — e ainda deixa a porta aberta para uma reinscrição acidental por importação de lista antiga.
 
 ### Prova de consentimento (`consent_at`)
 
@@ -48,6 +65,10 @@ Agora quem grava é o servidor: a function aceita só `email`, `source` e `local
 Vale ser exato sobre o que essa data prova: **o momento em que o formulário foi enviado, não a confirmação do titular.** Sem double opt-in, ninguém garante que o dono do endereço foi quem digitou. Para uma inscrição contestada, a defesa é fraca. O double opt-in fecha isso e está na etapa 3.
 
 Reinscrição não ressuscita quem saiu: a function usa `ignoreDuplicates`, então reenviar o formulário com um e-mail que está `active = false` **não** o reativa.
+
+### Privilégios: o que os default privileges tinham deixado aqui
+
+Conferido em produção em 17/09: `anon` e `authenticated` tinham `DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE` em `newsletter_subscribers` — os mesmos `ALTER DEFAULT PRIVILEGES` que já tinham mordido a `perfil_saude`. A RLS segurava SELECT/INSERT/UPDATE/DELETE (não há policy para `anon`) e a API REST não expõe TRUNCATE, então não havia exploração conhecida. Mas **TRUNCATE não passa por RLS**, e é a única operação que esvaziaria de uma vez a lista que esta casa chama de ativo. A migration `20260917120000` faz `REVOKE ALL ... FROM anon, authenticated`; `service_role` fica, que é quem as Edge Functions usam. Nada no cliente lê esta tabela.
 
 ## A versão pública
 

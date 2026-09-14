@@ -17,9 +17,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Política de Privacidade', () => {
-  test('v1.2 descreve o sistema de hoje, sem Mercado Pago e sem nenhum [DEFINIR]', async ({ page }) => {
+  test('v1.3 descreve o sistema de hoje, sem Mercado Pago e sem nenhum [DEFINIR]', async ({ page }) => {
     await page.goto('/privacidade.html', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('.updated')).toContainText('Versão 1.2');
+    await expect(page.locator('.updated')).toContainText('Versão 1.3');
     const main = page.locator('main');
     const texto = await main.textContent();
     expect(texto).not.toMatch(/Mercado ?Pago/i);
@@ -28,6 +28,8 @@ test.describe('Política de Privacidade', () => {
     await expect(page.locator('#controlador + p')).toContainText('CNPJ 20.507.723/0001-99');
     await expect(page.locator('#encarregado + p a[href="mailto:fsannino@collabz.com.br"]')).toHaveCount(1);
     // O que o código faz, nomeado.
+    // A política promete o que existe: o link de descadastro passou a existir.
+    expect(texto).toMatch(/todo e-mail traz um link de descadastro/);
     for (const re of [/art\. 11, I/, /Saúde e restrições/, /Diário de infusões/, /Restrições informadas sem conta/, /Indicação de parceiros/, /Google Tag Manager/, /Microsoft Clarity/, /Meta Pixel/, /Baixar meus dados/, /Excluir meus dados/, /24 meses/, /A loja está fechada/]) {
       expect(texto).toMatch(re);
     }

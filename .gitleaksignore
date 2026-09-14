@@ -1,0 +1,28 @@
+# ============================================================
+# Exceções da varredura de segredos (gitleaks)
+# ============================================================
+# A regra da casa não muda: segredo não entra no repositório. Este
+# arquivo abre exceção por FINGERPRINT — que inclui o hash do commit,
+# o arquivo, a regra e a linha. Cada entrada casa com um achado só e
+# com nada mais: não desliga regra, não vale para outro arquivo, nem
+# para um commit futuro.
+#
+# Por que é preciso existir: o `secret-scan` roda sobre o DIFF DE CADA
+# COMMIT, não sobre a árvore. Um valor removido num commit seguinte
+# continua sendo acusado no commit que o introduziu — que é o
+# comportamento certo para segredo de verdade, porque apagar depois não
+# desvaza nada.
+#
+# Se algum dia um segredo DE VERDADE entrar aqui, o caminho não é esta
+# lista: é ROTACIONAR a credencial. Entrada nova só com o mesmo padrão
+# — um fingerprint, e o comentário dizendo por que aquilo não é
+# segredo.
+# ============================================================
+
+# UUID inventado, escrito à mão como token de teste do descadastro.
+# O gitleaks acertou em acusar: entropia alta num literal chamado TOKEN
+# é indistinguível de credencial. Não era segredo, não abria nada, e o
+# arquivo já foi corrigido no commit seguinte (431e7f3) — o teste
+# sorteia o token com randomUUID() a cada execução, então o literal não
+# existe mais na árvore.
+ec4e69ab9a816369e7e08e9f30789a319e82d4a4:tests/e2e/descadastro.spec.mjs:generic-api-key:13

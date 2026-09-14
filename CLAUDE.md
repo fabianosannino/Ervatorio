@@ -101,6 +101,19 @@
 - **Nunca** coloque `service_role`, tokens de API ou secrets em arquivos servidos ao navegador, no HTML, ou no repositório.
 - Segredos vivem em Supabase Secrets / Vercel Environment Variables. A única chave pública aceitável é a `sb_publishable_...` (anon/publishable).
 - Antes de commitar, rode varredura de segredos (gitleaks/trufflehog). O CI também roda.
+- **O `secret-scan` varre o diff de cada commit, não a árvore.** Valor removido
+  num commit seguinte **continua acusado** no commit que o introduziu — e está
+  certo: apagar depois não desvaza nada. Se entrar segredo de verdade, o
+  caminho é **rotacionar a credencial**, não limpar o arquivo.
+- **Não escreva valor de alta entropia à mão, nem de mentira.** Um UUID
+  inventado num literal chamado `TOKEN` é indistinguível de credencial, e o
+  gitleaks acerta em acusar (aconteceu em `tests/e2e/descadastro.spec.mjs`).
+  Em teste, sorteie: `randomUUID()`.
+- **Exceção vai em `.gitleaksignore`, por fingerprint, uma por achado.** O
+  fingerprint prende commit, arquivo, regra e linha, então não desliga regra
+  nem vale para o commit seguinte. Toda entrada leva o comentário dizendo por
+  que aquilo não é segredo. Regra inteira desligada é o que transforma a
+  varredura em passo verde decorativo.
 
 ## Migrations
 - Toda mudança de schema é uma migration versionada e **idempotente** (`IF NOT EXISTS`, `CREATE OR REPLACE`, `DROP ... IF EXISTS`), em `supabase/migrations/`.
@@ -334,6 +347,35 @@ e as decisões D1–D14. As que mais mudam o jeito de trabalhar aqui:
   do teste reaplica **só** a migration nova, e o teste antigo dos
   interruptores continua contando quatro porque roda sozinho.
 - Mexeu nisso? Rode `supabase/tests/20260916_diario_infusoes_test.sql`.
+
+## Newsletter — o inscrito sai sozinho, e a saída é um fato
+
+- **`descadastrado_em` é a verdade; `active` é projeção** mantida por
+  gatilho (migration `20260917120000`), como `orders.status` e
+  `site_settings.payments_enabled`. **Nunca escreva `active`** — registre a
+  data. Um booleano sozinho responde «está na lista?» e perde «desde
+  quando saiu», que é a prova a apresentar se a inscrição for contestada.
+- **O link do e-mail não descadastra sozinho.** Cliente de e-mail e
+  antivírus corporativo abrem links para varrer (Outlook Safe Links,
+  Gmail, Proofpoint); um `GET` que descadastrasse tiraria metade da lista
+  sem ninguém ter clicado. O e-mail abre `descadastro.html?t=<token>`, que
+  é só HTML, e a Edge Function `newsletter-unsubscribe` é **POST**. O 405
+  no `GET` é a proteção, não uma limitação a corrigir.
+- **`token_descadastro` é capacidade, não identidade.** Com ele só se faz
+  uma coisa: sair. A function **nunca devolve o e-mail** da linha — senão
+  um UUID sorteado viraria oráculo de endereço. Token inexistente recebe
+  «link inválido»; dizer «pronto, você saiu» a quem continua na lista é a
+  mentira pior.
+- **Todo e-mail de campanha leva o link com o token da própria linha.** A
+  consulta está em `docs/compliance/retencao.md`. Sem isso, a promessa da
+  seção 7 da `privacidade.html` (v1.3) é falsa.
+- **Tabela antiga também tinha o buraco dos default privileges**: `anon` e
+  `authenticated` tinham `TRUNCATE` aqui (TRUNCATE **não** passa por RLS).
+  A migration revoga tudo dos dois. Quem escreve é a Edge Function, como
+  `service_role`.
+- Double opt-in **ainda não existe**: `consent_at` prova o envio do
+  formulário, não a confirmação do titular. É a próxima migration.
+- Mexeu nisso? Rode `supabase/tests/20260917_newsletter_descadastro_test.sql`.
 
 ## Compliance
 - Nenhum script de tracking (analytics, pixel) dispara antes do **consentimento** do usuário (LGPD / Consent Mode v2).

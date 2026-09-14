@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sair da newsletter — Ervatório</title>
+<meta name="description" content="Página de descadastro da newsletter do Ervatório.">
+<!-- Página de serviço: não entra em busca nem no sitemap. Quem chega
+     aqui vem do link de um e-mail, com o token na query. -->
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/icon-192.png">
+<style>
+  :root{--verde:#1a3a2a;--verde-2:#2d5440;--ouro:#b8965a;--creme:#f5ede0;--ink:#22201a;--panel:#fbf6ea;--line:#e0d5bd}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Georgia,'Times New Roman',serif;background:#f3ecdd;color:var(--ink);line-height:1.7}
+  header{background:linear-gradient(160deg,var(--verde),var(--verde-2));color:var(--creme);padding:48px 20px;border-bottom:3px solid var(--ouro)}
+  .wrap{max-width:660px;margin:0 auto;padding:0 20px}
+  header a{color:var(--ouro);text-decoration:none;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase}
+  h1{font-size:clamp(1.6rem,4vw,2.2rem);margin-top:10px;font-weight:600}
+  main{padding:40px 0 60px}
+  p{font-size:1rem;margin-bottom:14px}
+  .acao{margin:26px 0}
+  .btn{display:inline-block;background:var(--verde);color:var(--creme);border:1px solid var(--ouro);border-radius:10px;padding:14px 26px;font:inherit;font-size:1rem;cursor:pointer;text-decoration:none}
+  .btn:hover{background:var(--verde-2)}
+  .btn[disabled]{opacity:.6;cursor:progress}
+  .nota{font-size:.88rem;color:#6b5a2e}
+  .caixa{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--ouro);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0}
+  .erro{border-left-color:#a3241c;background:#f7e2df}
+  [hidden]{display:none!important}
+  footer{background:var(--verde);color:#c3b89e;padding:24px 20px;font-size:.82rem;text-align:center}
+  footer a{color:var(--ouro)}
+</style>
+<link rel="stylesheet" href="/css/editorial-pages.css">
+<!-- erv-nav-css -->
+<link rel="stylesheet" href="/css/nav.css">
+<!-- /erv-nav-css -->
+</head>
+<body>
+<!-- erv-nav-estatica -->
+<nav class="erv-nav erv-estatico" aria-label="Navegação principal">
+  <div class="erv-nav-bar">
+    <button type="button" class="erv-nav-burger" aria-label="Abrir menu" aria-expanded="false" aria-controls="ervMenuSheet"><svg class="ui-ico" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <a class="erv-logo" href="/" title="Voltar à página inicial"><span class="erv-logo-mark">Ervatório</span><span class="erv-logo-sub">Ervas do Brasil e do Mundo</span></a>
+    <div class="erv-nav-groups"><a class="erv-nav-item" data-group="encontrar" href="/#encontrar">Encontre seu chá</a><a class="erv-nav-item" data-group="descobrir" href="/erva/">Descobrir</a><a class="erv-nav-item" data-group="preparar" href="/receitas/">Preparar &amp; criar</a></div>
+    <div class="erv-nav-actions">
+      <a class="erv-nav-icon erv-nav-search" href="/#encontrar" aria-label="Buscar"><svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><span class="erv-nav-icon-label">Buscar erva, sintoma ou receita</span></a>
+      <a class="erv-nav-icon" href="/#estante" aria-label="Minha estante"><svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10z"/></svg></a>
+      <a class="erv-nav-icon" href="/#perfil" aria-label="Meu Ervatório"><svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></a>
+    </div>
+  </div>
+</nav>
+<div class="erv-sheet erv-estatico" id="ervMenuSheet" role="dialog" aria-modal="true" aria-label="Menu" hidden>
+  <div class="erv-sheet-top"><span class="erv-sheet-title">Menu</span><button type="button" class="erv-sheet-close" aria-label="Fechar"><svg class="ui-ico" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="erv-sheet-groups"><a class="erv-sheet-group" href="/#encontrar"><span class="erv-sheet-group-name">Encontre seu chá</span><span class="erv-sheet-group-sub">Conte como você está e veja chás para o seu momento</span></a><a class="erv-sheet-group" href="/erva/"><span class="erv-sheet-group-name">Descobrir</span><span class="erv-sheet-group-sub">Guia de Ervas, tipos de chá, origens e sabores</span></a><a class="erv-sheet-group" href="/receitas/"><span class="erv-sheet-group-name">Preparar &amp; criar</span><span class="erv-sheet-group-sub">Receitas, criar meu blend e como preparar</span></a></div>
+  <div class="erv-sheet-label">Meu Ervatório</div>
+  <div class="erv-sheet-grid"><a class="erv-sheet-cell" href="/#estante">Minha estante</a><a class="erv-sheet-cell" href="/#jornada">Minha jornada</a><a class="erv-sheet-cell" href="/#jogo">Jogo</a><a class="erv-sheet-cell" href="/#perfil">Perfil</a></div>
+  <div class="erv-sheet-foot"><a href="/#sobre">Sobre</a><span aria-hidden="true">·</span><a href="/#clube">Clube</a><span aria-hidden="true">·</span><a href="/pausa.html">Cultura da Pausa</a><span aria-hidden="true">·</span><a href="/privacidade.html">Privacidade</a></div>
+</div>
+<!-- /erv-nav-estatica -->
+<header>
+  <div class="wrap">
+    <a href="/">← Voltar ao Ervatório</a>
+    <h1>Sair da newsletter</h1>
+  </div>
+</header>
+<main class="wrap">
+
+  <!-- 1. Chegou com token: confirma com um clique. O clique é o que
+       descadastra — abrir esta página não faz nada, porque cliente de
+       e-mail e antivírus abrem links sozinhos para varrer. -->
+  <div id="confirmar" hidden>
+    <p>Você está saindo da <strong>Pausa</strong>, a carta semanal do Ervatório. Não enviaremos mais nada para este endereço.</p>
+    <div class="acao">
+      <button type="button" class="btn" id="btnSair">Confirmar minha saída</button>
+    </div>
+    <p class="nota">Se abriu esta página por engano, é só fechar: nada acontece até você confirmar.</p>
+  </div>
+
+  <!-- 2. Deu certo. -->
+  <div id="pronto" hidden>
+    <div class="caixa">
+      <p id="prontoTexto">Pronto. Você saiu da lista.</p>
+      <p class="nota">Pode levar algumas horas até parar de receber um e-mail que já tenha sido enviado.</p>
+    </div>
+    <p>Mudou de ideia? <a href="/pausa.html">Assine a Pausa de novo</a> quando quiser.</p>
+  </div>
+
+  <!-- 3. Link sem token, truncado ou já usado por outra pessoa. -->
+  <div id="semToken" hidden>
+    <div class="caixa erro">
+      <p id="semTokenTexto">Este link de descadastro não é válido.</p>
+    </div>
+    <p>Alguns programas de e-mail cortam links longos. Tente abrir o link de novo a partir do e-mail original, ou escreva para <a href="mailto:fsannino@collabz.com.br">fsannino@collabz.com.br</a> — o encarregado retira o seu endereço em até 15 dias.</p>
+  </div>
+
+  <!-- 4. Falha de rede ou do servidor: a pessoa não fica sem saída. -->
+  <div id="falhou" hidden>
+    <div class="caixa erro">
+      <p>Não consegui concluir agora.</p>
+    </div>
+    <p>Tente de novo em instantes. Se continuar assim, escreva para <a href="mailto:fsannino@collabz.com.br">fsannino@collabz.com.br</a> e retiramos o seu endereço.</p>
+  </div>
+
+  <p class="nota">O que fazemos com o seu e-mail está na <a href="/privacidade.html">Política de Privacidade</a>.</p>
+</main>
+<!-- erv-rodape-estatico -->
+<footer class="erv-footer erv-estatico" aria-label="Rodapé">
+  <div class="erv-footer-inner">
+    <div class="erv-footer-links">
+      <a href="/#sobre">Sobre</a>
+      <a href="/#clube">Clube</a>
+      <a href="/pausa.html">Cultura da Pausa</a>
+      <a href="/privacidade.html">Privacidade</a>
+      <a href="/termos.html">Termos</a>
+      <a href="mailto:contato@ervatorio.com.br">Contato</a>
+    </div>
+    <div>© 2026 Ervatório · Conteúdo educacional; não substitui orientação médica.</div>
+    <p class="erv-footer-aviso">Conteúdo educacional — não substitui orientação médica. Consulte um profissional antes de usar plantas medicinais, especialmente na gravidez, amamentação ou uso de medicamentos.</p>
+  </div>
+</footer>
+<script defer src="/js/nav-estatica.js"></script>
+<!-- /erv-rodape-estatico -->
+
+<script defer src="/js/config.js"></script>
+<script>
+  (function () {
+    'use strict';
+    var mostra = function (id) {
+      ['confirmar', 'pronto', 'semToken', 'falhou'].forEach(function (k) {
+        var el = document.getElementById(k);
+        if (el) el.hidden = (k !== id);
+      });
+    };
+
+    var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    var token = '';
+    try { token = (new URLSearchParams(window.location.search).get('t') || '').trim(); } catch (e) { token = ''; }
+
+    if (!UUID_RE.test(token)) { mostra('semToken'); return; }
+    mostra('confirmar');
+
+    document.getElementById('btnSair').addEventListener('click', function () {
+      var btn = this;
+      var cfg = window.ERVATORIO_CONFIG || {};
+      btn.disabled = true;
+      btn.textContent = 'Saindo…';
+      fetch(cfg.FUNCTIONS_URL + '/newsletter-unsubscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: cfg.SUPABASE_PUBLISHABLE_KEY,
+          Authorization: 'Bearer ' + cfg.SUPABASE_PUBLISHABLE_KEY
+        },
+        body: JSON.stringify({ token: token })
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (corpo) {
+          return { status: res.status, corpo: corpo };
+        });
+      }).then(function (r) {
+        if (r.status === 404 || r.status === 400) {
+          document.getElementById('semTokenTexto').textContent =
+            'Este link de descadastro não é válido ou já não existe.';
+          mostra('semToken');
+          return;
+        }
+        if (!r.corpo || !r.corpo.ok) throw new Error('HTTP ' + r.status);
+        if (r.corpo.ja_estava_fora) {
+          document.getElementById('prontoTexto').textContent =
+            'Você já não estava na lista. Nada mudou.';
+        }
+        mostra('pronto');
+      }).catch(function (err) {
+        console.error('[descadastro]', err);
+        btn.disabled = false;
+        btn.textContent = 'Confirmar minha saída';
+        mostra('falhou');
+      });
+    });
+  })();
+</script>
+</body>
+</html>
