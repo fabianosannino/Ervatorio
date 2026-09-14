@@ -124,11 +124,14 @@ test.describe('rotas por hash (D6)', () => {
     await expect.poll(() => page.evaluate(() => encState.intencao), { timeout: 5000 }).toBe('sono');
   });
 
-  test('âncora antiga da landing (#clube) rola para a seção com prefixo lp-', async ({ page }) => {
-    await page.goto('/#clube', { waitUntil: 'domcontentloaded' });
+  test('âncora antiga da landing (#mapa) rola para a seção com prefixo lp-', async ({ page }) => {
+    await page.goto('/#mapa', { waitUntil: 'domcontentloaded' });
     const st = await paginaAtiva(page);
     expect(st.landing).toBe(true);
-    await expect(page.locator('#lp-clube')).toBeAttached();
+    await expect(page.locator('#lp-mapa')).toBeAttached();
+    // `#clube` saiu do mapa no PR 11 — virou tela do app, como `#diario` no
+    // 08b. Quem sobrou são as duas seções que não têm tela: coleções e mapa.
+    expect(await page.evaluate(() => Object.keys(LANDING_ANCHORS))).toEqual(['colecoes', 'mapa']);
   });
 
   test('navegar e voltar restaura a tela anterior', async ({ page }) => {

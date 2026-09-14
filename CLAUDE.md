@@ -241,6 +241,13 @@ e as decisões D1–D14. As que mais mudam o jeito de trabalhar aqui:
   - Caixa de aviso é fundo de token (`rgba(200,168,75,.1)`), nunca cor
     fixa escura: o tema claro remapeia `--cream2` para tinta escura e
     `#3a2a1a` + `--cream2` fica ilegível.
+- **O Clube é `#clube`, tela do app, e o preço é o guarda do estado**
+  (PR 11, D37–D38). `clubeEstado()` devolve `espera` enquanto
+  `CLUBE_PLANOS` (js/clube-data.js) não tiver preço — ligar `assinatura`
+  ou `clube_pre_venda` sozinho **não** abre cobrança, e o teste E2E exige
+  isso. Não é página estática porque o estado depende de interruptor
+  (D23). A captura usa `subscribeEmail(form, 'clube', …)`; `plano_interesse`
+  não é enviado enquanto a Edge Function e a tabela não o aceitarem.
 - **Conteúdo que vira página estática mora em script de dados** (PR 10,
   D36). `js/receitas-data.js`, `js/blends-data.js`, `js/chas-data.js`,
   `js/herbs-data.js`, `js/fichas-data.js`, `js/nav-data.js`: só dados, sem

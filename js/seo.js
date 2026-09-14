@@ -60,6 +60,14 @@ const SEO_META = {
     de: { title:'Quiz — Welcher brasilianische Tee bist du? | Ervatório', desc:'Entdecke, welches brasilianische Kraut oder welcher Tee zu deiner Persönlichkeit passt.' },
     fr: { title:'Quiz — Quel thé brésilien êtes-vous ? | Ervatório', desc:'Découvrez quelle herbe ou quel thé brésilien correspond à votre personnalité dans ce quiz interactif.' },
   },
+  clube: {
+    pt: { title:'Clube Ervatório — lista de espera | Ervatório', desc:'Uma pausa por semana enquanto o Clube não abre. Três planos em definição, nenhum preço cobrado agora: entre na lista e saiba da abertura antes de todo mundo.' },
+    en: { title:'Ervatório Club — waiting list | Ervatório', desc:'One pause a week while the Club is closed. Three plans being designed, nothing charged now: join the list and hear about the opening before anyone else.' },
+    es: { title:'Club Ervatório — lista de espera | Ervatório', desc:'Una pausa por semana mientras el Club no abre. Tres planes por definir, sin cobro ahora: entra en la lista y entérate de la apertura antes que nadie.' },
+    ja: { title:'Ervatórioクラブ — ウェイティングリスト | Ervatório', desc:'クラブが開くまで、週に一度の一服を。三つのプランは検討中で、いまは料金はかかりません。リストに登録して、開始のお知らせを誰よりも先に。' },
+    de: { title:'Ervatório-Klub — Warteliste | Ervatório', desc:'Eine Pause pro Woche, solange der Klub geschlossen ist. Drei Pakete in Planung, jetzt kostet nichts: trag dich ein und erfahre vor allen anderen von der Eröffnung.' },
+    fr: { title:'Club Ervatório — liste d\'attente | Ervatório', desc:'Une pause par semaine tant que le Club est fermé. Trois formules à définir, rien à payer maintenant : inscrivez-vous et soyez prévenu de l\'ouverture avant tout le monde.' },
+  },
   blends: {
     pt: { title:'Criar meu blend — Ervatório', desc:'Monte seu blend com ervas do Brasil e do mundo, ou escolha um pronto. Salve e receba por e-mail.' },
     en: { title:'Create my blend — Ervatório', desc:'Build your own blend with herbs from Brazil and the world, or pick a ready one. Save it and get it by e-mail.' },

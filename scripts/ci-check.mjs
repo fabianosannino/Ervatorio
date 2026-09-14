@@ -18,6 +18,7 @@ const essentialFiles = [
   'js/herbs-data.js',
   'js/blends-data.js',
   'js/chas-data.js',
+  'js/clube-data.js',
   'js/receitas-data.js',
   'js/ficha-resumo.js',
   'js/app.js',
