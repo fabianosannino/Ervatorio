@@ -21,6 +21,13 @@ const PAGINAS = [
   { url: '/lexico/', grupo: 'preparar', secao: '/lexico/' },
   { url: '/como-se-faz/', grupo: 'preparar', secao: '/como-se-faz/' },
   { url: '/biblioteca/', grupo: 'preparar', secao: '/biblioteca/' },
+  // PR 10: receitas, blends prontos e tipos de chá também têm gêmea estática.
+  { url: '/receitas/', grupo: 'preparar', secao: '/receitas/' },
+  { url: '/receitas/chai-brasileiro/', grupo: 'preparar', secao: '/receitas/' },
+  { url: '/blends/', grupo: 'preparar', secao: '/blends/' },
+  { url: '/blends/infusao-do-silencio/', grupo: 'preparar', secao: '/blends/' },
+  { url: '/chas/', grupo: 'descobrir', secao: '/chas/' },
+  { url: '/chas/preto/', grupo: 'descobrir', secao: '/chas/' },
 ];
 
 test.describe('Cabeçalho único nas páginas estáticas (03b)', () => {
@@ -60,7 +67,8 @@ test.describe('Cabeçalho único nas páginas estáticas (03b)', () => {
     await expect(sub.filter({ hasText: 'Como se faz' })).toHaveAttribute('href', '/como-se-faz/');
     await expect(sub.filter({ hasText: 'Léxico' })).toHaveAttribute('href', '/lexico/');
     await expect(sub.filter({ hasText: 'Biblioteca' })).toHaveAttribute('href', '/biblioteca/');
-    await expect(sub.filter({ hasText: 'Receitas' })).toHaveAttribute('href', '/#receitas');
+    await expect(sub.filter({ hasText: 'Receitas' })).toHaveAttribute('href', '/receitas/');
+    await expect(sub.filter({ hasText: 'Blends prontos' })).toHaveAttribute('href', '/blends/');
   });
 
   for (const url of ['/pausa.html', '/privacidade.html', '/termos.html']) {

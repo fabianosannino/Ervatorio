@@ -1191,68 +1191,8 @@ function removeTray(id){ blendTray=blendTray.filter(i=>i!==id); localStorage.set
 // ── WIZARD ──
 // O assistente de blends (WIZ_*, buildWizard, generateBlend) saiu no PR 05:
 // virou o Encontre seu chá. BLEND_DB fica — é o blend sugerido por intenção.
-const BLEND_DB = {
-  'Insônia':{ name:'Infusão do Silêncio', tagline:'Serenidade profunda para noites difíceis',
-    ings:[{id:1,n:'Camomila',amount:'1 col. sopa cheia'},{id:3,n:'Maracujá',amount:'1 col. sopa'},{id:4,n:'Melissa',amount:'1 col. sopa'}],
-    steps:['Ferva a água até 85°C (não ferver muito).','Misture as ervas numa infusora.','Cubra e deixe em infusão por 10 minutos.','Coe e beba morno, 40 min antes de dormir.','Evite telas e luzes fortes após tomar.'],
-    effects:['Sedação suave','Reduz ruminação mental','Sem dependência'],
-    obs:'Potencialize com aromaterapia de lavanda no quarto.' },
-  'Ansiedade':{ name:'Blend da Calma Profunda', tagline:'Para momentos de tensão e nervosismo',
-    ings:[{id:3,n:'Maracujá',amount:'2 col. sopa'},{id:13,n:'Alfazema',amount:'1 col. sopa flores'},{id:4,n:'Melissa',amount:'1 col. sopa'}],
-    steps:['Aqueça água a 85°C.','Adicione as ervas e cubra bem.','Infusão de 8-10 minutos.','Coe, adicione mel se desejar.','Beba lentamente, respirando fundo.'],
-    effects:['Ansiolítico natural','Sem sonolência forte','Ação em 20-30 min'],
-    obs:'Use 2-3x ao dia em períodos de estresse intenso.' },
-  'Dor de estômago':{ name:'Elixir do Conforto Gástrico', tagline:'Alívio suave e aromático para o estômago',
-    ings:[{id:1,n:'Camomila',amount:'1 col. sopa cheia'},{id:9,n:'Hortelã',amount:'1 col. sopa'},{id:10,n:'Erva-doce',amount:'1/2 col. sopa'}],
-    steps:['Ferva água a 90°C.','Junte as três ervas juntas.','Cubra e infuse por 8 minutos.','Coe e beba morno em pequenos goles.','Deite de lado direito após tomar.'],
-    effects:['Antiespasmódico','Alivia gases e cólicas','Anti-inflamatório da mucosa'],
-    obs:'Para gastrite: substituir hortelã por espinheira santa.' },
-  'Gases':{ name:'Blend Carminativo', tagline:'Liberte os gases e alivie o desconforto',
-    ings:[{id:10,n:'Erva-doce',amount:'1 col. sopa'},{id:9,n:'Hortelã',amount:'1 col. sopa'},{id:11,n:'Canela',amount:'1 pedaço pequeno'}],
-    steps:['Aqueça a 90°C.','Junte as ervas.','Infusão coberta por 7 minutos.','Coe e beba ainda quente.','Massageie a barriga em círculos.'],
-    effects:['Carminativo potente','Relaxa musculatura intestinal','Efeito em 15-20 min'],
-    obs:'Excelente após refeições com leguminosas.' },
-  'Estresse':{ name:'Chai da Serenidade', tagline:'Conforto quente para dias pesados',
-    ings:[{id:19,n:'Erva Cidreira',amount:'2 col. sopa'},{id:17,n:'Capim-Limão',amount:'2 folhas frescas'},{id:1,n:'Camomila',amount:'1 col. sopa'}],
-    steps:['Ferva água a 88°C.','Amasse levemente o capim-limão antes.','Infuse coberto por 8 minutos.','Adicione mel a gosto.','Beba com calma, longe das telas.'],
-    effects:['Reduz cortisol','Calmante sem sedação','Aroma terapêutico'],
-    obs:'Combine com 5 minutos de respiração lenta.' },
-  'Foco':{ name:'Poção do Foco Profundo', tagline:'Clareza mental e concentração sustentada',
-    ings:[{id:6,n:'Chá Verde',amount:'1 col. sopa'},{id:8,n:'Alecrim',amount:'1 col. sopa'},{id:11,n:'Canela',amount:'1/2 col. chá'}],
-    steps:['Aqueça água a 75°C (não ferver).','Junte as ervas.','Infusão curta: 4 minutos apenas.','Coe e beba morno.','Tomar 30 min antes de estudar ou trabalhar.'],
-    effects:['L-teanina + cafeína: foco calmo','Sem ansiedade','Melhora memória de trabalho'],
-    obs:'Ideal pela manhã. Evitar após 15h.' },
-  'Cansaço':{ name:'Tônico Revigorante', tagline:'Energia limpa e sustentada para o dia',
-    ings:[{id:5,n:'Gengibre',amount:'4 fatias frescas'},{id:11,n:'Canela',amount:'1 pau pequeno'},{id:17,n:'Capim-Limão',amount:'2 folhas'}],
-    steps:['Ferva água a 95°C.','Adicione gengibre e canela primeiro.','Cozinhe por 5 minutos em fogo baixo.','Desligue, adicione capim-limão.','Infuse tampado por 5 min. Coe.'],
-    effects:['Termogênico','Circulação ativa','Energia sem pico'],
-    obs:'Com raspas de limão e mel: sabor excepcional.' },
-  'Gripe/Tosse':{ name:'Antigripal Poderoso', tagline:'Combate a gripe com força da natureza',
-    ings:[{id:5,n:'Gengibre',amount:'5 fatias frescas'},{id:16,n:'Guaco',amount:'2 col. sopa'},{id:28,n:'Tomilho',amount:'1 col. sopa'}],
-    steps:['Ferva água a 100°C.','Adicione todas as ervas.','Infusão coberta por 12 minutos.','Coe, adicione mel + limão.','Tomar 3-4x ao dia na fase aguda.'],
-    effects:['Broncodilatador','Expectorante','Antiviral natural'],
-    obs:'Potencializar com inalação de vapor de eucalipto.' },
-  'Emagrecimento':{ name:'Blend Queima-Gordura', tagline:'Acelera o metabolismo de forma natural',
-    ings:[{id:6,n:'Chá Verde',amount:'1 col. sopa'},{id:21,n:'Carqueja',amount:'1 col. sopa'},{id:7,n:'Hibisco',amount:'1 col. sopa'}],
-    steps:['Aqueça água a 80°C.','Misture as três ervas.','Infusão de 5-7 minutos.','Coe e beba sem adoçar.','Tomar 30 min antes das refeições.'],
-    effects:['Termogênico','Inibe absorção de carboidratos','Diurético suave'],
-    obs:'Associar com caminhada de 30 min diários.' },
-  'Pressão alta':{ name:'Infusão Hipotensora', tagline:'Apoio natural para pressão equilibrada',
-    ings:[{id:7,n:'Hibisco',amount:'2 col. sopa'},{id:4,n:'Melissa',amount:'1 col. sopa'},{id:17,n:'Capim-Limão',amount:'2 folhas'}],
-    steps:['Ferva água a 90°C.','Adicione as ervas.','Infusão coberta por 10 minutos.','Coe e beba sem adoçar (mel mínimo).','3 xícaras ao dia por 6+ semanas.'],
-    effects:['Hipotensor suave','Vasodilatador','Ansiolítico complementar'],
-    obs:'NÃO substituir medicação. Monitorar PA regularmente.' },
-  'TPM':{ name:'Blend da Lua', tagline:'Conforto e equilíbrio no período menstrual',
-    ings:[{id:1,n:'Camomila',amount:'2 col. sopa'},{id:4,n:'Melissa',amount:'1 col. sopa'},{id:10,n:'Erva-doce',amount:'1 col. sopa'}],
-    steps:['Ferva água a 88°C.','Misture as ervas com carinho.','Infusão de 10 minutos coberta.','Adicione mel e canela a gosto.','3x ao dia nos dias de maior desconforto.'],
-    effects:['Antiespasmódico uterino','Alivia irritabilidade','Anti-inflamatório'],
-    obs:'Adicionar folha de amora para menopausa.' },
-  'default':{ name:'Blend Equilibrante', tagline:'Harmonia e bem-estar para o dia a dia',
-    ings:[{id:19,n:'Erva Cidreira',amount:'2 col. sopa'},{id:17,n:'Capim-Limão',amount:'2 folhas'},{id:5,n:'Gengibre',amount:'2 fatias'}],
-    steps:['Ferva água a 88°C.','Junte as ervas.','Infusão coberta por 8 minutos.','Coe e personalize com mel ou limão.'],
-    effects:['Equilíbrio geral','Digestivo','Calmante suave'],
-    obs:'Ajuste as proporções ao seu gosto e necessidade.' },
-};
+// BLEND_DB mora em js/blends-data.js (carregado antes deste arquivo) — o
+// prerender lê os mesmos blends para /blends/<slug>/ (PR 10).
 
 function getSaborAdj(sabor,rec){
   const adj={
@@ -2603,7 +2543,7 @@ function goPage(id,btn,slug){
     renderTray();
     if(typeof switchBlendTab==='function') switchBlendTab(_blendOpenTab || 'prontos');
   }
-  if(id==='chas'){initChas();initCerimonia();}
+  if(id==='chas'){ if(slug && CHAS_DATA.some(function(c){ return c.id===slug; })) chaActiveId=slug; initChas(); initCerimonia(); }
   if(id==='guia-sensorial'&&typeof initFlavorWheel==='function')initFlavorWheel();
   if(id==='marketplace')initMkt();
   if(id==='mundo')initMundo(slug);
@@ -2760,167 +2700,8 @@ function switchBlendTab(tab){
 // ════════════════════════════════════════
 // ── CHÁS TRADICIONAIS ──
 // ════════════════════════════════════�����══
-const CHAS_DATA = [
-  {
-    id:'branco', name:'Chá Branco', emoji:'🤍', img:'images/chas/branco.png', tagline:'O mais sutil — antioxidante puro', oxidation:5,
-    color:'#e8dcc8', textColor:'#3a2a1a', textColorLight:'#3a2a1a', bgColor:'rgba(232,220,200,.12)',
-    tagline:'O mais puro e delicado — colhido antes do despertar',
-    latin:'Camellia sinensis — brotos jovens, pré-floração',
-    sabores:['Mel suave','Floral','Melão','Fruta fresca','Levemente adocicado'],
-    temp:'65-75°C', tempo:'2-4 min', dose:'2-3 col. sopa / 200ml', cafeina:'Baixo (15-30mg)',
-    beneficios:['Rico em catequinas antioxidantes','Maior concentração de EGCG entre os chás','Anti-aging celular','Leve termogênico','Proteção cardiovascular'],
-    historia:[
-      {year:'618 d.C.', text:'Originário da Dinastia Tang, na China. Oferecido como tributo ao imperador, representava pureza e status imperial.'},
-      {year:'960 d.C.', text:'Na Dinastia Song tornou-se ápice da cultura do chá. A cerimônia Gongfu foi desenvolvida para honrar sua delicadeza.'},
-      {year:'Século XIX', text:'Chegou à Europa através da Rota da Seda. Considerado mais valioso que o ouro em alguns mercados.'},
-      {year:'Hoje', text:'Fujian (China) e Darjeeling (Índia) produzem os mais apreciados. Bai Hao Yinzhen ("Agulha de Prata") é o mais nobre.'},
-    ],
-    preparo:['Aqueça a água até 65-70°C. Nunca água fervendo — destrói os compostos delicados.','Use 2-3 colheres de sopa cheias para 200ml.','Infuse por 2-3 minutos. Pode reutilizar as folhas até 3 vezes.','Sirva sem leite ou açúcar — a sutileza é sua essência.','A segunda infusão é frequentemente a melhor.'],
-    curiosidades:'As folhas do chá branco são cobertas por finos pelos brancos (Bai Hao). Esses pelos são proteção natural contra insetos — e concentram polifenóis. É o único chá que pode ser infusionado com água fria (cold brew 8h).',
-    regioes:['Fujian, China (Bai Hao Yinzhen, Bai Mudan)','Darjeeling, Índia','Sri Lanka','Nepal'],
-    variedades:[
-      {n:'Bai Hao Yinzhen',emoji:'🥇',orig:'Fujian, China',d:'Agulha de Prata — o mais nobre. Apenas brotos cobertos de finos pelos brancos.'},
-      {n:'Bai Mudan',emoji:'🌸',orig:'Fujian, China',d:'Peônia Branca — broto + duas folhas jovens. Mais corpo que o Yinzhen.'},
-      {n:'Shou Mei',emoji:'🍂',orig:'Fujian, China',d:'Sobrancelha Longeva — folhas maduras. Sabor mais encorpado e adocicado.'},
-      {n:'Ceylon White',emoji:'🇱🇰',orig:'Sri Lanka',d:'Silver Tips do Sri Lanka. Mais acessível, notas de mel e baunilha.'},
-    ],
-    harmonizacao:['Frutos do mar delicados','Sushi e sashimi','Queijo ricota ou brie','Frutas tropicais frescas','Mousse de baunilha','Macaron de flores'],
-    momento:'Tarde — silêncio e contemplação depois do almoço',
-  },
-  {
-    id:'verde', name:'Chá Verde', emoji:'🍃', img:'images/chas/verde.png', tagline:'Energia limpa e foco natural', oxidation:10,
-    color:'#4a7a3a', textColor:'#e8f5e0', textColorLight:'#1a4a1a', bgColor:'rgba(74,122,58,.15)',
-    tagline:'O guardião da saúde — dois mil anos de sabedoria',
-    latin:'Camellia sinensis — folhas fixadas rapidamente ao calor',
-    sabores:['Gramíneo','Vegetal','Algas marinhas','Castanho suave','Erva fresca'],
-    temp:'70-80°C', tempo:'2-3 min', dose:'1-2 col. sopa / 200ml', cafeina:'Médio (25-50mg)',
-    beneficios:['EGCG: antioxidante mais estudado do mundo','L-teanina: foco calmo sem ansiedade','Termogênico — aumenta queima de gordura','Neuroprotetor a longo prazo','Reduz risco cardiovascular'],
-    historia:[
-      {year:'2737 a.C.', text:'Lenda: o imperador Shennong descobriu o chá quando folhas caíram em sua água quente. Reconheceu suas propriedades medicinais.'},
-      {year:'618 d.C.', text:'Lu Yu escreveu o Chajing (Clássico do Chá) — primeiro livro dedicado à arte do chá. Fundação da cultura do chá verde japonês.'},
-      {year:'1191 d.C.', text:'O monge Eisai levou o chá verde para o Japão. Origem do matcha e da cerimônia japonesa (Chanoyu).'},
-      {year:'Século XX', text:'Estudos científicos confirmam os benefícios do EGCG. Japão exporta Gyokuro, Sencha, Matcha para o mundo.'},
-    ],
-    preparo:['Água a 75-80°C. Para Gyokuro premium, use 60°C.','1 colher de sopa por 200ml. Para matcha: 1 col. chá em pó.','Infuse por 2-3 minutos. Evite mais — fica amargo.','Para matcha: bata em Z com o chasen até espumar.','Pode infusionar 2-3 vezes. A segunda é mais suave.'],
-    curiosidades:'O Japão produz mais de 80 estilos diferentes de chá verde. Matcha é pó de folhas inteiras — você ingere toda a folha. Gyokuro é cultivado à sombra nas últimas semanas, concentrando L-teanina e tornando o sabor mais doce.',
-    regioes:['Uji, Japão (Matcha, Gyokuro)','Shizuoka, Japão (Sencha)','Fujian, China (Dragonwell/Longjing)','Zhejiang, China','Darjeeling, Índia'],
-    variedades:[
-      {n:'Matcha',emoji:'🍵',orig:'Uji, Kyoto',d:'Tencha moída em pedra. Você ingere a folha inteira. 137× mais EGCG que Sencha.'},
-      {n:'Gyokuro',emoji:'👑',orig:'Uji, Kyoto',d:'20 dias à sombra antes da colheita. Umami intenso. O mais premium japonês.'},
-      {n:'Sencha',emoji:'🌿',orig:'Shizuoka',d:'O cotidiano japonês. 80% da produção. Vegetal, limpo, gramíneo.'},
-      {n:'Hojicha',emoji:'🍂',orig:'Kyoto',d:'Sencha torrado. Caramelo, nozes. Quase sem cafeína — perfeito à noite.'},
-      {n:'Longjing',emoji:'🐉',orig:'Zhejiang, China',d:'Dragon Well — folhas planas salteadas em wok. Castanha tostada, suave.'},
-      {n:'Genmaicha',emoji:'🌾',orig:'Japão',d:'Sencha com arroz tostado. Notas de pipoca. Acessível e extremamente saboroso.'},
-    ],
-    harmonizacao:['Sushi e temaki','Edamame e gyoza','Queijo de cabra fresco','Torrada com azeite','Sorvete de matcha','Wagashi japonês'],
-    momento:'Manhã — foco sem ansiedade; ou antes de meditação',
-  },
-  {
-    id:'amarelo', name:'Chá Amarelo', emoji:'💛', img:'images/chas/amarelo.png', tagline:'O raro tesouro imperial da China', oxidation:15,
-    color:'#a87a2a', textColor:'#fff8e0', textColorLight:'#5a3a0a', bgColor:'rgba(168,122,42,.12)',
-    tagline:'O raro tesouro — o segredo mais guardado da China',
-    latin:'Camellia sinensis — smothering lento, oxidação controlada',
-    sabores:['Mel suave','Milho','Floral discreto','Amendoado','Mais suave que o verde'],
-    temp:'70-80°C', tempo:'2-3 min', dose:'2 col. sopa / 200ml', cafeina:'Médio (20-40mg)',
-    beneficios:['Mais fácil para estômagos sensíveis que o chá verde','Rico em antioxidantes','Processo único de "fechamento" reduz amargor','Melhora digestão','Propriedades anti-inflamatórias'],
-    historia:[
-      {year:'Dinastia Tang', text:'Reservado exclusivamente para o imperador e sua corte. Produção era segredo de Estado, punível com morte divulgar.'},
-      {year:'Século XVIII', text:'Algumas regiões abandonaram a produção. O conhecimento do processo quase se perdeu completamente.'},
-      {year:'Século XX', text:'Produção quase extinta. Apenas 3 estilos sobrevivem: Junshan Yinzhen, Meng Ding Huangya e Huo Shan Huangya.'},
-      {year:'Hoje', text:'Um dos chás mais raros e caros do mundo. Produção anual de alguns estilos não ultrapassa 500kg.'},
-    ],
-    preparo:['Água a 75°C — mais delicado que o verde.','2 colheres de sopa para 200ml.','Infuse por 2-3 minutos. As folhas podem ser reinfusionadas.','O processo de men huan (abafamento) lhe dá cor amarelada única.','Aprecie a diferença sutil em relação ao chá verde.'],
-    curiosidades:'O processo smothering (Men Huan) envolve embrulhar as folhas ainda quentes para iniciar leve oxidação controlada. Isso remove o sabor gramíneo e cria o perfil único. Junshan Yinzhen é cultivado apenas na Ilha Junshan, no Lago Dongting.',
-    regioes:['Ilha Junshan, Hunan (Junshan Yinzhen)','Sichuan (Meng Ding Huangya)','Anhui (Huo Shan Huangya)'],
-    variedades:[
-      {n:'Junshan Yinzhen',emoji:'🥇',orig:'Ilha Junshan, Hunan',d:'O mais nobre. < 500kg/ano. Só na Ilha Junshan no Lago Dongting. Imperial.'},
-      {n:'Meng Ding Huangya',emoji:'⛰',orig:'Monte Meng, Sichuan',d:'Segunda variedade. Amendoado, mel suave. Cultivado acima de 1000m.'},
-      {n:'Huo Shan Huangya',emoji:'🌿',orig:'Anhui',d:'A mais acessível. Sabor entre verde e branco, toques adocicados.'},
-    ],
-    harmonizacao:['Peixe branco grelhado','Frango suave no vapor','Legumes salteados','Tofu sedoso','Sobremesas de limão ou mel'],
-    momento:'Meio-dia — apreciação lenta, contemplativa',
-  },
-  {
-    id:'oolong', name:'Chá Oolong', emoji:'🔵', img:'images/chas/oolong.png', tagline:'Complexidade entre o verde e o preto', oxidation:50,
-    color:'#2d5a7a', textColor:'#e0f0ff', textColorLight:'#1a3a5a', bgColor:'rgba(45,90,122,.15)',
-    tagline:'O chá azul — entre dois mundos, com a melhor de cada',
-    latin:'Camellia sinensis — oxidação parcial 15-85%',
-    sabores:['Floral intenso','Pêssego','Mel de flores','Frutado suave','Torrado suave (oxidado)'],
-    temp:'85-95°C', tempo:'3-5 min', dose:'1 col. sopa / 200ml', cafeina:'Médio-alto (30-50mg)',
-    beneficios:['Equilibra benefícios do verde e do preto','Controle glicêmico — estudado para diabetes','Termogênico eficaz','Saúde óssea','Reduz triglicerídeos'],
-    historia:[
-      {year:'Século XVII', text:'Originário de Fujian. O nome "oolong" (dragão negro) vem de uma lenda: um catador viu uma cobra e fugiu. Ao voltar, as folhas já tinham oxidado parcialmente — e o resultado era sublime.'},
-      {year:'Século XVIII', text:'Taiwan começa a cultivar oolong trazido de Fujian. A ilha torna-se célebre pelo High Mountain Oolong.'},
-      {year:'Século XIX', text:'Chás oolong de Formosa (Taiwan) tornaram-se os mais apreciados da Europa e América.'},
-      {year:'Hoje', text:'Taiwan produz os mais renomados: Ali Shan, Li Shan, Da Yu Ling. Fujian é famoso pelo Tie Guan Yin e Da Hong Pao.'},
-    ],
-    preparo:['Água a 90-95°C para oolongs oxidados; 85°C para os florais.','1 colher de sopa rasa por 200ml.','Primeira infusão: 3-4 min. Oolongs de qualidade suportam 5-7 infusões.','No estilo Gongfu: copos pequenos, infusões rápidas (30s-2min) revelam perfis diferentes.','Observe a evolução do sabor a cada infusão.'],
-    curiosidades:'Um oolong de alta qualidade (como Da Yu Ling, a 2600m de altitude) pode custar R$800-2000 por 100g. Cada infusão revela notas diferentes — a 3ª e 4ª são frequentemente as mais complexas. O grau de oxidação define tudo: 15% = quase verde; 85% = quase preto.',
-    regioes:['Alishan e Li Shan, Taiwan (High Mountain)','Wuyi, Fujian, China (Da Hong Pao, Shui Xian)','Anxi, Fujian (Tie Guan Yin)','Darjeeling, Índia'],
-    variedades:[
-      {n:'Tie Guan Yin',emoji:'🙏',orig:'Anxi, Fujian',d:'Deusa da Misericórdia. Floral, orquídea, cremoso. O oolong mais icônico do mundo.'},
-      {n:'Da Hong Pao',emoji:'🏔',orig:'Wuyi, Fujian',d:'Manto Vermelho. Das arbustos mais famosos do mundo. Rochoso, mineral, torrado.'},
-      {n:'Ali Shan',emoji:'⛰',orig:'Ali Shan (1400m), Taiwan',d:'High Mountain. Cremoso, manteigoso, floral. Revela-se em 5-7 infusões.'},
-      {n:'Oriental Beauty',emoji:'����',orig:'Hsinchu, Taiwan',d:'Picadas de cigarrinhas criam terpenos únicos. Mel, pêssego, moscatel.'},
-      {n:'Dan Cong',emoji:'🎵',orig:'Fenghuang, Guangdong',d:'Oolong Fênix. Dezenas de cultivares nomeados por aromas (lichia, gengibre).'},
-    ],
-    harmonizacao:['Carnes grelhadas e dim sum','Queijo meia-cura','Frutas frescas e secas','Chocolate amargo 70%','Castanhas e nozes','Macarons florais'],
-    momento:'Tarde — ritual contemplativo, múltiplas infusões',
-  },
-  {
-    id:'preto', name:'Chá Preto', emoji:'🖤', img:'images/chas/preto.png', tagline:'Corpo, presença e energia duradoura', oxidation:100,
-    color:'#3a1a0a', textColor:'#f5d8c0', textColorLight:'#3a1a0a', bgColor:'rgba(58,26,10,.2)',
-    tagline:'O favorito do mundo — força, profundidade, história',
-    latin:'Camellia sinensis — oxidação total, sabor robusto',
-    sabores:['Malte','Caramelo','Terra','Chocolate amargo','Tanino marcante','Notas de frutas secas'],
-    temp:'90-100°C', tempo:'3-5 min', dose:'1-2 col. sopa / 250ml', cafeina:'Alto (40-70mg)',
-    beneficios:['Estimulante natural — mais cafeína que o verde','L-teanina presente (menor que verde)','Saúde intestinal — prebiótico','Reduz LDL colesterol','Antioxidantes theaflavinas'],
-    historia:[
-      {year:'Século XVII', text:'Criado como chá para exportação — resistia melhor às longas viagens marítimas. A oxidação total preservava o chá por meses.'},
-      {year:'1823', text:'Robert Bruce descobre o chá Assam na Índia — plantas nativas diferentes das chinesas. Início da produção colonial britânica.'},
-      {year:'1869', text:'Fungo destrói plantações de café no Sri Lanka. Os ingleses substituem por chá — criando o famoso Ceylon Tea.'},
-      {year:'Hoje', text:'O chá mais consumido no mundo. Assam, Darjeeling e Ceylon definem o mercado global. Base do Chai indiano e do English Breakfast.'},
-    ],
-    preparo:['Água a 95-100°C — o único chá que suporta água fervendo.','1-2 colheres de sopa por 250ml.','Infuse por 3-5 minutos. Além disso fica amargo.','Com leite: adicione o leite antes da água (tradição britânica).','Com especiarias (Masala Chai): gengibre, canela, cardamomo, cravo.'],
-    curiosidades:'Darjeeling First Flush (colheita de março-abril) é o "Champagne dos chás" — tem certificação geográfica. Assam é base do famoso English Breakfast. Pu-erh não é exatamente preto — tem sua própria categoria. O chá com leite foi introduzido para proteger porcelanas finas do choque térmico.',
-    regioes:['Assam, Índia (forte, maltado)','Darjeeling, Índia (floral, Champagne dos chás)','Sri Lanka / Ceylon','Keemun, China (fumado, notas de vinho)','Nilgiri, Índia'],
-    variedades:[
-      {n:'Darjeeling First Flush',emoji:'🏔',orig:'Darjeeling (800-2200m)',d:'Champagne dos chás. Colheita março-abril. Floral, muscatel, leve.'},
-      {n:'Assam CTC',emoji:'💪',orig:'Vale do Assam',d:'Forte, maltado, encorpado. Base do English Breakfast. Rei dos saquinhos globais.'},
-      {n:'Lapsang Souchong',emoji:'🔥',orig:'Wuyi, Fujian',d:'Defumado com pinheiro. O chá mais polarizador — ama-se ou odeia-se.'},
-      {n:'Ceylon UVA',emoji:'🇱🇰',orig:'Uva Province, Sri Lanka',d:'Aromático, mentolado, adstringente limpo. Ideal com leite ou puro.'},
-      {n:'Keemun',emoji:'🍷',orig:'Anhui, China',d:'Notas de vinho tinto e chocolate. Base do English Breakfast original.'},
-    ],
-    harmonizacao:['Scones com creme e geleia','Bolo de chocolate','Queijo cheddar e gouda','Ovos mexidos no café da manhã','Carnes assadas','Biscoito de gengibre'],
-    momento:'Manhã — despertar e energia; com leite é o breakfast perfeito',
-  },
-  {
-    id:'puerh', name:'Chá Escuro (Pu-erh)', emoji:'🟤', img:'images/chas/puerh.png', tagline:'O vinho dos chás — fermentado único', oxidation:100,
-    color:'#2a1a0a', textColor:'#e8d0b0', textColorLight:'#2a1a0a', bgColor:'rgba(42,26,10,.2)',
-    tagline:'O chá que envelhece como vinho — fermentado, profundo, raro',
-    latin:'Camellia sinensis — fermentação microbiana pós-colheita',
-    sabores:['Terra molhada','Cogumelo','Madeira','Couro envelhecido','Tabaco suave','Compostagem mineral'],
-    temp:'95-100°C', tempo:'3-5 min', dose:'5-8g / 150ml', cafeina:'Médio-alto (30-60mg)',
-    beneficios:['Único chá com probióticos vivos (fermentado)','Mais estudado para redução de colesterol','Digestivo poderoso — usado após refeições gordurosas','Saúde hepática','Emagrecimento — estudos em animais promissores'],
-    historia:[
-      {year:'618 d.C.', text:'Yunnan (China) — tributo ao imperador Tang. A longa viagem pela Rota do Chá-Cavalos transformava naturalmente as folhas por fermentação.'},
-      {year:'Século XVII', text:'Comerciantes tibetanos e mongóis trocavam cavalos por tijolos de Pu-erh. A rota Tea Horse Road estendia-se por 2700km.'},
-      {year:'1973', text:'Criação do Shu Pu-erh (fermentação acelerada) na fábrica Kunming. Permite produzir em meses o que levaria décadas naturalmente.'},
-      {year:'Anos 2000', text:'Pu-erh vintage torna-se investimento. Um bolo (357g) de 1950 pode valer mais de R$500.000. Mercado de especulação em Hong Kong.'},
-    ],
-    preparo:['Despeje água quente sobre as folhas e jogue fora (lavagem). Pu-erh precisa de rinse.','Água a 95-100°C. 5-8g por 150ml (mais denso que outros chás).','Primeira infusão: 30s. Infusões seguintes: aumente 10s cada vez.','Pode render 10-20 infusões de qualidade.','Armazenado corretamente, melhora por décadas.'],
-    curiosidades:'Pu-erh Sheng (cru) envelhece como vinho — ganha complexidade com o tempo. Pu-erh Shu (maduro) tem fermentação acelerada de 45-60 dias em pilhas úmidas. Os microrganismos responsáveis incluem Aspergillus niger. Um bolo vintage de boa procedência é investimento comparável a vinhos de Bordeaux.',
-    regioes:['Xishuangbanna, Yunnan (antigos bosques)','Menghai, Yunnan (fábricas tradicionais)','Yiwu, Yunnan (Pu-erh premium)','Jingmai, Yunnan (árvores centenárias)'],
-    variedades:[
-      {n:'Sheng Pu-erh',emoji:'🌱',orig:'Yunnan',d:'Pu-erh cru. Envelhece décadas. Sabor evolui de vegetal/amargo para doce complexo.'},
-      {n:'Shu Pu-erh',emoji:'🍂',orig:'Yunnan',d:'Pu-erh maduro. Fermentação acelerada 45-60 dias. Pronto para beber imediatamente.'},
-      {n:'Bingcha (Bolo)',emoji:'💿',orig:'Yunnan',d:'Pu-erh prensado em disco (357g). Clássico. Quanto mais antigo, mais valioso.'},
-      {n:'Gushu (Árvore Antiga)',emoji:'🌳',orig:'Yunnan',d:'De árvores centenárias ou milenares. Sabor mais complexo e duradouro.'},
-    ],
-    harmonizacao:['Carnes gordurosas — churrasco, pato confitado','Queijo azul ou curado','Chocolate amargo 85%+','Dim sum e dumplings','Cogumelos salteados','Sobremesas de caramelo escuro'],
-    momento:'Após refeições — digestivo poderoso; ou ritual matinal profundo',
-  },
-];
+// CHAS_DATA mora em js/chas-data.js (carregado antes deste arquivo) — o
+// prerender lê os mesmos seis tipos para /chas/<id>/ (PR 10).
 
 let chaActiveId='verde';
 
@@ -2940,7 +2721,10 @@ function buildChaTabs(){
     b.style.color=chaActiveId===c.id?c.color:'';
     b.style.borderColor=chaActiveId===c.id?c.color:'';
     b.innerHTML=`${c.emoji} ${c.name}`;
-    b.onclick=()=>{chaActiveId=c.id;buildChaTabs();renderChaDetail(c.id);};
+    b.onclick=()=>{chaActiveId=c.id;buildChaTabs();renderChaDetail(c.id);
+      // A visão tem hash próprio (#chas/<id>), como as de Origens (PR 07).
+      if(window._currentPage==='chas'){ window._currentSlug=c.id; history.replaceState({page:'chas',slug:c.id},'',pageHash('chas',c.id)); }
+    };
     el.appendChild(b);
   });
 }
