@@ -68,7 +68,7 @@ três commits** (D2).
 | 08 | Meu Ervatório + `perfil_saude` (tabela própria, RLS, consentimento com timestamp); cadastro reduzido; «Excluir meus dados» | **Segunda rodada (15/09)** — ver D15–D17. O Diário fica para o 08b. | PR `feat/conta-e-consentimento` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 08b | Diário de infusões (`diario_infusoes`, RLS dono, interruptor `diario`) | **Terceira rodada (16/09)** — ver D19–D21. | PR `feat/diario-infusoes` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 09 | `privacidade.html`: CNPJ/DPO, dado de saúde, base legal, retenção | **Oitava rodada (16/09)** — tudo, menos CNPJ e nome do encarregado, que continuam `[DEFINIR]` por decisão pendente do dono (D35). | PR `docs/privacy-update` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
-| 10 | Páginas estáticas para receitas, blends, tipos de chá | Mês 2–3 | `feat/static-pages-recipes-blends` |
+| 10 | Páginas estáticas para receitas, blends, tipos de chá | **Nona rodada (16/09)** — ver D36. | PR `feat/static-pages-recipes-blends` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 11 | Clube (lista de espera → pré-venda → Stripe) | Depois | `feat/clube-waitlist` → `feat/stripe-checkout` |
 
 **Recomendação de ordem depois desta rodada:** 08 antes de 05. O dado de
@@ -275,6 +275,23 @@ para `mailto:`, até existir `/parceiros/`.
 - **(09) `termos.html` ainda tem três `[DEFINIR]`** (NF-e, canal de
   atendimento, foro) que não são de privacidade e ficaram fora deste PR;
   só a cláusula de pagamento mudou, para não contradizer a política.
+- **(10) Três listas de conteúdo moravam dentro de arquivos de
+  comportamento**: `RECEITAS` em `js/receitas.js`, `BLEND_DB` e
+  `CHAS_DATA` em `js/app.js`. O gerador não tem como carregar esses
+  arquivos em Node (tocam o DOM), então as listas saíram para
+  `js/receitas-data.js`, `js/blends-data.js` e `js/chas-data.js` — o mesmo
+  movimento de `HERBS` no 06. `INTENCOES` ficou onde está (é o motor) e o
+  gerador lê só o mapa intenção → blend de `js/app.js`, com erro se não
+  achar.
+- **(10) Os blends do banco (`admin_blends`) não têm página estática.**
+  Não estão no repositório; o gerador roda sem rede. `/blends/<slug>/`
+  cobre os doze blends prontos por intenção (`BLEND_DB`), que são os que
+  o «Encontre seu chá» sugere. Se a biblioteca do banco virar conteúdo
+  editorial de verdade, o caminho é exportá-la para um script de dados,
+  como as fichas.
+- **(10) `#chas` não aceitava slug**: a página dos tipos de chá abria
+  sempre no verde. Agora `#chas/<id>` abre o tipo pedido e trocar a aba
+  troca o hash (`replaceState`), como as visões de Origens.
 - **(07) A sub-navegação marcava a entrada sem slug junto com a de slug**
   (`!p.slug` era verdadeiro sempre). Não aparecia porque só Blends tinha
   duas entradas na mesma tela e as duas têm slug. Com Origens/Onde beber
@@ -472,6 +489,21 @@ política lista só o que o código faz; o que ainda não faz (double opt-in,
 link de descadastro, operador de pagamento) está dito como pendente, não
 prometido.
 
+**D36 — Página estática só do que está no repositório, com o mesmo gerador
+e a mesma moldura.** `/receitas/<id>/` (23), `/blends/<slug>/` (12, os
+blends prontos por intenção) e `/chas/<id>/` (6) saem de
+`scripts/prerender.mjs`, lendo os mesmos scripts de dados que o app carrega
+— uma fonte, duas saídas, como as fichas. Cada página tem JSON-LD
+(`Recipe` para receita e blend, `Article` para tipo de chá, sempre com
+`BreadcrumbList`), as ervas ligadas às fichas em `/erva/`, o aviso de
+saúde e um CTA para **o mesmo lugar no app**: `/#receitas/<id>`,
+`/#encontrar/<intenção>` (o blend aparece no passo 3) e `/#chas/<id>`. O
+slug do blend é o nome normalizado (`infusao-do-silencio`), estável e
+legível; o gerador recusa slug repetido. Sem emoji e sem `style` inline
+nas páginas geradas (a barra de oxidação é um `<meter>`). As entradas de
+`NAV_GROUPS` ganham `estatico`, então o cabeçalho das páginas estáticas
+aponta para as gêmeas — e o `sitemap.xml` passa de 192 para 236 URLs.
+
 ## 4. Como testar esta rodada
 
 ```
@@ -600,6 +632,20 @@ npx playwright test tests/e2e/encontrar.spec.mjs   # 6 cenários
     página, no modo de preferências.
 33. `/termos.html` não cita mais o Mercado Pago; a cláusula aponta para a
     política.
+34. `/receitas/chai-brasileiro/` sem JavaScript: ingredientes, passos
+    numerados, «Ervas desta receita» com links para `/erva/gengibre/` e
+    `/erva/capim-limao/`, aviso de saúde, «Abrir no Ervatório» →
+    `/#receitas/chai-brasileiro`. JSON-LD `Recipe` com `totalTime: PT15M`.
+35. `/blends/infusao-do-silencio/`: tag «Insônia», três ervas com
+    proporção, passos, «O que esperar»; «Abrir no Ervatório» →
+    `/#encontrar/sono`. `/blends/blend-equilibrante/` → `/#encontrar/explorar`.
+36. `/chas/preto/`: oxidação como `<meter>`, preparo, sabores, variedades,
+    história, harmonização; «Abrir no Ervatório» → `/#chas/preto`.
+37. Hubs `/receitas/`, `/blends/`, `/chas/` com 23, 12 e 6 itens; o
+    cabeçalho marca «Preparar & criar › Receitas / Blends prontos» e
+    «Descobrir › Tipos de chá»; `sitemap.xml` com 236 URLs.
+38. No app, `/#chas/preto` abre o chá preto; clicar em «Chá Branco» muda
+    o hash para `#chas/branco`.
 
 ## 5. Rollback
 
@@ -632,3 +678,7 @@ usa a `source: "ficha"` que a migration `20260914120000` já aceita. O
 
 **09.** `git revert` do commit. Só texto (duas páginas HTML, um documento
 interno) e um teste; sem migration, sem função, sem dado.
+
+**10.** `git revert` do commit e `npm run prerender` (as pastas `receitas/`,
+`blends/` e `chas/` somem do commit revertido; o sitemap volta a 192 URLs).
+Sem migration, sem função, sem dado.

@@ -1,7 +1,7 @@
 // v48: handoff de UX (14/09) — rotas por hash com aliases, navegação em três
 // grupos, Loja fora do DOM quando desligada, mapa mundi em arquivo (o
 // index.html cai de 1,5 MB para ~130 KB e o precache junto).
-const CACHE_NAME = 'ervatorio-v53';
+const CACHE_NAME = 'ervatorio-v54';
 const OFFLINE_URL = '/';
 
 const PRECACHE_ASSETS = [
@@ -12,6 +12,9 @@ const PRECACHE_ASSETS = [
   '/css/main.css',
   '/js/nav-data.js',
   '/js/herbs-data.js',
+  '/js/blends-data.js',
+  '/js/chas-data.js',
+  '/js/receitas-data.js',
   '/js/ficha-resumo.js',
   '/js/app.js',
   '/js/config.js',

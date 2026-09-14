@@ -241,6 +241,17 @@ e as decisões D1–D14. As que mais mudam o jeito de trabalhar aqui:
   - Caixa de aviso é fundo de token (`rgba(200,168,75,.1)`), nunca cor
     fixa escura: o tema claro remapeia `--cream2` para tinta escura e
     `#3a2a1a` + `--cream2` fica ilegível.
+- **Conteúdo que vira página estática mora em script de dados** (PR 10,
+  D36). `js/receitas-data.js`, `js/blends-data.js`, `js/chas-data.js`,
+  `js/herbs-data.js`, `js/fichas-data.js`, `js/nav-data.js`: só dados, sem
+  DOM, lidos pelo app e por `scripts/prerender.mjs`. Lista nova que precise
+  de página indexável nasce assim — não dentro de `app.js`. As páginas
+  geradas (`/receitas/<id>/`, `/blends/<slug>/`, `/chas/<id>/`) têm JSON-LD,
+  CTA para o mesmo lugar no app (`/#receitas/<id>`, `/#encontrar/<intenção>`,
+  `/#chas/<id>`), aviso de saúde, nenhum emoji e nenhum `style` inline
+  (`html-validate` nas geradas). Entrada de `NAV_GROUPS` com gêmea estática
+  leva `estatico`. Os blends de `admin_blends` não têm página: não estão no
+  repositório.
 
 ## Dado de saúde — tabela própria, consentimento próprio (PR 08 do handoff)
 

@@ -9,6 +9,9 @@
 //   • erva/index.html        — hub "Ervopédia" com links para todas
 //   • sitemap.xml             — home + legais + hub + 97 ervas
 //   • robots.txt              — referencia o sitemap
+//   • receitas/<id>/, blends/<slug>/, chas/<id>/ (+ hubs) — PR 10 do
+//     handoff: as mesmas listas do app (js/receitas-data.js,
+//     js/blends-data.js, js/chas-data.js), indexáveis sem JavaScript
 //
 // Estratégia (fase 1 da Onda 5): páginas estáticas convivem com o
 // SPA sem tocar no routing hash — o Google indexa /erva/<slug>/ e
@@ -57,6 +60,22 @@ const { PROCESSOS } = new Function(`${processosSrc}; return { PROCESSOS };`)();
 const bibliotecaSrc = readFileSync('js/biblioteca-data.js', 'utf8');
 const { BIBLIOTECA_GUIAS, PREPARO_TABELA } =
   new Function(`${bibliotecaSrc}; return { BIBLIOTECA_GUIAS, PREPARO_TABELA };`)();
+
+// Receitas, blends prontos e tipos de chá (PR 10): os mesmos scripts de
+// dados que o app carrega. INTENCOES fica em js/app.js (é o motor de
+// recomendação, não dado) e só o mapa intenção → blend é lido daqui, para
+// a página estática do blend levar ao mesmo lugar que o app.
+const receitasSrc = readFileSync('js/receitas-data.js', 'utf8');
+const { RECEITAS, REC_IMG_EXT } = new Function(`${receitasSrc}; return { RECEITAS, REC_IMG_EXT };`)();
+const blendsSrc = readFileSync('js/blends-data.js', 'utf8');
+const { BLEND_DB } = new Function(`${blendsSrc}; return { BLEND_DB };`)();
+const chasSrc = readFileSync('js/chas-data.js', 'utf8');
+const { CHAS_DATA } = new Function(`${chasSrc}; return { CHAS_DATA };`)();
+const appSrc = readFileSync('js/app.js', 'utf8');
+const intencoesMatch = appSrc.match(/\nconst INTENCOES = \{\n[\s\S]*?\n\};\n/);
+if (!intencoesMatch) throw new Error('prerender: INTENCOES não encontrado em js/app.js');
+const { INTENCOES } = new Function(`${intencoesMatch[0]}; return { INTENCOES };`)();
+const slugify = (v) => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 // Manifest de imagens (Onda 4) para OG image por erva quando existir.
 let IMG_MANIFEST = {};
@@ -844,6 +863,346 @@ ${cards}
 </html>`;
 }
 
+// ── Receitas, blends prontos e tipos de chá (PR 10) ─────────
+const HERB_BY_ID = Object.fromEntries(HERBS.map((h) => [h.id, h]));
+// Erva do catálogo → slug da ficha editorial (mesma casa de herbDaFicha).
+function fichaSlugDeHerb(h) {
+  if (!h) return null;
+  const hn = _nrm(h.n), hl = h.lat ? _nrm(h.lat.split(' ').slice(0, 2).join(' ')) : '';
+  for (const [slug, f] of Object.entries(FICHAS)) {
+    if (_nrm(f.nome_popular) === hn) return slug;
+    if (hl && f.nome_cientifico && _nrm(f.nome_cientifico).startsWith(hl)) return slug;
+  }
+  return null;
+}
+function linkErva(h) {
+  const slug = fichaSlugDeHerb(h);
+  return slug ? `<a href="/erva/${slug}/">${esc(h.n)}</a>` : `<span>${esc(h.n)}</span>`;
+}
+function imagemProduto(nome) {
+  if (!nome) return null;
+  const ext = REC_IMG_EXT[nome] || 'png';
+  for (const e of [ext, ext === 'png' ? 'jpg' : 'png']) {
+    const p = `images/produtos/${nome}.${e}`;
+    if (existsSync(p)) return `/${p}`;
+  }
+  return null;
+}
+// «15 min» → PT15M; «1 h 20 min» → PT1H20M. Sem número: null.
+function duracaoISO(txt) {
+  const h = String(txt || '').match(/(\d+)\s*h/i), m = String(txt || '').match(/(\d+)\s*min/i);
+  if (!h && !m) return null;
+  return `PT${h ? h[1] + 'H' : ''}${m ? m[1] + 'M' : ''}`;
+}
+const REC_CAT = { quente: 'Quente', gelado: 'Gelada', mocktail: 'Mocktail', medicinal: 'Medicinal', culinario: 'Culinária', ritual: 'Ritual' };
+const CONTEUDO_CSS = `
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.88rem;color:#6b5a2e;margin:6px 0 0}
+.meta span{white-space:nowrap}
+.foto{margin:0 0 18px;border-radius:14px;overflow:hidden;background:var(--panel);border:1px solid var(--line);max-width:520px}
+.foto img{display:block;width:100%;height:auto}
+ol.passos{padding-left:26px}ol.passos li{margin:8px 0;font-size:.98rem}
+.dica{background:#eef3ec;border:1px solid #cfe0cc;border-left:4px solid var(--verde2);border-radius:0 10px 10px 0;padding:12px 16px;margin:18px 0;font-size:.95rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips span{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-size:.85rem}
+ul.lista{list-style:none;padding:0}ul.lista li{border-bottom:1px dashed var(--line);padding:12px 0}
+ul.lista a{color:var(--verde);font-weight:700;text-decoration:none;font-size:1.05rem}
+ul.lista .sub{display:block;color:#7a6f57;font-size:.88rem}
+.grupo{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ouro2);margin:26px 0 4px;font-weight:700}
+.linha{display:flex;gap:14px;align-items:flex-start;margin:10px 0}.linha .ano{flex:0 0 110px;font-weight:700;color:#6b5a2e;font-size:.9rem}
+.tag{margin-top:10px;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ouro2);font-weight:700}
+meter.barra{width:220px;height:12px;vertical-align:middle}
+`;
+
+const RODAPE_ANTIGO = `<footer>
+  <p>© 2026 Ervatório · <a href="/">ervatorio.com.br</a> · <a href="/privacidade.html">Privacidade</a> · <a href="/termos.html">Termos</a></p>
+</footer>`;
+
+function cabecaHtml({ title, desc, url, ogType, ogImage, jsonld, extraCss }) {
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${url}">
+<link rel="icon" href="/icon-192.png">
+<meta property="og:type" content="${ogType}">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:url" content="${url}">
+<meta property="og:image" content="${esc(ogImage)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(title)}">
+<meta name="twitter:description" content="${esc(desc)}">
+<script type="application/ld+json">${JSON.stringify(jsonld)}</script>
+<style>${CSS}${CONTEUDO_CSS}${extraCss || ''}</style>
+</head>`;
+}
+const OG_PADRAO = `${SITE}/images/optimized/hero/ervas-colecao-1024w.webp`;
+const AVISO_SAUDE = '<div class="health"><strong>Aviso:</strong> conteúdo educacional — não substitui orientação médica. Consulte um profissional antes de usar plantas medicinais, especialmente na gravidez, amamentação ou uso de medicamentos.</div>';
+
+// Receita
+function receitaPage(r) {
+  const url = `${SITE}/receitas/${r.id}/`;
+  const desc = String(r.subtitulo || r.nome).slice(0, 158);
+  const foto = imagemProduto(r.img);
+  const ervas = (r.ervas_ids || []).map((id) => HERB_BY_ID[id]).filter(Boolean);
+  const relacionadas = RECEITAS.filter((x) => x.id !== r.id && x.categoria === r.categoria).slice(0, 4)
+    .map((x) => `<a href="/receitas/${x.id}/">${esc(x.nome)}</a>`).join('');
+  const jsonld = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Recipe', name: r.nome, description: desc, inLanguage: 'pt-BR', url,
+        image: foto ? `${SITE}${foto}` : OG_PADRAO,
+        author: { '@type': 'Organization', name: 'Ervatório', url: SITE },
+        recipeCategory: REC_CAT[r.categoria] || r.categoria,
+        recipeYield: r.porcoes || undefined,
+        prepTime: duracaoISO(r.tempo_prep) || undefined,
+        totalTime: duracaoISO(r.tempo_total) || undefined,
+        keywords: (r.tags || []).join(', ') || undefined,
+        recipeIngredient: r.ingredientes || [],
+        recipeInstructions: (r.modo || []).map((t, i) => ({ '@type': 'HowToStep', position: i + 1, text: t })),
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Ervatório', item: `${SITE}/` },
+          { '@type': 'ListItem', position: 2, name: 'Receitas', item: `${SITE}/receitas/` },
+          { '@type': 'ListItem', position: 3, name: r.nome, item: url },
+        ],
+      },
+    ],
+  };
+  return `${cabecaHtml({ title: `${r.nome} — receita ${REC_CAT[r.categoria] ? (REC_CAT[r.categoria]).toLowerCase() : ''} com ervas | Ervatório`, desc, url, ogType: 'article', ogImage: foto ? `${SITE}${foto}` : OG_PADRAO, jsonld })}
+<body>
+<header class="hero"><div class="wrap">
+  <a class="back" href="/receitas/">← Receitas</a>
+  <h1>${esc(r.nome)}</h1>
+  ${has(r.subtitulo) ? `<div class="latin">${esc(r.subtitulo)}</div>` : ''}
+  <div class="meta"><span>${esc(REC_CAT[r.categoria] || r.categoria)}</span>${has(r.nivel) ? `<span>${esc(r.nivel)}</span>` : ''}${has(r.tempo_total) ? `<span>${esc(r.tempo_total)}</span>` : ''}${has(r.porcoes) ? `<span>${esc(r.porcoes)}</span>` : ''}</div>
+</div></header>
+<main class="wrap">
+  ${foto ? `<figure class="foto"><img src="${foto}" alt="${esc(r.nome)}" loading="lazy"></figure>` : ''}
+  <p>
+    <a class="cta gold" href="/#receitas/${esc(r.id)}">Abrir no Ervatório</a>
+    <a class="cta" href="/receitas/">Todas as receitas</a>
+  </p>
+  ${ervas.length ? section('Ervas desta receita', `<div class="related">${ervas.map(linkErva).join('')}</div>`) : ''}
+  ${section('Ingredientes', ul(r.ingredientes))}
+  ${section('Modo de preparo', `<ol class="passos">${(r.modo || []).map((t) => `<li>${esc(t)}</li>`).join('')}</ol>`)}
+  ${has(r.dica) ? `<div class="dica"><strong>Dica:</strong> ${esc(r.dica)}</div>` : ''}
+  ${has(r.beneficios) ? section('Benefícios', `<p>${esc(r.beneficios)}</p>`) : ''}
+  ${has(r.pairing) ? section('Harmonização', `<p>${esc(r.pairing)}</p>`) : ''}
+  ${(r.tags || []).length ? section('Tags', `<div class="chips">${r.tags.map((t) => `<span>${esc(t)}</span>`).join('')}</div>`) : ''}
+  ${AVISO_SAUDE}
+  ${relacionadas ? section('Mais receitas assim', `<div class="related">${relacionadas}</div>`) : ''}
+</main>
+${RODAPE_ANTIGO}
+</body>
+</html>`;
+}
+
+function receitasHub() {
+  const url = `${SITE}/receitas/`;
+  const ordem = ['quente', 'gelado', 'mocktail', 'medicinal', 'culinario', 'ritual'];
+  const grupos = ordem.filter((c) => RECEITAS.some((r) => r.categoria === c)).map((c) =>
+    `<div class="grupo">${esc(REC_CAT[c] || c)}</div><ul class="lista">${RECEITAS.filter((r) => r.categoria === c).map((r) =>
+      `<li><a href="/receitas/${r.id}/">${esc(r.nome)}</a> <span class="sub">${esc(r.subtitulo || '')}${has(r.tempo_total) ? ` · ${esc(r.tempo_total)}` : ''}</span></li>`).join('\n')}</ul>`).join('\n');
+  const jsonld = {
+    '@context': 'https://schema.org', '@type': 'CollectionPage',
+    name: 'Receitas com ervas — Ervatório', url, inLanguage: 'pt-BR',
+    hasPart: RECEITAS.map((r) => ({ '@type': 'Recipe', name: r.nome, url: `${SITE}/receitas/${r.id}/` })),
+  };
+  return `${cabecaHtml({ title: `Receitas com ervas — ${RECEITAS.length} chás, drinks e preparos | Ervatório`, desc: `${RECEITAS.length} receitas com ervas brasileiras: chás quentes, gelados, mocktails, medicinais, culinárias e rituais. Ingredientes, modo de preparo e as ervas de cada uma.`, url, ogType: 'website', ogImage: OG_PADRAO, jsonld })}
+<body>
+<header class="hero"><div class="wrap">
+  <a class="back" href="/">← Ervatório</a>
+  <h1>Receitas com ervas</h1>
+  <p class="tagline">${RECEITAS.length} preparos, do chai brasileiro ao cold brew de mate — com as ervas de cada um ligadas às fichas.</p>
+</div></header>
+<main class="wrap">
+  <p><a class="cta gold" href="/#receitas">Abrir no Ervatório</a> <a class="cta" href="/blends/">Blends prontos</a> <a class="cta" href="/erva/">Guia de Ervas</a></p>
+${grupos}
+  ${AVISO_SAUDE}
+</main>
+${RODAPE_ANTIGO}
+</body>
+</html>`;
+}
+
+// Blend pronto
+const BLENDS = Object.entries(BLEND_DB).map(([chave, b]) => {
+  const intencao = Object.entries(INTENCOES).find(([, def]) => def.blend === chave)?.[0] || null;
+  return { chave, slug: slugify(b.name), intencao, ...b };
+});
+if (new Set(BLENDS.map((b) => b.slug)).size !== BLENDS.length) throw new Error('prerender: slug de blend repetido');
+
+function blendPage(b) {
+  const url = `${SITE}/blends/${b.slug}/`;
+  const desc = String(b.tagline || b.name).slice(0, 158);
+  const ervas = (b.ings || []).map((i) => HERB_BY_ID[i.id] || { id: i.id, n: i.n, lat: '' });
+  const outros = BLENDS.filter((x) => x.slug !== b.slug).slice(0, 4).map((x) => `<a href="/blends/${x.slug}/">${esc(x.name)}</a>`).join('');
+  const jsonld = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Recipe', name: b.name, description: desc, inLanguage: 'pt-BR', url, image: OG_PADRAO,
+        author: { '@type': 'Organization', name: 'Ervatório', url: SITE },
+        recipeCategory: 'Blend de ervas',
+        recipeIngredient: (b.ings || []).map((i) => `${i.amount} de ${i.n}`),
+        recipeInstructions: (b.steps || []).map((t, i) => ({ '@type': 'HowToStep', position: i + 1, text: t })),
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Ervatório', item: `${SITE}/` },
+          { '@type': 'ListItem', position: 2, name: 'Blends prontos', item: `${SITE}/blends/` },
+          { '@type': 'ListItem', position: 3, name: b.name, item: url },
+        ],
+      },
+    ],
+  };
+  const ctaApp = b.intencao ? `/#encontrar/${b.intencao}` : '/#blends/prontos';
+  return `${cabecaHtml({ title: `${b.name} — blend pronto para ${b.chave === 'default' ? 'o dia a dia' : b.chave.toLowerCase()} | Ervatório`, desc, url, ogType: 'article', ogImage: OG_PADRAO, jsonld })}
+<body>
+<header class="hero"><div class="wrap">
+  <a class="back" href="/blends/">← Blends prontos</a>
+  <div class="tag">${b.chave === 'default' ? 'Para o dia a dia' : esc(b.chave)}</div>
+  <h1>${esc(b.name)}</h1>
+  ${has(b.tagline) ? `<div class="latin">${esc(b.tagline)}</div>` : ''}
+</div></header>
+<main class="wrap">
+  <p>
+    <a class="cta gold" href="${ctaApp}">Abrir no Ervatório</a>
+    <a class="cta" href="/#blends/manual">Montar o meu blend</a>
+  </p>
+  ${section('Ervas e proporção', `<ul>${(b.ings || []).map((i) => `<li><strong>${esc(i.amount)}</strong> de ${linkErva(HERB_BY_ID[i.id] || { n: i.n })}</li>`).join('')}</ul>`)}
+  ${section('Como preparar', `<ol class="passos">${(b.steps || []).map((t) => `<li>${esc(t)}</li>`).join('')}</ol>`)}
+  ${(b.effects || []).length ? section('O que esperar', `<div class="chips">${b.effects.map((e) => `<span>${esc(e)}</span>`).join('')}</div>`) : ''}
+  ${has(b.obs) ? `<div class="dica"><strong>Observação:</strong> ${esc(b.obs)}</div>` : ''}
+  ${AVISO_SAUDE}
+  ${outros ? section('Outros blends prontos', `<div class="related">${outros}</div>`) : ''}
+</main>
+${RODAPE_ANTIGO}
+</body>
+</html>`;
+}
+
+function blendsHub() {
+  const url = `${SITE}/blends/`;
+  const itens = BLENDS.map((b) =>
+    `<li><a href="/blends/${b.slug}/">${esc(b.name)}</a> <span class="sub">${b.chave === 'default' ? 'Para o dia a dia' : esc(b.chave)} · ${(b.ings || []).map((i) => esc(i.n)).join(', ')}</span></li>`).join('\n');
+  const jsonld = {
+    '@context': 'https://schema.org', '@type': 'CollectionPage',
+    name: 'Blends prontos — Ervatório', url, inLanguage: 'pt-BR',
+    hasPart: BLENDS.map((b) => ({ '@type': 'Recipe', name: b.name, url: `${SITE}/blends/${b.slug}/` })),
+  };
+  return `${cabecaHtml({ title: `Blends prontos — ${BLENDS.length} misturas de ervas por momento | Ervatório`, desc: `${BLENDS.length} blends de ervas com proporção, preparo e cuidados: para dormir, para o foco, para a digestão, para a ansiedade e mais.`, url, ogType: 'website', ogImage: OG_PADRAO, jsonld })}
+<body>
+<header class="hero"><div class="wrap">
+  <a class="back" href="/">← Ervatório</a>
+  <h1>Blends prontos</h1>
+  <p class="tagline">${BLENDS.length} misturas testadas, cada uma para um momento — as mesmas que o «Encontre seu chá» sugere.</p>
+</div></header>
+<main class="wrap">
+  <p><a class="cta gold" href="/#encontrar">Encontre seu chá</a> <a class="cta" href="/#blends/manual">Montar o meu blend</a> <a class="cta" href="/receitas/">Receitas</a></p>
+  <ul class="lista">
+${itens}
+  </ul>
+  ${AVISO_SAUDE}
+</main>
+${RODAPE_ANTIGO}
+</body>
+</html>`;
+}
+
+// Tipo de chá (Camellia sinensis)
+function chaPage(c) {
+  const url = `${SITE}/chas/${c.id}/`;
+  const desc = String(c.tagline || c.name).slice(0, 158);
+  const foto = existsSync(c.img || '') ? `/${c.img}` : null;
+  const outros = CHAS_DATA.filter((x) => x.id !== c.id).map((x) => `<a href="/chas/${x.id}/">${esc(x.name)}</a>`).join('');
+  const jsonld = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Article', headline: `${c.name} — ${c.tagline}`.slice(0, 110), description: desc, inLanguage: 'pt-BR', mainEntityOfPage: url,
+        image: foto ? `${SITE}${foto}` : OG_PADRAO,
+        author: { '@type': 'Organization', name: 'Ervatório', url: SITE },
+        publisher: { '@type': 'Organization', name: 'Ervatório', url: SITE, logo: { '@type': 'ImageObject', url: `${SITE}/icon-512.png` } },
+        about: { '@type': 'Thing', name: c.name, alternateName: 'Camellia sinensis' },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Ervatório', item: `${SITE}/` },
+          { '@type': 'ListItem', position: 2, name: 'Tipos de chá', item: `${SITE}/chas/` },
+          { '@type': 'ListItem', position: 3, name: c.name, item: url },
+        ],
+      },
+    ],
+  };
+  return `${cabecaHtml({ title: `${c.name} — preparo, sabor, história e variedades | Ervatório`, desc, url, ogType: 'article', ogImage: foto ? `${SITE}${foto}` : OG_PADRAO, jsonld })}
+<body>
+<header class="hero"><div class="wrap">
+  <a class="back" href="/chas/">← Tipos de chá</a>
+  <h1>${esc(c.name)}</h1>
+  ${has(c.latin) ? `<div class="latin">${esc(c.latin)}</div>` : ''}
+  ${has(c.tagline) ? `<p class="tagline">${esc(c.tagline)}</p>` : ''}
+</div></header>
+<main class="wrap">
+  ${foto ? `<figure class="foto"><img src="${foto}" alt="${esc(c.name)}" loading="lazy"></figure>` : ''}
+  <p>
+    <a class="cta gold" href="/#chas/${esc(c.id)}">Abrir no Ervatório</a>
+    <a class="cta" href="/chas/">Os seis tipos</a>
+  </p>
+  ${section('Oxidação', `<p><meter class="barra" min="0" max="100" value="${Number(c.oxidation) || 0}">${esc(String(c.oxidation))}%</meter> ${esc(String(c.oxidation))}% — de 0 (chá branco) a 100 (chá preto).</p>`)}
+  ${section('Como preparar', dl([['Temperatura', c.temp], ['Tempo', c.tempo], ['Dose', c.dose], ['Cafeína', c.cafeina], ['Melhor momento', c.momento]]) + ((c.preparo || []).length ? `<ol class="passos">${c.preparo.map((t) => `<li>${esc(t)}</li>`).join('')}</ol>` : ''))}
+  ${(c.sabores || []).length ? section('Perfil de sabor', `<div class="chips">${c.sabores.map((x) => `<span>${esc(x)}</span>`).join('')}</div>`) : ''}
+  ${section('Benefícios', ul(c.beneficios))}
+  ${(c.variedades || []).length ? section('Variedades', `<ul>${c.variedades.map((v) => `<li><strong>${esc(v.n)}</strong>${has(v.orig) ? ` (${esc(v.orig)})` : ''}${has(v.d) ? ` — ${esc(v.d)}` : ''}</li>`).join('')}</ul>`) : ''}
+  ${section('Regiões', ul(c.regioes))}
+  ${(c.historia || []).length ? section('História', c.historia.map((h) => `<div class="linha"><span class="ano">${esc(h.year)}</span><span>${esc(h.text)}</span></div>`).join('')) : ''}
+  ${section('Harmonização', ul(c.harmonizacao))}
+  ${has(c.curiosidades) ? section('Curiosidade', `<p>${esc(c.curiosidades)}</p>`) : ''}
+  ${AVISO_SAUDE}
+  ${section('Os outros tipos', `<div class="related">${outros}</div>`)}
+</main>
+${RODAPE_ANTIGO}
+</body>
+</html>`;
+}
+
+function chasHub() {
+  const url = `${SITE}/chas/`;
+  const itens = CHAS_DATA.map((c) =>
+    `<li><a href="/chas/${c.id}/">${esc(c.name)}</a> <span class="sub">${esc(c.tagline || '')} · oxidação ${esc(String(c.oxidation))}% · ${esc(c.cafeina || '')}</span></li>`).join('\n');
+  const jsonld = {
+    '@context': 'https://schema.org', '@type': 'CollectionPage',
+    name: 'Tipos de chá (Camellia sinensis) — Ervatório', url, inLanguage: 'pt-BR',
+    hasPart: CHAS_DATA.map((c) => ({ '@type': 'Article', name: c.name, url: `${SITE}/chas/${c.id}/` })),
+  };
+  return `${cabecaHtml({ title: 'Tipos de chá — os seis filhos da Camellia sinensis | Ervatório', desc: 'Branco, verde, amarelo, oolong, preto e pu-erh: uma planta, seis processos. Preparo, sabor, cafeína, história e variedades de cada tipo.', url, ogType: 'website', ogImage: OG_PADRAO, jsonld })}
+<body>
+<header class="hero"><div class="wrap">
+  <a class="back" href="/">← Ervatório</a>
+  <h1>Tipos de chá</h1>
+  <p class="tagline">Uma única planta, seis universos: o que muda é a oxidação — e com ela o sabor, a cafeína e o preparo.</p>
+</div></header>
+<main class="wrap">
+  <p><a class="cta gold" href="/#chas">Abrir no Ervatório</a> <a class="cta" href="/como-se-faz/">Como se faz o chá</a> <a class="cta" href="/erva/">Guia de Ervas</a></p>
+  <ul class="lista">
+${itens}
+  </ul>
+  ${AVISO_SAUDE}
+</main>
+${RODAPE_ANTIGO}
+</body>
+</html>`;
+}
+
 // ── Geração ─────────────────────────────────────────────────
 let count = 0;
 for (const [i, slug] of slugs.entries()) {
@@ -884,6 +1243,32 @@ for (const guia of BIBLIOTECA_GUIAS) {
 }
 writeFileSync(join('biblioteca', 'index.html'), moldura(bibliotecaHub(), { secao: '/biblioteca/' }));
 
+// Receitas, blends prontos e tipos de chá (PR 10)
+let recCount = 0;
+for (const r of RECEITAS) {
+  const dir = join('receitas', r.id);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'index.html'), moldura(receitaPage(r), { secao: '/receitas/' }));
+  recCount++;
+}
+writeFileSync(join('receitas', 'index.html'), moldura(receitasHub(), { secao: '/receitas/' }));
+let blendCount = 0;
+for (const b of BLENDS) {
+  const dir = join('blends', b.slug);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'index.html'), moldura(blendPage(b), { secao: '/blends/' }));
+  blendCount++;
+}
+writeFileSync(join('blends', 'index.html'), moldura(blendsHub(), { secao: '/blends/' }));
+let chaCount = 0;
+for (const c of CHAS_DATA) {
+  const dir = join('chas', c.id);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'index.html'), moldura(chaPage(c), { secao: '/chas/' }));
+  chaCount++;
+}
+writeFileSync(join('chas', 'index.html'), moldura(chasHub(), { secao: '/chas/' }));
+
 // Páginas escritas à mão: recebem o mesmo cabeçalho pelos marcadores.
 for (const arquivo of ['pausa.html', 'privacidade.html', 'termos.html']) aplicarMarcadores(arquivo, {});
 
@@ -894,6 +1279,9 @@ const staticUrls = [
   { loc: `${SITE}/lexico/`, priority: '0.7' },
   { loc: `${SITE}/como-se-faz/`, priority: '0.7' },
   { loc: `${SITE}/biblioteca/`, priority: '0.6' },
+  { loc: `${SITE}/receitas/`, priority: '0.8' },
+  { loc: `${SITE}/blends/`, priority: '0.7' },
+  { loc: `${SITE}/chas/`, priority: '0.8' },
   { loc: `${SITE}/privacidade.html`, priority: '0.3' },
   { loc: `${SITE}/termos.html`, priority: '0.3' },
 ];
@@ -901,7 +1289,10 @@ const urls = staticUrls
   .concat(slugs.map((s) => ({ loc: `${SITE}/erva/${s}/`, priority: '0.8' })))
   .concat(LEXICO_TERMOS.map((t) => ({ loc: `${SITE}/lexico/${t.slug}/`, priority: '0.6' })))
   .concat(PROCESSOS.map((p) => ({ loc: `${SITE}/como-se-faz/${p.slug}/`, priority: '0.7' })))
-  .concat(BIBLIOTECA_GUIAS.map((g) => ({ loc: `${SITE}/biblioteca/${g.slug}/`, priority: '0.5' })));
+  .concat(BIBLIOTECA_GUIAS.map((g) => ({ loc: `${SITE}/biblioteca/${g.slug}/`, priority: '0.5' })))
+  .concat(RECEITAS.map((r) => ({ loc: `${SITE}/receitas/${r.id}/`, priority: '0.7' })))
+  .concat(BLENDS.map((b) => ({ loc: `${SITE}/blends/${b.slug}/`, priority: '0.6' })))
+  .concat(CHAS_DATA.map((c) => ({ loc: `${SITE}/chas/${c.id}/`, priority: '0.7' })));
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map((u) => `  <url><loc>${u.loc}</loc><lastmod>${TODAY}</lastmod><priority>${u.priority}</priority></url>`).join('\n')}
@@ -921,5 +1312,6 @@ console.log(`✓ ${count} páginas de erva + hub geradas em /erva/`);
 console.log(`✓ ${lexCount} termos do léxico + hub gerados em /lexico/`);
 console.log(`✓ ${procCount} artigos "como se faz" + hub gerados em /como-se-faz/`);
 console.log(`✓ ${bibCount} guias da biblioteca + hub gerados em /biblioteca/`);
+console.log(`✓ ${recCount} receitas + hub em /receitas/, ${blendCount} blends + hub em /blends/, ${chaCount} tipos de chá + hub em /chas/`);
 console.log(`✓ sitemap.xml (${urls.length} URLs) e robots.txt escritos`);
 if (!existsSync('images/manifest.json')) console.warn('! images/manifest.json ausente — OG images caíram no fallback');
