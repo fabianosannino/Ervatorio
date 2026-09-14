@@ -169,6 +169,30 @@ e as decisões D1–D14. As que mais mudam o jeito de trabalhar aqui:
   `#encontrar` abre a tela de intenções; `#encontrar/<intencao>` já aplica a
   intenção.
 
+## Dado de saúde — tabela própria, consentimento próprio (PR 08 do handoff)
+
+- **Condição de saúde é dado sensível** (LGPD art. 5º II). Só se trata com
+  consentimento **específico e destacado** para finalidade específica
+  (art. 11 I). A finalidade aqui é **uma**: filtrar recomendações.
+- **Mora em `perfil_saude`** (migration `20260915120000`), uma linha por
+  usuário, RLS do dono, sem acesso a `anon`. **Não existe linha sem
+  consentimento** (`consentimento_em NOT NULL`); retirar o consentimento é
+  `DELETE`. Cai com a conta (CASCADE) e sai no export de `user-data-rights`.
+- **Nunca no aparelho.** `perfilState` / `erb_perfil` guardam nome e
+  preferências; saúde vive em `saudeState`, **só em memória**, carregada do
+  servidor a cada sessão. O Service Worker não cacheia a API do Supabase
+  (outra origem). Se algum dia alguém escrever saúde em `localStorage`, é
+  regressão — o `conta.spec.mjs` confere.
+- **Lista fechada, dois espelhos**: `condicoes_de_saude_conhecidas()` no
+  banco (o `CHECK` recusa o resto) e `SAUDE_CONDICOES` em `js/app.js` (cada
+  entrada diz quais `avoid` das fichas ela bloqueia). Condição nova entra nos
+  dois. **Texto livre de saúde não entra** em lugar nenhum — o campo
+  «observações» do assistente de blends foi trocado por chips de sessão.
+- **Já houve vazamento**: `user_preferences.caffeine_pref` recebia a primeira
+  «condição» do perfil. A migration limpou os valores conhecidos; a
+  sincronização não escreve mais ali.
+- Mexeu nisso? Rode `supabase/tests/20260915_perfil_saude_test.sql`.
+
 ## Compliance
 - Nenhum script de tracking (analytics, pixel) dispara antes do **consentimento** do usuário (LGPD / Consent Mode v2).
 - Dados pessoais têm base legal, política de retenção e caminho de exclusão.

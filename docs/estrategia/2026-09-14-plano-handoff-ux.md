@@ -65,7 +65,8 @@ três commits** (D2).
 | 05 | «Encontre seu chá» em 3 passos, motor único de recomendação, restrição como barreira | Aguarda o roteiro de teste com usuários (README §Fase 2 §04) | `feat/encontrar` |
 | 06 | Ficha: resumo leigo, timer embutido, «Onde encontrar» (indicação), e-mail | Depois do 05 | `feat/ficha-actions` |
 | 07 | Descobrir e Preparar como abas de verdade (fusão de renderizadores) | Parte já entra no 03 como sub-navegação; a fusão fica aqui | `feat/descobrir-preparar` |
-| 08 | Meu Ervatório + `perfil_saude` (tabela própria, RLS, consentimento com timestamp) + Diário | Prioridade alta por LGPD; não depende do 05 | `feat/conta-e-consentimento` |
+| 08 | Meu Ervatório + `perfil_saude` (tabela própria, RLS, consentimento com timestamp); cadastro reduzido; «Excluir meus dados» | **Segunda rodada (15/09)** — ver D15–D17. O Diário fica para o 08b. | PR `feat/conta-e-consentimento` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
+| 08b | Diário de infusões (`diario_infusoes`, RLS dono, flag) | Depois do 08 | `feat/diario-infusoes` |
 | 09 | `privacidade.html`: CNPJ/DPO, dado de saúde, base legal, retenção | Depende de decisão do dono (CNPJ/DPO) | `docs/privacy-update` |
 | 10 | Páginas estáticas para receitas, blends, tipos de chá | Mês 2–3 | `feat/static-pages-recipes-blends` |
 | 11 | Clube (lista de espera → pré-venda → Stripe) | Depois | `feat/clube-waitlist` → `feat/stripe-checkout` |
@@ -203,6 +204,35 @@ para `mailto:`, até existir `/parceiros/`.
 - **`html-validate index.html` acusava dois `<nav>` e dois `<footer>` com o
   mesmo nome** (landing + app no mesmo documento). Nomeados; some quando a
   landing virar a home (PR 03b/05).
+
+**D15 — O Diário de infusões não entra no PR 08.** O critério de aceite do
+handoff para o 08 é o consentimento («sem consentimento, campos desabilitados
+e app 100% funcional; RLS testada»). O Diário é tabela nova, tela nova e flag
+nova — outro PR (08b), com o próprio teste SQL.
+
+**D16 — Meu Ervatório usa a sub-navegação, não a barra lateral.** O protótipo
+mostra `/conta/` com nav lateral de 220 px. A sub-navegação do grupo «conta»
+(Minha estante · Minha jornada · Jogo · Perfil · Sobre) já dá a mesma
+hierarquia sem refazer o layout de cinco páginas. «Excluir meus dados»,
+«Baixar meus dados» e «Sair» ficam na seção «Seus dados» do Perfil. A barra
+lateral, se ainda fizer sentido, entra quando as páginas forem fundidas
+(PR 07).
+
+**D17 — Saúde é lista fechada; texto livre não entra.** O handoff pede
+chips (`Gestante · Hipertensão · Uso de anticoagulante · Alergia a
+asteráceas`). Acrescentamos `amamentando`, `crianca` e `diabetes` porque as
+fichas já têm `avoid` correspondente (ou aviso, no caso do diabetes). O
+campo «Restrições e alergias» (texto livre) e o «Observações» do assistente
+de blends saem: texto livre com dado de saúde não filtra nada e não se
+minimiza. Os «objetivos com os chás» (dormir melhor, foco…) ficam nas
+preferências comuns: são intenções, as mesmas dos chips do hero, não
+condições de saúde.
+
+**D18 — A limpeza de `caffeine_pref` é destrutiva de propósito.** A coluna
+guardava «Grávida»/«Hipertensão» sem base legal. A migration zera só os
+valores da lista antiga; preferência de cafeína de verdade não está nela.
+Não há rollback para isso — não se restaura dado sensível guardado
+indevidamente.
 
 ## 4. Como testar esta rodada
 
