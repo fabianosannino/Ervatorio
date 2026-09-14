@@ -32,6 +32,10 @@ const OWNED_TABLES: Array<{ table: string; key: string }> = [
   { table: 'tasting_journal', key: 'user_id' },
   { table: 'saved_recipes', key: 'user_id' },
   { table: 'user_addresses', key: 'user_id' },
+  // Dado sensível (migration 20260915120000): sai no export como todo o
+  // resto e cai com a conta por CASCADE. Retirar só o consentimento é
+  // DELETE na linha, feito pela própria tela (RLS do dono).
+  { table: 'perfil_saude', key: 'user_id' },
 ];
 
 Deno.serve(async (req) => {
