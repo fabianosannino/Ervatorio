@@ -62,7 +62,7 @@ três commits** (D2).
 | 02 | CTAs mortos; flag única de comércio; mapa mundi em arquivo | **Nesta rodada** | commit `fix(landing): CTAs mortos viram rotas…` (2º) |
 | 03 | Cabeçalho único: 3 grupos + Loja condicional + ícones; menu mobile; sub-navegação por grupo; landing com o mesmo vocabulário e hero por intenção | **Nesta rodada (parcial)** — o app e a landing. As páginas estáticas (`/erva/*`, `/como-se-faz/*`, `/biblioteca/*`, `/lexico/*`, `pausa.html`, legais) ficam para o 03b, porque exigem mexer no gerador `scripts/prerender.mjs` e regenerar ~100 arquivos. | commit `feat(nav): cabeçalho único…` (3º) |
 | 03b | Mesmo cabeçalho nas páginas estáticas (via `prerender.mjs`) | **Quarta rodada (16/09)** — ver D22–D23. | PR `feat/unified-nav-static` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
-| 05 | «Encontre seu chá» em 3 passos, motor único de recomendação, restrição como barreira | Aguarda o roteiro de teste com usuários (README §Fase 2 §04) | `feat/encontrar` |
+| 05 | «Encontre seu chá» em 3 passos, motor único de recomendação, restrição como barreira | **Sexta rodada (16/09)** — sem o teste com usuários, por decisão do dono (D27). Ver D27–D30. | PR `feat/encontrar` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 06 | Ficha: resumo leigo, timer embutido, «Onde encontrar» (indicação), e-mail | Depois do 05 | `feat/ficha-actions` |
 | 07 | Descobrir e Preparar como abas de verdade (fusão de renderizadores) | **Quinta rodada (16/09)** — Origens absorve Onde beber; hub «Como preparar» com seis cards. Ver D24–D25 para o que fica. | PR `feat/descobrir-preparar` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 08 | Meu Ervatório + `perfil_saude` (tabela própria, RLS, consentimento com timestamp); cadastro reduzido; «Excluir meus dados» | **Segunda rodada (15/09)** — ver D15–D17. O Diário fica para o 08b. | PR `feat/conta-e-consentimento` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
@@ -234,6 +234,14 @@ para `mailto:`, até existir `/parceiros/`.
   (`!p.slug` era verdadeiro sempre). Não aparecia porque só Blends tinha
   duas entradas na mesma tela e as duas têm slug. Com Origens/Onde beber
   apareceria; corrigido na condição.
+- **(05) O hash muda pelo fluxo, e mudar o hash com a landing por cima abre
+  o app.** `history.replaceState` não dispara `hashchange`, mas o roteador
+  roda 300 ms depois do boot e leria `#encontrar`. `encSincronizarHash` só
+  age com a tela de fato aberta (`_currentPage` e landing escondida); o
+  boot chama `encReset()`, que não toca no hash.
+- **(05) `toggleFav` escreve «♥ Favorito» em todo `[data-fav-herb]`** — os
+  cards do passo 3 não usam esse atributo e se re-renderizam depois do
+  clique, para o rótulo vir do i18n (`enc.saved`).
 
 **D15 — O Diário de infusões não entra no PR 08.** O critério de aceite do
 handoff para o 08 é o consentimento («sem consentimento, campos desabilitados
@@ -330,6 +338,45 @@ entendessem `tela/slug` com nome próprio: `PAGE_HASH['mundo/beber'] =
 (`replaceState`) e a sub-navegação; o `#chazerias` antigo segue valendo
 por alias. O Leaflet e as chazerias só carregam quando a visão abre.
 
+**D27 — O 05 entra sem o teste com usuários.** O handoff condicionava o
+05 ao roteiro de teste (Fase 2 §04). O dono mandou seguir «na ordem
+proposta», e a ordem passava pelo 05. O roteiro não some: vira validação
+**depois** de no ar, com o fluxo real na mão das seis pessoas em vez de um
+protótipo — o que se aprende aí volta como PR pequeno, não como bloqueio.
+O que o teste ia decidir e foi decidido aqui, para poder ser revisto: os
+rótulos dos chips (as strings `intent.*` que já existiam), a restrição em
+quatro chips (gestante ou amamentando · hipertensão · anticoagulante · é
+para criança) e o momento em quatro.
+
+**D28 — A Roda de filtros sai da tela de intenções e vira modo avançado.**
+A antiga Busca (roda de três anéis, chips em lista, grade) não foi apagada:
+mora em `#encBusca`, escondida, e aparece quando o usuário digita no campo
+de busca ou pede «Buscar por filtros e pela roda». `#roda` (Roda dos Chás)
+e `#roda-funcional` continuam páginas próprias; o passo 1 aponta para a
+segunda como «modo avançado», em vez de renderizar a roda no lugar, como o
+protótipo sugeria — a Roda Funcional tem formulário e resultados próprios,
+e embuti-la no passo 1 seria carregar duas telas numa.
+
+**D29 — O Assistente de blends sai; `BLEND_DB` fica.** A aba tinha
+sintoma, hora, sabor e restrição — o mesmo que o fluxo pergunta, com outros
+nomes. Sai a aba, sai o `wizState`, saem `buildWizard` e `generateBlend`.
+O que ele produzia (a receita por sintoma, `BLEND_DB`) vira o «Blend pronto
+para o seu momento» do passo 3, escolhido pela intenção, e continua indo
+para o construtor e para os favoritos. `#blends/assistente` e o
+`#criarblend` legado caem em `#encontrar`. A bandeja («＋ Selecionar para
+blend» nas fichas) muda para a aba Manual, que é onde ela desemboca.
+
+**D30 — O motor é uma função pura, e o momento pontua, não filtra.**
+`recomendar({intencao, momento, restricoes})` devolve as três ervas, o que
+a restrição removeu e o blend. Intenção casa por categoria (3 pontos) e por
+tag (2 por tag); momento soma 2 se a erva é daquele momento e 1 se é de
+«qualquer hora» — um filtro duro zeraria o resultado em intenções com
+poucas ervas noturnas. A restrição é a única barreira dura, pela mesma
+`ervaContraindicada` do Perfil. «Cautela» marca erva com contraindicação
+para algum grupo (gestantes, hipertensos, anticoagulantes, crianças,
+lactantes) que o usuário **não** declarou; «Seguro», as demais. O teste
+E2E compara o que está na tela com o que a função devolve.
+
 ## 4. Como testar esta rodada
 
 ```
@@ -397,6 +444,26 @@ Quinta rodada (07), além do de cima:
     todos operáveis por Tab + Enter; nenhum «Famílias» ali.
 15. Trocar o idioma para EN e voltar ao hub: os textos dos cards trocam.
 
+Sexta rodada (05), além do de cima:
+
+```
+npx playwright test tests/e2e/encontrar.spec.mjs   # 6 cenários
+```
+
+16. `/#encontrar`: seis chips; escolher «Quero dormir melhor» abre o passo
+    2 com `#encontrar/sono`; «À noite» + «Hipertensão» + «Ver minhas
+    opções» abre o passo 3 com aviso, três cards (nenhum com «hipertensos»
+    em `avoid`), selo Seguro/Cautela e o blend «Infusão do Silêncio»; o
+    hash vira `#encontrar/sono/noite/hipertensao` e, colado noutra aba,
+    abre direto no passo 3.
+17. Com conta e consentimento de saúde: o passo 2 já vem com a restrição
+    marcada. Sem consentimento, «Nenhuma».
+18. Digitar «camomila» no campo abre a grade e a roda (modo avançado).
+19. `/#blends`: duas abas; a bandeja está no Manual; `/#blends/assistente`
+    e `/#criarblend` caem em `#encontrar`.
+20. Chips do hero da landing e «Não sabe por onde começar?» continuam
+    funcionando.
+
 ## 5. Rollback
 
 Cada etapa é um commit; `git revert <sha>` desfaz uma sem tocar nas outras.
@@ -416,3 +483,7 @@ mão voltam vazios com o revert. Sem migration, sem função, sem dado.
 **07.** `git revert` do commit e `npm run prerender` (a sub-navegação das
 páginas estáticas volta a apontar para `#onde-beber` como página). Sem
 migration, sem função, sem dado.
+
+**05.** `git revert` do commit. Sem migration, sem função, sem dado; o
+`localStorage` não muda de formato (`erb_tray`, `erb_recipes`, `erb_favs`
+continuam iguais).

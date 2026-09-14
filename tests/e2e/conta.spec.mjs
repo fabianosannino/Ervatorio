@@ -3,7 +3,7 @@
 // ============================================================
 // O que não pode regredir: saúde nunca em localStorage; sem conta o bloco
 // explica e não coleta; com conta, chips desabilitados até o consentimento;
-// salvar grava em perfil_saude e retirar apaga; o assistente de blends não
+// salvar grava em perfil_saude e retirar apaga; o Encontre seu chá não
 // tem mais campo livre; o cadastro pede só nome.
 //
 // Não há Supabase aqui: `ervaria.client` é substituído por um stub que
@@ -132,16 +132,15 @@ test.describe('Perfil — dado de saúde', () => {
   });
 });
 
-test.describe('assistente de blends — restrição por chips', () => {
-  test('não há campo de texto livre; a restrição é nomeada no resultado', async ({ page }) => {
-    await page.goto('/#blends/assistente', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('#page-blends')).toHaveClass(/\bon\b/);
-    expect(await page.locator('#wizObs').count()).toBe(0);
-    await expect(page.locator('#wizRestr button')).toHaveCount(8); // Nenhuma + 7
-    await page.click('#wizSintomas .wizard-chip >> nth=0');
-    await page.click('#wizRestr button[data-condicao="gestante"]');
-    await page.click('.gen-btn');
-    await expect(page.locator('#blendResult')).toContainText(/Gestante/);
+test.describe('Encontre seu chá — restrição por chips (ex-assistente de blends)', () => {
+  test('não há campo de texto livre; a restrição é nomeada no resultado e não persiste', async ({ page }) => {
+    await page.goto('/#encontrar/sono', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#encPasso2')).toBeVisible({ timeout: 5000 });
+    expect(await page.locator('#wizObs, #encPasso2 textarea').count()).toBe(0);
+    await expect(page.locator('#encRestricoes .enc-chip')).toHaveCount(5); // Nenhuma + 4
+    await page.click('#encRestricoes .enc-chip[data-restricao="gestante"]');
+    await page.click('#encVerOpcoes');
+    await expect(page.locator('#encAviso')).toContainText(/Gestante/);
     // A restrição não persiste no aparelho.
     const ls = await page.evaluate(() => JSON.stringify(localStorage));
     expect(ls).not.toMatch(/gestante/);

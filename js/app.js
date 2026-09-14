@@ -126,7 +126,6 @@ let blendTray = safeLoad('erb_tray', []);
 let savedRecipes = safeLoad('erb_recipes', []);
 let cart = safeLoad('erb_cart', []);
 let activeFilters = {search:'',cat:'Todos',safe:'',avoid:'',momento:'',linha:''};
-let wizState = {sintomas:[],hora:'',sabor:'',restricoes:[]};
 let activeSup = 'Todos';
 let currentHerb = null;
 
@@ -638,27 +637,223 @@ function clearAllFilters(){
   toast('Filtros limpos');
 }
 
-// ── INTENÇÕES — entrada por linguagem natural ──
-function aplicarIntencao(intencao){
-  const mapa = {
-    'sono':       {cat:'Sono',     safe:'',          momento:'noite'},
-    'foco':       {cat:'Estimulante', safe:'',       momento:'manha'},
-    'digestao':   {cat:'Digestivo',safe:'',           momento:''},
-    'ansiedade':  {cat:'Calmante', safe:'',           momento:''},
-    'imunidade':  {cat:'Todos',    safe:'',           momento:'', search:'imunidade'},
-    'explorar':   null,
+// ============================================================
+// ENCONTRE SEU CHÁ (handoff, PR 05) — três passos, um motor
+// ============================================================
+// `recomendar()` é a única regra de recomendação: o passo 3 e o blend
+// sugerido saem dela. Intenção → categorias e tags de HERBS; restrição →
+// `avoid`, pela mesma barreira do Perfil (ervaContraindicada); momento é
+// preferência (pontua), não filtro — nunca zera o resultado. A restrição
+// vive em encState, só nesta sessão; com conta e consentimento, o Perfil
+// pré-marca (encRestricoesDoPerfil). Sem campo de texto livre (D17).
+const INTENCOES = {
+  sono:      { cats:['Sono','Calmante'],         tags:['sono','sedativa','calmante','insônia'],                 momento:'noite', blend:'Insônia' },
+  foco:      { cats:['Estimulante','Cognitivo'], tags:['foco','energia','memória','cognitivo'],                 momento:'manha', blend:'Foco' },
+  digestao:  { cats:['Digestivo'],               tags:['digestivo','digestao','digestiva','gases','gastrite','náusea'], momento:'', blend:'Dor de estômago' },
+  ansiedade: { cats:['Calmante','Adaptogênico'], tags:['ansiedade','calmante','antidepressiva','estresse'],     momento:'', blend:'Ansiedade' },
+  imunidade: { cats:['Respiratório'],            tags:['gripe','tosse','expectorante','vitamina c','respiratorio','congestão','bronquite'], momento:'', blend:'Gripe/Tosse' },
+  explorar:  { cats:[],                          tags:[],                                                       momento:'', blend:'default' },
+};
+const ENC_INTENT_LABEL = { sono:'intent.sleep', foco:'intent.focus', digestao:'intent.digestive', ansiedade:'intent.anxiety', imunidade:'intent.immunity', explorar:'intent.explore' };
+const ENC_MOMENTOS = ['manha','tarde','noite','qualquer'];
+// Chips de restrição do passo 2 → condições de SAUDE_CONDICOES (a barreira).
+const ENC_RESTRICOES = [
+  { id:'gestante',       cond:['gestante','amamentando'], label:'enc.r_gestante' },
+  { id:'hipertensao',    cond:['hipertensao'],            label:'perfil.cond_hipertensao' },
+  { id:'anticoagulante', cond:['anticoagulante'],         label:'perfil.cond_anticoagulante' },
+  { id:'crianca',        cond:['crianca'],                label:'perfil.cond_crianca' },
+];
+// Grupos cuja contraindicação rende o selo «Cautela» mesmo sem restrição informada.
+const ENC_CAUTELA = ['gestantes','hipertensos','anticoagulantes','crianças','lactantes','amamentação'];
+let encState = { passo:1, intencao:null, momento:'qualquer', restricoes:[] };
+
+function encT(k){ return (typeof t === 'function') ? t(k) : k; }
+function encCondicoes(restricoes){
+  var out=[];
+  (restricoes||[]).forEach(function(r){
+    var d=ENC_RESTRICOES.filter(function(x){ return x.id===r; })[0];
+    if(d) d.cond.forEach(function(c){ if(out.indexOf(c)===-1) out.push(c); });
+  });
+  return out;
+}
+function encTemCautela(h){
+  var av=(h.avoid||[]).map(function(a){ return String(a).toLowerCase(); });
+  return ENC_CAUTELA.some(function(g){ return av.some(function(v){ return v===g || v.indexOf(g+' ')===0 || v.indexOf(g+' (')===0; }); });
+}
+
+/** O motor único. Puro: recebe {intencao, momento, restricoes}, devolve as três
+ *  ervas, o que foi removido pela restrição e o blend sugerido. */
+function recomendar(opts){
+  opts=opts||{};
+  var def=INTENCOES[opts.intencao]||INTENCOES.explorar;
+  var momento=(opts.momento && opts.momento!=='qualquer') ? opts.momento : '';
+  var condicoes=encCondicoes(opts.restricoes);
+  var lista=HERBS.map(function(h){
+    var tags=(h.tags||[]).map(function(x){ return String(x).toLowerCase(); });
+    var pontos=0;
+    if(def.cats.indexOf(h.cat)!==-1) pontos+=3;
+    def.tags.forEach(function(x){ if(tags.indexOf(x)!==-1) pontos+=2; });
+    if(def.cats.length && pontos===0) return null;              // fora da intenção
+    if(momento){ var m=h.momento||[]; if(m.indexOf(momento)!==-1) pontos+=2; else if(m.indexOf('qualquer')!==-1) pontos+=1; }
+    pontos+=(h.safe||[]).length*0.5;
+    return { h:h, pontos:pontos };
+  }).filter(Boolean);
+  var removidas=lista.filter(function(x){ return ervaContraindicada(x.h, condicoes); }).map(function(x){ return x.h; });
+  var aptas=lista.filter(function(x){ return !ervaContraindicada(x.h, condicoes); });
+  aptas.sort(function(a,b){ return (b.pontos-a.pontos) || a.h.n.localeCompare(b.h.n,'pt'); });
+  return {
+    ervas: aptas.slice(0,3).map(function(x){ return { herb:x.h, cautela:encTemCautela(x.h) }; }),
+    removidas: removidas,
+    condicoes: condicoes,
+    blend: blendParaIntencao(opts.intencao, condicoes),
   };
-  if(intencao==='explorar'){ goPage('roda'); return; }
-  const filtros = mapa[intencao];
-  if(!filtros) return;
-  activeFilters.cat = filtros.cat;
-  activeFilters.safe = filtros.safe;
-  activeFilters.momento = filtros.momento;
-  activeFilters.linha = '';
-  if(filtros.search) document.getElementById('searchInput').value = filtros.search;
-  drawWheel(); buildFilters(); renderHerbs();
-  document.getElementById('herbGrid').scrollIntoView({behavior:'smooth',block:'start'});
-  toast('Mostrando ervas para: '+intencao);
+}
+function blendParaIntencao(intencao, condicoes){
+  var def=INTENCOES[intencao]||INTENCOES.explorar;
+  var chave=BLEND_DB[def.blend] ? def.blend : 'default';
+  var rec=BLEND_DB[chave];
+  var contra=(condicoes||[]).length ? rec.ings.filter(function(i){ return ervaContraindicada(HERBS.find(function(h){ return h.id===i.id; }), condicoes); }) : [];
+  return { chave:chave, rec:rec, contra:contra };
+}
+function encRestricoesDoPerfil(){
+  var ativas=saudeCondicoesAtivas();
+  return ENC_RESTRICOES.filter(function(r){ return r.cond.some(function(c){ return ativas.indexOf(c)!==-1; }); }).map(function(r){ return r.id; });
+}
+
+// ── A tela ──
+function encHashAtual(){
+  if(!encState.intencao) return pageHash('search');
+  var parts=[encState.intencao];
+  if(encState.passo>=3){ parts.push(encState.momento||'qualquer'); parts.push(encState.restricoes.length ? encState.restricoes.join(',') : 'nenhuma'); }
+  return pageHash('search', parts.join('/'));
+}
+// Só sincroniza quando a tela está de fato aberta pelo usuário (nunca no boot,
+// com a landing por cima — mudar o hash ali faria o roteador abrir o app).
+function encSincronizarHash(){
+  if(window._currentPage!=='search') return;
+  var lp=document.getElementById('landingPage'); if(lp && lp.style.display!=='none') return;
+  try { history.replaceState(null, '', encHashAtual()); } catch(e){}
+}
+function encPintar(passo){
+  var p1=document.getElementById('encPasso1'), p2=document.getElementById('encPasso2'), p3=document.getElementById('encPasso3');
+  if(!p1||!p2||!p3) return false;
+  encState.passo=passo;
+  p1.hidden=passo!==1; p2.hidden=passo!==2; p3.hidden=passo!==3;
+  var titulos={1:'enc.t1',2:'enc.t2',3:'enc.t3'};
+  var tt=document.getElementById('encTitle'); if(tt) tt.textContent=encT(titulos[passo]);
+  var ey=document.getElementById('encEyebrow'); if(ey) ey.textContent=encT('enc.step').replace('{n}', String(passo));
+  document.querySelectorAll('#encProgress span').forEach(function(sp,i){ sp.classList.toggle('on', i<passo); });
+  document.querySelectorAll('#encPasso1 .intencao-card').forEach(function(b){ var on=b.dataset.intencao===encState.intencao; b.classList.toggle('on',on); b.setAttribute('aria-pressed', on?'true':'false'); });
+  if(passo===2) encRenderPasso2();
+  if(passo===3) encRenderPasso3();
+  return true;
+}
+// Estado inicial da tela (boot e #encontrar sem intenção): passo 1, sem mexer no hash.
+function encReset(){
+  encState={ passo:1, intencao:null, momento:'qualquer', restricoes:[] };
+  encPintar(1);
+  encMostrarBusca(false);
+}
+function encIrPara(passo){
+  if(passo===1){ encState.intencao=null; encMostrarBusca(false); }
+  if(!encPintar(passo)) return;
+  encSincronizarHash();
+  if(passo!==1){ var head=document.querySelector('.enc-head'); if(head && head.scrollIntoView) head.scrollIntoView({behavior:'smooth',block:'start'}); }
+}
+function encEscolherIntencao(intencao){
+  if(!INTENCOES[intencao]) return;
+  encState.intencao=intencao;
+  if(!encState.restricoes.length) encState.restricoes=encRestricoesDoPerfil();
+  if(typeof trackAction==='function') trackAction('intencao', intencao);
+  encIrPara(2);
+}
+function encVerOpcoes(){ if(!encState.intencao){ encIrPara(1); return; } encIrPara(3); }
+function encChip(texto, on, data, onclick){
+  var b=document.createElement('button'); b.type='button';
+  b.className='enc-chip'+(on?' on':''); b.setAttribute('aria-pressed', on?'true':'false');
+  Object.keys(data).forEach(function(k){ b.dataset[k]=data[k]; });
+  b.textContent=texto; b.onclick=onclick; return b;
+}
+function encRenderPasso2(){
+  var e=document.getElementById('encEscolha'); if(e) e.textContent=encT(ENC_INTENT_LABEL[encState.intencao]||'intent.explore');
+  var m=document.getElementById('encMomentos');
+  if(m){ m.innerHTML=''; ENC_MOMENTOS.forEach(function(id){ m.appendChild(encChip(encT('enc.m_'+id), encState.momento===id, {momento:id}, function(){ encState.momento=id; encRenderPasso2(); })); }); }
+  var r=document.getElementById('encRestricoes');
+  if(r){
+    r.innerHTML='';
+    r.appendChild(encChip(encT('enc.r_none'), !encState.restricoes.length, {restricao:'nenhuma'}, function(){ encState.restricoes=[]; encRenderPasso2(); }));
+    ENC_RESTRICOES.forEach(function(rd){
+      var on=encState.restricoes.indexOf(rd.id)!==-1;
+      r.appendChild(encChip(encT(rd.label), on, {restricao:rd.id}, function(){
+        if(on) encState.restricoes=encState.restricoes.filter(function(x){ return x!==rd.id; }); else encState.restricoes.push(rd.id);
+        encRenderPasso2();
+      }));
+    });
+  }
+}
+function encRenderPasso3(){
+  var res=recomendar({ intencao:encState.intencao, momento:encState.momento, restricoes:encState.restricoes });
+  var aviso=document.getElementById('encAviso');
+  if(aviso){
+    if(encState.restricoes.length){
+      var quem=encState.restricoes.map(function(id){ var d=ENC_RESTRICOES.filter(function(x){ return x.id===id; })[0]; return d ? encT(d.label) : id; }).join(', ');
+      aviso.innerHTML='<div class="enc-aviso">'+esc(encT('encontrar.safety').replace('{restrição}',quem).replace('{restriction}',quem))+'</div>';
+    } else aviso.innerHTML='';
+  }
+  var cards=document.getElementById('encCards');
+  if(cards){
+    cards.innerHTML = res.ervas.length ? res.ervas.map(function(x){
+      var h=x.herb, fav=favorites.includes(h.id);
+      return '<article class="enc-card" data-herb-id="'+h.id+'">'+
+        '<div class="enc-card-top"><h2 class="enc-card-nome">'+esc(h.n)+'</h2><span class="enc-badge '+(x.cautela?'cautela':'seguro')+'">'+esc(encT(x.cautela?'enc.badge_caution':'enc.badge_safe'))+'</span></div>'+
+        '<p class="enc-card-why">'+esc(h.tagline||h.ef||'')+'</p>'+
+        '<p class="enc-card-prep">'+esc(encT('enc.prep'))+': '+esc([h.temp,h.tempo,h.dose].filter(Boolean).join(' · '))+'</p>'+
+        (x.cautela ? '<p class="enc-card-avoid">'+esc((h.avoid||[]).slice(0,2).join(' · '))+'</p>' : '')+
+        '<div class="enc-card-actions">'+
+          '<button type="button" class="enc-btn enc-btn-gold" onclick="openHerbModal('+h.id+')">'+esc(encT('enc.ficha'))+'</button>'+
+          '<button type="button" class="enc-btn enc-fav'+(fav?' on':'')+'" onclick="toggleFav(event,'+h.id+');encRenderPasso3()">'+(fav?'♥ ':'♡ ')+esc(encT(fav?'enc.saved':'enc.save'))+'</button>'+
+        '</div></article>';
+    }).join('') : '<p class="enc-note">'+esc(encT('enc.empty'))+'</p>';
+  }
+  var bl=document.getElementById('encBlend');
+  if(bl){
+    var b=res.blend, rec=b.rec;
+    bl.innerHTML='<div class="enc-blend-box"><div class="enc-sublabel">'+esc(encT('enc.blend_title'))+'</div>'+
+      '<div class="enc-blend-nome">'+esc(rec.name)+'</div><p class="enc-note">'+esc(rec.tagline)+'</p>'+
+      '<p class="enc-blend-ings">'+rec.ings.map(function(i){ return esc(i.n)+' <span>'+esc(i.amount)+'</span>'; }).join(' · ')+'</p>'+
+      (b.contra.length ? '<div class="warn-box">'+esc(encT('enc.blend_contra').replace('{ervas}', b.contra.map(function(i){ return i.n; }).join(', ')))+'</div>' : '')+
+      '<div class="enc-card-actions">'+
+        '<button type="button" class="enc-btn enc-btn-gold" onclick=\'sendWizardToManual('+JSON.stringify(rec.ings.map(function(i){ return i.id; }))+')\'>'+esc(encT('enc.blend_edit'))+'</button>'+
+        '<button type="button" class="enc-btn save-recipe-btn" onclick="saveRecipe('+JSON.stringify(b.chave).replace(/"/g,'&quot;')+')">'+esc(encT('enc.blend_save'))+'</button>'+
+      '</div></div>';
+  }
+}
+// Modo avançado: a roda de filtros, os chips e a grade (a antiga Busca).
+function encMostrarBusca(mostrar){
+  var box=document.getElementById('encBusca'), btn=document.getElementById('encBuscaToggle');
+  if(!box) return;
+  box.hidden=!mostrar;
+  if(btn) btn.setAttribute('aria-expanded', mostrar?'true':'false');
+  if(mostrar){ try { drawWheel(); buildFilters(); renderHerbs(); } catch(e){} }
+}
+function encBuscaDigitou(){
+  var v=(document.getElementById('searchInput')||{}).value||'';
+  if(v.trim()) encMostrarBusca(true);
+  renderHerbs();
+}
+// #encontrar/<intencao>[/<momento>/<restricoes>] — chips do hero da landing e
+// link compartilhado do resultado. Intenção desconhecida cai no passo 1.
+function aplicarIntencao(slug){
+  var parts=String(slug||'').split('/');
+  var intencao=parts[0];
+  if(!INTENCOES[intencao]){ encReset(); return; }
+  encState.intencao=intencao;
+  var mom=parts[1]; encState.momento = ENC_MOMENTOS.indexOf(mom)!==-1 ? mom : 'qualquer';
+  var restr=parts[2];
+  if(restr!==undefined){
+    encState.restricoes = restr==='nenhuma' ? [] : restr.split(',').filter(function(r){ return ENC_RESTRICOES.some(function(x){ return x.id===r; }); });
+  } else if(!encState.restricoes.length) encState.restricoes=encRestricoesDoPerfil();
+  encIrPara(parts.length>=3 ? 3 : 2);
 }
 
 function buildFilters(){
@@ -1229,6 +1424,7 @@ function addToTray(id){
 
 function renderTray(){
   const items=document.getElementById('trayItems');
+  if(!items) return;
   if(!blendTray.length){ items.innerHTML='<span class="tray-empty">Selecione ervas nas fichas do Ervatório para montar seu blend</span>'; return; }
   const herbs=HERBS.filter(h=>blendTray.includes(h.id));
   items.innerHTML=herbs.map(h=>`
@@ -1249,71 +1445,8 @@ function importTrayToManual(){
 function removeTray(id){ blendTray=blendTray.filter(i=>i!==id); localStorage.setItem('erb_tray',JSON.stringify(blendTray)); renderTray(); }
 
 // ── WIZARD ──
-const WIZ_SINTOMAS=['Insônia','Ansiedade','Dor de estômago','Gases','Estresse','Gripe/Tosse','Dor de cabeça','Cansaço','Foco','Pressão alta','TPM','Emagrecimento'];
-const WIZ_HORA=['Ao acordar','Manhã','Pós-refeição','Tarde','À noite','Antes de dormir'];
-const WIZ_SABOR=['Doce','Suave','Cítrico','Amargo','Picante','Floral'];
-
-function buildWizard(){
-  const ss=document.getElementById('wizSintomas'); if(!ss) return;
-  // goPage('blends') chama isto a cada visita: limpa antes de montar.
-  ['wizSintomas','wizHora','wizSabor','wizRestr'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=''; });
-  WIZ_SINTOMAS.forEach(s=>{
-    const b=document.createElement('button');
-    b.className='wizard-chip'+(wizState.sintomas.includes(s)?' on':'');
-    b.textContent=s;
-    b.onclick=()=>{
-      if(wizState.sintomas.includes(s)) wizState.sintomas=wizState.sintomas.filter(x=>x!==s);
-      else wizState.sintomas.push(s);
-      b.classList.toggle('on');
-    };
-    ss.appendChild(b);
-  });
-  const sh=document.getElementById('wizHora');
-  WIZ_HORA.forEach(h=>{
-    const b=document.createElement('button');
-    b.className='wizard-chip'+(wizState.hora===h?' on':'');
-    b.textContent=h;
-    b.onclick=()=>{ wizState.hora=h; sh.querySelectorAll('.wizard-chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); };
-    sh.appendChild(b);
-  });
-  const sv=document.getElementById('wizSabor');
-  WIZ_SABOR.forEach(s=>{
-    const b=document.createElement('button');
-    b.className='wizard-chip'+(wizState.sabor===s?' on':'');
-    b.textContent=s;
-    b.onclick=()=>{ wizState.sabor=s; sv.querySelectorAll('.wizard-chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); };
-    sv.appendChild(b);
-  });
-  // Restrição como chips (handoff 14/09): o campo livre convidava a digitar
-  // «estou grávida» num texto que nada filtrava e que era dado sensível sem
-  // lugar. Fica só nesta sessão (wizState), nunca em localStorage; com conta e
-  // consentimento, o Perfil já pré-marca.
-  const sr=document.getElementById('wizRestr');
-  if(sr){
-    const ativas=saudeCondicoesAtivas();
-    if(!wizState.restricoes.length && ativas.length) wizState.restricoes=ativas;
-    const none=document.createElement('button');
-    none.type='button'; none.className='wizard-chip'+(wizState.restricoes.length?'':' on');
-    none.textContent=navT('blend.restr_none');
-    none.onclick=()=>{ wizState.restricoes=[]; buildWizard(); };
-    sr.appendChild(none);
-    SAUDE_CONDICOES.forEach(c=>{
-      const b=document.createElement('button');
-      b.type='button'; b.dataset.condicao=c.id;
-      const on=wizState.restricoes.includes(c.id);
-      b.className='wizard-chip'+(on?' on':''); b.setAttribute('aria-pressed', on?'true':'false');
-      b.textContent=saudeLabel(c.id);
-      b.onclick=()=>{
-        if(wizState.restricoes.includes(c.id)) wizState.restricoes=wizState.restricoes.filter(x=>x!==c.id);
-        else wizState.restricoes.push(c.id);
-        buildWizard();
-      };
-      sr.appendChild(b);
-    });
-  }
-}
-
-// ── BLEND RECIPES ──
+// O assistente de blends (WIZ_*, buildWizard, generateBlend) saiu no PR 05:
+// virou o Encontre seu chá. BLEND_DB fica — é o blend sugerido por intenção.
 const BLEND_DB = {
   'Insônia':{ name:'Infusão do Silêncio', tagline:'Serenidade profunda para noites difíceis',
     ings:[{id:1,n:'Camomila',amount:'1 col. sopa cheia'},{id:3,n:'Maracujá',amount:'1 col. sopa'},{id:4,n:'Melissa',amount:'1 col. sopa'}],
@@ -1401,62 +1534,6 @@ function getHoraAdj(hora){
   return adj[hora]||'';
 }
 
-function generateBlend(){
-  if(typeof trackAction==='function') trackAction('create-blend');
-  const sintoma = wizState.sintomas[0]||'default';
-  const rec = BLEND_DB[sintoma]||BLEND_DB['default'];
-  const saborTip = getSaborAdj(wizState.sabor, rec);
-  const horaTip = getHoraAdj(wizState.hora);
-  // Restrição como barreira: ingrediente com `avoid` que bate na condição
-  // informada é nomeado, e o blend não é apresentado como «seguro».
-  const restr = wizState.restricoes||[];
-  const contra = restr.length ? rec.ings.filter(i=>ervaContraindicada(HERBS.find(h=>h.id===i.id), restr)) : [];
-  let alertBox='';
-  if(restr.length){
-    const quem = restr.map(saudeLabel).join(', ');
-    alertBox = contra.length
-      ? `<div class="warn-box">${esc(navT('encontrar.safety').replace('{restrição}',quem).replace('{restriction}',quem))} <strong>${esc(contra.map(i=>i.n).join(', '))}</strong> — troque no construtor.</div>`
-      : `<div class="safe-box">${esc(quem)}: nenhum ingrediente deste blend tem contraindicação conhecida para o que você informou. ${esc(navT('health.disclaimer'))}</div>`;
-  }
-
-  document.getElementById('blendResult').innerHTML=`
-    ${alertBox}
-    <div class="recipe-card">
-      <div class="recipe-header">
-        <div class="recipe-name">${esc(rec.name)}</div>
-        <div class="recipe-tagline">${esc(rec.tagline)}</div>
-      </div>
-      <div class="recipe-body">
-        <div class="recipe-ing-title">Ingredientes e Quantidades</div>
-        ${rec.ings.map(ing=>`
-          <div class="ing-row">
-            <div>
-              <div class="ing-name">${esc(ing.n)}</div>
-              <div class="ing-latin" style="font-size:.7rem;color:var(--muted);font-style:italic">${esc(HERBS.find(h=>h.id===ing.id)?.lat||'')}</div>
-            </div>
-            <div class="ing-amount">${esc(ing.amount)}</div>
-          </div>`).join('')}
-        <div style="padding:8px 0;border-bottom:0.5px solid rgba(255,255,255,.04);color:var(--cream2);font-size:.82rem">
-          <span style="color:var(--muted)">Água:</span> 250-300ml &nbsp;|&nbsp; <span style="color:var(--muted)">Temp:</span> 85-90°C &nbsp;|&nbsp; <span style="color:var(--muted)">Infusão:</span> 8-10 min
-        </div>
-        <div class="steps-section">
-          <div class="recipe-ing-title">Modo de Preparo</div>
-          ${rec.steps.map((s,i)=>`<div class="step"><div class="step-num">${i+1}</div><div class="step-text">${esc(s)}</div></div>`).join('')}
-          ${saborTip?`<div class="step"><div class="step-num">✦</div><div class="step-text"><strong style="color:var(--gold2)">Sabor ${esc(wizState.sabor)}:</strong> ${esc(saborTip)}</div></div>`:''}
-          ${horaTip?`<div class="step"><div class="step-num">⏰</div><div class="step-text"><strong style="color:var(--gold2)">${esc(wizState.hora)||'Uso geral'}:</strong> ${esc(horaTip)}</div></div>`:''}
-        </div>
-        <div class="effect-badges">
-          ${rec.effects.map(e=>`<span class="eff-badge">${esc(e)}</span>`).join('')}
-        </div>
-        ${rec.obs?`<div style="margin-top:.75rem;font-size:.78rem;color:var(--muted);font-style:italic;line-height:1.5">${svgIcon('bulb')} ${esc(rec.obs)}</div>`:''}
-        <div style="display:flex;gap:8px;margin-top:1rem">
-          <button class="save-recipe-btn" style="flex:1" onclick="saveRecipe('${esc(rec.name)}')">♥ Salvar</button>
-          <button class="save-recipe-btn" style="flex:1;background:rgba(255,255,255,.04)" onclick="sendWizardToManual(${JSON.stringify(rec.ings.map(i=>i.id))})">${svgIcon('leaf')} Editar no construtor</button>
-        </div>
-      </div>
-    </div>`;
-}
-
 function sendWizardToManual(ids){
   ctrBlend=ids.filter(id=>HERBS.find(h=>h.id===id)).map(id=>({id,qty:1}));
   switchBlendTab('manual');
@@ -1464,16 +1541,15 @@ function sendWizardToManual(ids){
   toast('Blend carregado no construtor!');
 }
 
-function saveRecipe(name){
-  const sintoma=wizState.sintomas[0]||'default';
-  const rec=BLEND_DB[sintoma]||BLEND_DB['default'];
+function saveRecipe(chave){
+  const rec=BLEND_DB[chave]||BLEND_DB['default'];
   if(savedRecipes.find(r=>r.name===rec.name)){ toast('Blend já foi salvo!'); return; }
   const entry={name:rec.name,tagline:rec.tagline,ingredients:rec.ings};
   savedRecipes.unshift(entry);
   localStorage.setItem('erb_recipes',JSON.stringify(savedRecipes));
   if(typeof ervaria!=='undefined') ervaria.pushRecipe(entry);
   toast('Blend salvo nos favoritos!');
-  document.querySelector('.save-recipe-btn').innerHTML='✓ Salvo <span class="saved-tag">✓</span>';
+  document.querySelectorAll('.save-recipe-btn').forEach(b=>{ b.textContent='✓ '+navT('enc.saved'); });
 }
 
 // ── SUPPLIERS ──
@@ -2660,12 +2736,13 @@ function goPage(id,btn,slug){
   // O hub "Sabores" saiu (D13): dois cards e conteudo nenhum. Quem chega por
   // ele cai no Guia de sabores; a Roda dos Chas continua em #roda.
   if(id==='sabores') id='guia-sensorial';
-  // Blends tem sub-abas (Prontos/Assistente/Manual). A aba vem no slug
-  // (#blends/manual); 'criarblend' legado abre o Assistente.
+  // Blends tem duas abas (Prontos/Manual); a aba vem no slug (#blends/manual).
+  // O Assistente virou o Encontre seu chá (PR 05): 'criarblend' legado e
+  // #blends/assistente caem lá.
   var _blendOpenTab = null;
-  if(id==='criarblend'){ id='blends'; _blendOpenTab='assistente'; }
+  if(id==='criarblend' || (id==='blends' && slug==='assistente')){ id='search'; slug=undefined; }
   if(id==='blends'){
-    if(slug==='manual'||slug==='prontos'||slug==='assistente') _blendOpenTab=slug;
+    if(slug==='manual'||slug==='prontos') _blendOpenTab=slug;
     slug=_blendOpenTab||undefined;
   }
   // #encontrar/<intencao>: a tela de intencoes ja abre com a intencao aplicada
@@ -2701,11 +2778,15 @@ function goPage(id,btn,slug){
   if(id==='roda')window.initRoda();
   if(id==='perfil')renderPerfil();
   if(id==='diario' && typeof renderDiario==='function') renderDiario();
-  if(id==='search' && _intent && typeof aplicarIntencao==='function') setTimeout(function(){ aplicarIntencao(_intent); }, 50);
+  if(id==='search'){
+    // Com intenção no hash, o fluxo abre já no passo 2 (ou 3, se o link traz
+    // momento e restrição); sem, volta ao passo 1.
+    if(_intent) setTimeout(function(){ aplicarIntencao(_intent); }, 50);
+    else if(typeof encReset==='function') encReset();
+  }
   if(id==='blends'){
     // Inicializa todas as sub-abas (barato o bastante para rodar sempre)
-    buildWizard();renderTray();
-    // Default: abre na aba Prontos. Se viemos de 'criarblend' legado, abre em Assistente.
+    renderTray();
     if(typeof switchBlendTab==='function') switchBlendTab(_blendOpenTab || 'prontos');
   }
   if(id==='chas'){initChas();initCerimonia();}
@@ -2762,7 +2843,7 @@ var HASH_ALIASES = {
   'como-preparar':'ferramentas', 'criar-blend':'blends/manual', 'loja':'marketplace',
   'produtores':'suppliers', 'estante':'favs', 'jornada':'caminho', 'conta':'favs',
   // hashes antigos e atalhos
-  'sabores':'guia-sensorial', 'shop':'marketplace', 'cerimonia':'chas', 'criarblend':'blends/manual',
+  'sabores':'guia-sensorial', 'shop':'marketplace', 'cerimonia':'chas', 'criarblend':'search',
   // Onde beber virou visão de Origens (PR 07); o hash antigo segue valendo.
   'chazerias':'mundo/beber',
 };
@@ -2815,9 +2896,14 @@ function handleHash(){
 window.addEventListener('hashchange', handleHash);
 // Carga inicial com hash: o roteador so roda depois que os scripts `defer`
 // seguintes (ervatorio-pages, receitas, quiz…) registraram seus renderizadores.
+// `_rotaInicialPronta` diz que essa passada inicial já aconteceu: quem
+// precisa interagir com a tela (os testes E2E, por exemplo) espera por ela,
+// porque goPage('search') sem slug devolve o Encontre seu chá ao passo 1.
 if(window.location.hash && resolveHash(window.location.hash) && !resolveHash(window.location.hash).landing){
   hideLanding();
-  setTimeout(handleHash, 300);
+  setTimeout(function(){ handleHash(); window._rotaInicialPronta = true; }, 300);
+} else {
+  window._rotaInicialPronta = true;
 }
 
 // Botão Voltar/Avançar do browser
@@ -2839,26 +2925,21 @@ window.addEventListener('popstate', function(e){
 
 function switchBlendTab(tab){
   const pronto=document.getElementById('blendPanelPronto');
-  const assist=document.getElementById('blendPanelAssist');
   const manual=document.getElementById('blendPanelManual');
   const tabP=document.getElementById('blendTabPronto');
-  const tabA=document.getElementById('blendTabAssist');
   const tabM=document.getElementById('blendTabManual');
-  // Default safe defaults when algum elemento não existe (ex.: renderização parcial).
-  [pronto,assist,manual].forEach(el=>{ if(el) el.style.display='none'; });
-  [tabP,tabA,tabM].forEach(el=>{ if(el) el.classList.remove('on'); });
-  if(tab==='prontos'){
+  [pronto,manual].forEach(el=>{ if(el) el.style.display='none'; });
+  [tabP,tabM].forEach(el=>{ if(el) el.classList.remove('on'); });
+  // Duas abas (PR 05): Prontos e Manual. O Assistente virou o Encontre seu chá.
+  if(tab==='manual'){
+    if(manual) manual.style.display='';
+    if(tabM) tabM.classList.add('on');
+    if(typeof renderTray==='function') renderTray();
+    buildCtrFilters();renderCtrHerbs();renderCtrBlend();
+  } else {
     if(pronto) pronto.style.display='';
     if(tabP) tabP.classList.add('on');
     if(typeof renderBibliotecaBlends==='function') renderBibliotecaBlends();
-  } else if(tab==='manual'){
-    if(manual) manual.style.display='';
-    if(tabM) tabM.classList.add('on');
-    buildCtrFilters();renderCtrHerbs();renderCtrBlend();
-  } else {
-    // assistente (default)
-    if(assist) assist.style.display='';
-    if(tabA) tabA.classList.add('on');
   }
 }
 
@@ -4004,7 +4085,7 @@ if(typeof updateSEO==='function') updateSEO('search');
 buildFilters();
 renderHerbs();
 drawWheel();
-buildWizard();
+encReset();
 renderTray();
 updateCartCount();
 renderPerfil();
