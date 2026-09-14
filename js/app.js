@@ -168,6 +168,7 @@ var NAV_GROUPS = [
   { id:'conta', label:'nav.account', home:'favs', icone:true, pages:[
       { id:'favs',           label:'nav.favorites' },
       { id:'caminho',        label:'nav.path' },
+      { id:'diario',         label:'nav.diary', flag:'diario' },
       { id:'jogo',           label:'nav.game' },
       { id:'perfil',         label:'nav.profile' },
       { id:'sobre',          label:'nav.about' } ] },
@@ -202,7 +203,7 @@ function renderSubnav(pageId, slug){
   var el=document.getElementById('ervSubnav'); if(!el) return;
   var g=navGroupOf(pageId);
   if(!g){ el.innerHTML=''; el.hidden=true; return; }
-  var items=g.pages.filter(function(p){ return !p.hidden; });
+  var items=g.pages.filter(function(p){ return !p.hidden && (!p.flag || flagLigada(p.flag)); });
   if(items.length<2){ el.innerHTML=''; el.hidden=true; return; }
   el.hidden=false;
   el.innerHTML='<div class="erv-subnav-inner">'+items.map(function(p){
@@ -239,7 +240,7 @@ function openMenuSheet(){
       return '<a class="erv-sheet-group" href="'+navHref(g.pages[0])+'"><span class="erv-sheet-group-name">'+esc(navT(g.label))+'</span>'+(g.sub?'<span class="erv-sheet-group-sub">'+esc(navT(g.sub))+'</span>':'')+'</a>';
     }).join('')+'</div>'+
     '<div class="erv-sheet-label">'+esc(navT('nav.account'))+'</div>'+
-    '<div class="erv-sheet-grid">'+conta.pages.filter(function(p){ return p.id!=='sobre'; }).map(function(p){
+    '<div class="erv-sheet-grid">'+conta.pages.filter(function(p){ return p.id!=='sobre' && (!p.flag || flagLigada(p.flag)); }).map(function(p){
       return '<a class="erv-sheet-cell" href="'+navHref(p)+'">'+esc(navT(p.label))+'</a>';
     }).join('')+'</div>'+
     '<div class="erv-sheet-foot">'+
@@ -291,6 +292,13 @@ function lojaAtiva(){
   return false;
 }
 var LOJA_PAGES = ['marketplace','suppliers','pedidos'];
+
+// Interruptor genérico (página com `flag` em NAV_GROUPS). Sem resposta do
+// banco: desligado — a tela avisa em vez de prometer o que o servidor recusa.
+function flagLigada(chave){
+  var i = window.ERV_INTERRUPTORES;
+  return !!(i && i[chave] === true);
+}
 
 // Chamada quando os interruptores respondem (ervaria.loadInterruptores) e no
 // boot. Ligado → a classe `loja-on` no <html> revela os blocos [data-loja].
@@ -1938,6 +1946,154 @@ function saudeLabel(id){ const def=SAUDE_CONDICOES.find(x=>x.id===id); return de
 
 function perfilLogado(){ return !!(window.ervaria && ervaria.user); }
 
+// ============================================================
+// DIÁRIO DE INFUSÕES (handoff, PR 08b) — erva + horário + sensação
+// ============================================================
+// Atrás do interruptor `diario` (flagLigada): desligado, a tela avisa e o
+// banco recusa registro novo (policy). O diário é da conta: `diarioState`
+// vive só em memória, carregado do servidor a cada sessão — nada no
+// localStorage. Sensação é lista FECHADA, espelho de
+// `sensacoes_conhecidas()` na migration 20260916120000. Sem texto livre:
+// campo aberto viraria o lugar onde dado de saúde entra sem consentimento.
+const DIARIO_SENSACOES = ['relaxei','dormi_bem','energia','foco','digestao','sem_efeito','nao_gostei'];
+let diarioState = { carregado:false, itens:[] };
+let diarioSensacaoEscolhida = null;
+function resetDiarioState(){ diarioState = { carregado:false, itens:[] }; diarioSensacaoEscolhida = null; }
+function diarioT(key){ return (typeof t === 'function') ? t(key) : key; }
+function diarioNorm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim(); }
+
+// Catálogo: as ervas de HERBS (id numérico como texto — o mesmo de
+// user_favorites.tea_id) mais as fichas editoriais sem erva em HERBS (slug).
+// Um id por erva; o banco confere o formato (^[a-z0-9_-]{1,64}$).
+function diarioCatalogo(){
+  if(window._diarioCatalogo) return window._diarioCatalogo;
+  var lista=[], vistos={};
+  var idOk=function(id){ return /^[a-z0-9_-]{1,64}$/.test(id); };
+  (typeof HERBS!=='undefined' ? HERBS : []).forEach(function(h){
+    var k=diarioNorm(h.n); if(!k || vistos[k] || !idOk(String(h.id))) return;
+    vistos[k]=1; lista.push({ id:String(h.id), nome:h.n });
+  });
+  if(typeof FICHAS_ANCORA!=='undefined'){
+    Object.keys(FICHAS_ANCORA).forEach(function(key){
+      var f=FICHAS_ANCORA[key]||{}; var slug=f.slug||key; var k=diarioNorm(f.nome_popular);
+      if(!k || vistos[k] || !idOk(slug)) return;
+      vistos[k]=1; lista.push({ id:slug, nome:f.nome_popular });
+    });
+  }
+  lista.sort(function(a,b){ return a.nome.localeCompare(b.nome, 'pt'); });
+  window._diarioCatalogo=lista;
+  return lista;
+}
+function diarioErvaPorNome(nome){
+  var k=diarioNorm(nome);
+  return k ? (diarioCatalogo().filter(function(e){ return diarioNorm(e.nome)===k; })[0] || null) : null;
+}
+function diarioAgoraLocal(){
+  var d=new Date(); var p=function(n){ return (n<10?'0':'')+n; };
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());
+}
+function diarioLocale(){
+  try { return (typeof LANGS!=='undefined' && typeof getLang==='function' && LANGS[getLang()]) ? LANGS[getLang()].locale : 'pt-BR'; } catch(e){ return 'pt-BR'; }
+}
+
+function renderDiario(){
+  var off=document.getElementById('diarioOff'), guest=document.getElementById('diarioGuest'),
+      form=document.getElementById('diarioForm'), lista=document.getElementById('diarioLista');
+  if(!off||!guest||!form||!lista) return;
+  var ligado=flagLigada('diario'), logado=perfilLogado();
+  off.hidden=ligado; guest.hidden=!ligado||logado;
+  form.hidden=!(ligado&&logado); lista.hidden=!(ligado&&logado);
+  if(!ligado||!logado) return;
+  var dl=document.getElementById('diarioErvasList');
+  if(dl && !dl.children.length) dl.innerHTML=diarioCatalogo().map(function(e){ return '<option value="'+esc(e.nome)+'"></option>'; }).join('');
+  var quando=document.getElementById('diarioQuando');
+  if(quando && !quando.value) quando.value=diarioAgoraLocal();
+  renderDiarioSensacoes();
+  renderDiarioLista();
+  if(!diarioState.carregado && typeof ervaria!=='undefined' && typeof ervaria.diarioListar==='function'){
+    ervaria.diarioListar().then(function(itens){
+      diarioState.itens=Array.isArray(itens)?itens:[]; diarioState.carregado=true; renderDiarioLista();
+    }).catch(function(){ toast(diarioT('diario.error')); });
+  }
+}
+
+function renderDiarioSensacoes(){
+  var el=document.getElementById('diarioSensacoes'); if(!el) return;
+  el.innerHTML='';
+  DIARIO_SENSACOES.forEach(function(s){
+    var b=document.createElement('button'); b.type='button';
+    var on=diarioSensacaoEscolhida===s;
+    b.className='perfil-chip'+(on?' on':''); b.setAttribute('aria-pressed', on?'true':'false');
+    b.dataset.sensacao=s; b.textContent=diarioT('diario.s_'+s);
+    b.onclick=function(){ diarioSensacaoEscolhida=(diarioSensacaoEscolhida===s)?null:s; renderDiarioSensacoes(); };
+    el.appendChild(b);
+  });
+}
+
+function diarioOrdenar(){ diarioState.itens.sort(function(a,b){ return String(b.tomado_em).localeCompare(String(a.tomado_em)); }); }
+
+function registrarInfusao(){
+  if(!perfilLogado()||!flagLigada('diario')) return;
+  var input=document.getElementById('diarioErva'), quando=document.getElementById('diarioQuando'), btn=document.getElementById('diarioAdd');
+  var erva=diarioErvaPorNome(input.value);
+  if(!erva){ input.setAttribute('aria-invalid','true'); input.focus(); toast(diarioT('diario.erva_unknown')); return; }
+  input.removeAttribute('aria-invalid');
+  var d=quando && quando.value ? new Date(quando.value) : new Date();
+  if(isNaN(d.getTime())) d=new Date();
+  var reg={ erva_id:erva.id, erva_nome:erva.nome, tomado_em:d.toISOString(), sensacao:diarioSensacaoEscolhida };
+  if(btn) btn.disabled=true;
+  ervaria.diarioRegistrar(reg).then(function(row){
+    diarioState.itens.unshift(row||reg); diarioOrdenar();
+    input.value=''; diarioSensacaoEscolhida=null; if(quando) quando.value=diarioAgoraLocal();
+    renderDiarioSensacoes(); renderDiarioLista(); toast(diarioT('diario.saved'));
+  }).catch(function(){ toast(diarioT('diario.error')); }).then(function(){ if(btn) btn.disabled=false; });
+}
+
+function renderDiarioLista(){
+  var el=document.getElementById('diarioLista'); if(!el) return;
+  if(!diarioState.carregado){ el.innerHTML='<p class="perfil-hint">'+esc(diarioT('diario.loading'))+'</p>'; return; }
+  if(!diarioState.itens.length){ el.innerHTML='<p class="perfil-hint" id="diarioVazio">'+esc(diarioT('diario.empty'))+'</p>'; return; }
+  var loc=diarioLocale(), grupos={}, ordem=[];
+  diarioState.itens.forEach(function(it){
+    var d=new Date(it.tomado_em); var k=d.toDateString();
+    if(!grupos[k]){ grupos[k]={ data:d, itens:[] }; ordem.push(k); }
+    grupos[k].itens.push(it);
+  });
+  el.innerHTML=ordem.map(function(k){
+    var g=grupos[k];
+    return '<section class="diario-dia"><h3 class="diario-dia-titulo">'+esc(g.data.toLocaleDateString(loc,{weekday:'long',day:'numeric',month:'long'}))+'</h3>'+
+      g.itens.map(function(it){
+        var hora=new Date(it.tomado_em).toLocaleTimeString(loc,{hour:'2-digit',minute:'2-digit'});
+        var id=String(it.id||'');
+        return '<div class="diario-item" data-id="'+esc(id)+'">'+
+          '<span class="diario-hora">'+esc(hora)+'</span>'+
+          '<span class="diario-erva">'+esc(it.erva_nome||'')+'</span>'+
+          '<select class="diario-sensacao" aria-label="'+esc(diarioT('diario.sensacao_label'))+': '+esc(it.erva_nome||'')+'" onchange="alterarSensacaoInfusao(this.closest(\'.diario-item\').dataset.id,this.value)">'+
+            '<option value="">'+esc(diarioT('diario.sensacao_none'))+'</option>'+
+            DIARIO_SENSACOES.map(function(s){ return '<option value="'+s+'"'+(it.sensacao===s?' selected':'')+'>'+esc(diarioT('diario.s_'+s))+'</option>'; }).join('')+
+          '</select>'+
+          '<button type="button" class="diario-apagar" aria-label="'+esc(diarioT('diario.delete'))+': '+esc(it.erva_nome||'')+'" onclick="apagarInfusao(this.closest(\'.diario-item\').dataset.id)">'+svgIcon('trash',16)+'</button>'+
+        '</div>';
+      }).join('')+'</section>';
+  }).join('');
+}
+
+function alterarSensacaoInfusao(id, s){
+  if(!id) return;
+  var novo=(DIARIO_SENSACOES.indexOf(s)!==-1)?s:null;
+  var it=diarioState.itens.filter(function(x){ return String(x.id)===String(id); })[0];
+  ervaria.diarioAtualizarSensacao(id, novo).then(function(){ if(it) it.sensacao=novo; })
+    .catch(function(){ toast(diarioT('diario.error')); renderDiarioLista(); });
+}
+function apagarInfusao(id){
+  if(!id) return;
+  ervaria.diarioApagar(id).then(function(){
+    diarioState.itens=diarioState.itens.filter(function(x){ return String(x.id)!==String(id); });
+    renderDiarioLista(); toast(diarioT('diario.deleted'));
+  }).catch(function(){ toast(diarioT('diario.error')); });
+}
+
+
 function renderPerfil(){
   const nome=document.getElementById('perfilNome'); if(!nome) return;
   nome.value=perfilState.nome||'';
@@ -2575,6 +2731,7 @@ function goPage(id,btn,slug){
   if(id==='suppliers')renderSuppliers();
   if(id==='roda')window.initRoda();
   if(id==='perfil')renderPerfil();
+  if(id==='diario' && typeof renderDiario==='function') renderDiario();
   if(id==='search' && _intent && typeof aplicarIntencao==='function') setTimeout(function(){ aplicarIntencao(_intent); }, 50);
   if(id==='blends'){
     // Inicializa todas as sub-abas (barato o bastante para rodar sempre)
@@ -2646,7 +2803,9 @@ var PAGE_HASH = {
 };
 // Secoes da landing (D7): os ids no HTML tem prefixo `lp-`; estes sao os
 // nomes antigos, que ainda podem chegar por link. Nao ha pagina — o navegador rola.
-var LANDING_ANCHORS = { 'clube':'lp-clube', 'colecoes':'lp-colecoes', 'mapa':'lp-mapa', 'diario':'lp-diario' };
+// `diario` saiu daqui no PR 08b: agora é página do app (#diario). A seção da
+// landing continua em #lp-diario, que é o que os links dela já usam.
+var LANDING_ANCHORS = { 'clube':'lp-clube', 'colecoes':'lp-colecoes', 'mapa':'lp-mapa' };
 
 function pageHash(id, slug){
   return '#' + (PAGE_HASH[id] || id) + (slug ? '/' + slug : '');

@@ -66,7 +66,7 @@ três commits** (D2).
 | 06 | Ficha: resumo leigo, timer embutido, «Onde encontrar» (indicação), e-mail | Depois do 05 | `feat/ficha-actions` |
 | 07 | Descobrir e Preparar como abas de verdade (fusão de renderizadores) | Parte já entra no 03 como sub-navegação; a fusão fica aqui | `feat/descobrir-preparar` |
 | 08 | Meu Ervatório + `perfil_saude` (tabela própria, RLS, consentimento com timestamp); cadastro reduzido; «Excluir meus dados» | **Segunda rodada (15/09)** — ver D15–D17. O Diário fica para o 08b. | PR `feat/conta-e-consentimento` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
-| 08b | Diário de infusões (`diario_infusoes`, RLS dono, flag) | Depois do 08 | `feat/diario-infusoes` |
+| 08b | Diário de infusões (`diario_infusoes`, RLS dono, interruptor `diario`) | **Terceira rodada (16/09)** — ver D19–D21. | PR `feat/diario-infusoes` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 09 | `privacidade.html`: CNPJ/DPO, dado de saúde, base legal, retenção | Depende de decisão do dono (CNPJ/DPO) | `docs/privacy-update` |
 | 10 | Páginas estáticas para receitas, blends, tipos de chá | Mês 2–3 | `feat/static-pages-recipes-blends` |
 | 11 | Clube (lista de espera → pré-venda → Stripe) | Depois | `feat/clube-waitlist` → `feat/stripe-checkout` |
@@ -204,6 +204,20 @@ para `mailto:`, até existir `/parceiros/`.
 - **`html-validate index.html` acusava dois `<nav>` e dois `<footer>` com o
   mesmo nome** (landing + app no mesmo documento). Nomeados; some quando a
   landing virar a home (PR 03b/05).
+- **(08b) `#diario` colidia com o atalho da landing.** `LANDING_ANCHORS`
+  mapeava `diario → lp-diario`, então a página nova nunca abria pelo hash.
+  A página venceu; a seção continua em `#lp-diario`. É a colisão que a D7
+  previu, uma página depois.
+- **(08b) Estender `interruptores_conhecidos()` numa migration nova deixa a
+  antiga (`20260815230000`) não reaplicável**: ela recria a função com quatro
+  chaves e o `CHECK` recusa a linha `diario`. Não é cenário de produção
+  (migrations rodam uma vez, em ordem), mas o teste da 08b só reaplica a
+  migration nova no bloco de idempotência, e o teste antigo continua valendo
+  porque roda sozinho.
+- **(08b) `tasting_journal` tem ALL para `anon`** — os default privileges de
+  novo, numa tabela de antes das migrations versionadas. RLS segura (policies
+  exigem `auth.uid()`), mas o privilégio não deveria existir. Limpeza à parte
+  (D21).
 
 **D15 — O Diário de infusões não entra no PR 08.** O critério de aceite do
 handoff para o 08 é o consentimento («sem consentimento, campos desabilitados
@@ -234,11 +248,36 @@ valores da lista antiga; preferência de cafeína de verdade não está nela.
 Não há rollback para isso — não se restaura dado sensível guardado
 indevidamente.
 
+**D19 — O diário não tem campo de notas.** O handoff modela
+`diario_infusoes (…, sensacao text, nota text)`. A `nota` sai: um campo
+aberto num diário é o caminho pelo qual dado de saúde entra sem
+consentimento («tomei porque estou grávida»), e a D17 acabou de fechar esse
+caminho no assistente de blends. O que fica é o que o handoff pede na
+tela — erva + horário + sensação em chips — com a sensação numa lista
+fechada (`relaxei`, `dormi_bem`, `energia`, `foco`, `digestao`,
+`sem_efeito`, `nao_gostei`), espelhada no banco. Notas livres, se vierem,
+são outra decisão.
+
+**D20 — O interruptor `diario` é conferido pelo banco, não só pela tela.**
+A régua do CLAUDE.md («o servidor é quem recusa») vale para funcionalidade
+também: a policy de `INSERT`/`UPDATE` de `diario_infusoes` chama
+`interruptor_ligado('diario')`. `SELECT` e `DELETE` não dependem dele —
+desligar uma funcionalidade não pode sequestrar o que o usuário já
+registrou. A chave se chama `diario` (o handoff diz `diario_ativo`) para
+seguir o padrão das outras quatro, que são substantivos.
+
+**D21 — `tasting_journal` não é reaproveitada.** Existe em produção, vazia,
+sem código que a escreva, com colunas de outro modelo (nota, aroma, foto,
+sabor) e com os privilégios de default (ALL para `anon`). Reaproveitar
+seria herdar um esquema que ninguém desenhou para isto; o diário nasce em
+tabela própria e a antiga fica para uma limpeza à parte (revogar `anon`,
+depois decidir se some).
+
 ## 4. Como testar esta rodada
 
 ```
 npm ci
-npm run test:e2e            # smoke antigo + tests/e2e/navegacao.spec.mjs
+npm run test:e2e            # smoke, navegacao, conta e diario (tests/e2e/)
 npx html-validate index.html   # ler a saída: prefer-native-element deve sumir do nav
 node scripts/ci-check.mjs
 ```
@@ -255,9 +294,34 @@ Manual (preview da Vercel):
 5. Teclado: Tab percorre o menu; Enter abre; no celular, ☰ abre a folha,
    Esc fecha e devolve o foco.
 
+Terceira rodada (08b), além do de cima:
+
+```
+psql … -f supabase/tests/20260916_diario_infusoes_test.sql   # 17 blocos, todos `t`
+npx playwright test tests/e2e/diario.spec.mjs
+```
+
+6. Com `diario` desligado (estado inicial): `/#diario` mostra «ainda não
+   está disponível»; «Diário» não aparece na sub-navegação de Meu Ervatório
+   nem na folha do celular.
+7. No painel (staging!), ligar `diario` e recarregar: «Diário» entra no
+   menu; sem conta, a tela explica e oferece entrar; com conta, registrar
+   Camomila com «Relaxei» cria a linha (conferir no SQL Editor:
+   `select erva_id, erva_nome, sensacao from diario_infusoes`), trocar a
+   sensação na lista grava só `sensacao`, apagar apaga.
+8. Desligar `diario` com registros existentes: a tela some do menu e, pelo
+   REST com o token do usuário, `POST /rest/v1/diario_infusoes` volta 42501;
+   `GET` e `DELETE` continuam funcionando.
+9. `user-data-rights` (após reimplantar): o export traz `diario_infusoes`.
+
 ## 5. Rollback
 
 Cada etapa é um commit; `git revert <sha>` desfaz uma sem tocar nas outras.
 A migration `20260914120000` só **amplia** um `CHECK` — reverter é
 reaplicar a lista antiga (documentado no próprio arquivo). Nenhuma tabela,
 coluna ou policy é criada ou removida.
+
+**08b.** Primeiro degrau: desligar o interruptor `diario` no painel — a tela
+some e o banco recusa registro novo, sem deploy. Segundo: `git revert` do
+commit. Terceiro (só com backup verificado, porque apaga registro de
+usuário): o bloco ROLLBACK no cabeçalho de `20260916120000_diario_infusoes.sql`.

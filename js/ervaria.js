@@ -108,6 +108,9 @@ const ervaria = {
     // Sem resposta, lojaAtiva() cai para SITE_SETTINGS e depois para false,
     // e os blocos ficam escondidos (não removidos) até a resposta chegar.
     try { typeof applyLojaState === 'function' && applyLojaState(confirmado); } catch (_) {}
+    // Páginas atrás de interruptor (diário): a resposta pode chegar com a
+    // tela já aberta pelo hash.
+    try { if (window._currentPage === 'diario' && typeof renderDiario === 'function') renderDiario(); } catch (_) {}
   },
 
   applyPaymentsState() {
@@ -253,6 +256,7 @@ const ervaria = {
   onLogout() {
     this.updateAuthUI(false);
     if (typeof resetSaudeState === 'function') resetSaudeState();
+    if (typeof resetDiarioState === 'function') resetDiarioState();
     localStorage.removeItem('erb_entered');
     localStorage.removeItem('erb_auth');
     backToLanding();
@@ -365,6 +369,45 @@ const ervaria = {
   async saudeApagar() {
     if (!this.client || !this.user) throw new Error('sem sessão');
     const { error } = await this.client.from('perfil_saude').delete().eq('user_id', this.user.id);
+    if (error) throw error;
+  },
+
+
+  // ── DIÁRIO DE INFUSÕES (PR 08b) ───────────────────────────
+  // Só em memória (diarioState); o servidor é a única cópia. O interruptor
+  // `diario` é conferido pela policy de INSERT/UPDATE — a tela só esconde.
+  async diarioListar() {
+    if (!this.client || !this.user) return [];
+    const { data, error } = await this.client.from('diario_infusoes')
+      .select('id, erva_id, erva_nome, tomado_em, sensacao')
+      .eq('user_id', this.user.id)
+      .order('tomado_em', { ascending: false })
+      .limit(200);
+    if (error) throw error;
+    return data || [];
+  },
+  async diarioRegistrar(reg) {
+    if (!this.client || !this.user) throw new Error('sem sessão');
+    const { data, error } = await this.client.from('diario_infusoes').insert({
+      user_id: this.user.id,
+      erva_id: reg.erva_id,
+      erva_nome: reg.erva_nome,
+      tomado_em: reg.tomado_em,
+      sensacao: reg.sensacao || null,
+    }).select('id, erva_id, erva_nome, tomado_em, sensacao').single();
+    if (error) throw error;
+    return data;
+  },
+  async diarioAtualizarSensacao(id, sensacao) {
+    if (!this.client || !this.user) throw new Error('sem sessão');
+    const { error } = await this.client.from('diario_infusoes')
+      .update({ sensacao: sensacao || null }).eq('id', id).eq('user_id', this.user.id);
+    if (error) throw error;
+  },
+  async diarioApagar(id) {
+    if (!this.client || !this.user) throw new Error('sem sessão');
+    const { error } = await this.client.from('diario_infusoes')
+      .delete().eq('id', id).eq('user_id', this.user.id);
     if (error) throw error;
   },
 

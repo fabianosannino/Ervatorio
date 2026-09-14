@@ -1745,3 +1745,23 @@ img,video,canvas,svg{max-width:100%;height:auto}
 .page:not(#page-search)>.sec-title:first-child::before{content:'';position:absolute;top:0;left:0;width:44px;height:2px;background:var(--gold)}
 .page:not(#page-search)>.sec-title:first-child::after{content:'ERVATÓRIO';position:absolute;top:-2px;left:58px;font-family:'Jost',sans-serif;font-size:.62rem;font-weight:500;letter-spacing:.24em;color:var(--gold2);opacity:.75}
 .page:not(#page-search)>.sec-title:first-child+.sec-sub{font-size:.95rem!important;line-height:1.6!important;color:var(--muted)!important;max-width:64ch;margin-bottom:0!important;padding-bottom:1.4rem;border-bottom:0.5px solid var(--faint);margin-bottom:1.75rem!important}
+
+/* ── Diário de infusões (PR 08b) ── */
+#page-diario [hidden]{display:none!important}
+.diario-form{margin-bottom:1.5rem}
+.diario-form .perfil-input{margin-bottom:.4rem}
+.diario-form .perfil-save-btn{margin-top:.75rem}
+.diario-dia{margin-bottom:1.25rem}
+.diario-dia-titulo{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:400;font-size:1.05rem;color:var(--gold2);margin:0 0 .3rem}
+.diario-dia-titulo::first-letter{text-transform:uppercase}
+.diario-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:.6rem;align-items:center;padding:.5rem 0;border-top:0.5px solid var(--faint)}
+.diario-hora{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.diario-erva{font-size:.9rem;color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.diario-sensacao{min-height:36px;max-width:100%;padding:0 8px;background:var(--bg3);border:0.5px solid var(--faint);border-radius:var(--r-sm);color:var(--cream2);font-family:'Jost',sans-serif;font-size:.78rem}
+.diario-sensacao:focus{outline:none;border-color:rgba(200,168,75,.4)}
+.diario-apagar{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;background:none;border:0;color:var(--muted);cursor:pointer;border-radius:var(--r-sm)}
+.diario-apagar:hover,.diario-apagar:focus-visible{color:#e08080}
+@media(max-width:600px){
+  .diario-item{grid-template-columns:auto minmax(0,1fr) auto}
+  .diario-sensacao{grid-column:1/4}
+}

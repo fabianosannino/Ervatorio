@@ -201,6 +201,49 @@ e as decisões D1–D14. As que mais mudam o jeito de trabalhar aqui:
   (`ALTER DEFAULT PRIVILEGES ... GRANT ALL`) para pegar isso.
 - Mexeu nisso? Rode `supabase/tests/20260915_perfil_saude_test.sql`.
 
+## Diário de infusões — atrás de interruptor, sem texto livre (PR 08b do handoff)
+
+- **`diario_infusoes`** (migration `20260916120000`): erva + horário +
+  sensação, uma linha por infusão, RLS do dono, sem acesso a `anon`. Cai com
+  a conta (CASCADE) e sai no export de `user-data-rights`.
+- **O interruptor `diario` decide duas coisas**: se a tela aparece no menu
+  (`flag:'diario'` em `NAV_GROUPS`, lida por `flagLigada()`) **e** se o banco
+  aceita registro novo — a policy de `INSERT`/`UPDATE` chama
+  `interruptor_ligado('diario')`. Desligar **não sequestra**: o dono continua
+  lendo e apagando o que é dele. Nasce desligado; liga-se pelo painel.
+- **`flagLigada()` falha para desligado** e não tem fallback: sem resposta
+  do banco, a tela avisa «ainda não está disponível» em vez de prometer o que
+  o servidor recusaria. Página nova atrás de interruptor = `flag:'<chave>'`
+  na entrada de `NAV_GROUPS` + `if(id==='x') render…` no `goPage` + o
+  re-render em `ervaria.loadInterruptores` quando a resposta chega.
+- **Sensação é lista fechada, dois espelhos**: `sensacoes_conhecidas()` no
+  banco e `DIARIO_SENSACOES` em `js/app.js`. **Não há campo de notas.** Um
+  campo aberto num diário é o lugar onde «tomei porque estou grávida» entra
+  sem consentimento — o mesmo motivo pelo qual o assistente de blends perdeu
+  o «observações». Sensação percebida («relaxei», «dormi bem») não é
+  condição de saúde. Se um dia houver notas livres, é outra decisão, com a
+  minimização pensada antes.
+- **`erva_id` é texto**: o id numérico de `HERBS` como string (a mesma
+  convenção de `user_favorites.tea_id`) ou o slug da ficha editorial. O
+  catálogo mora em js/, não numa tabela — por isso `erva_nome` vai junto,
+  para o export ser legível sem o app. O `CHECK` confere o formato.
+- **Só em memória** (`diarioState`), como a saúde: carregado do servidor a
+  cada sessão, nada em `localStorage`. O `diario.spec.mjs` confere.
+- **`#diario` é página do app**, não mais atalho para a seção da landing
+  (`#lp-diario`, que os links da landing já usam). Saiu de
+  `LANDING_ANCHORS` — a colisão era exatamente o que a D7 previu.
+- **`tasting_journal` continua existindo**, com zero linhas e nenhum código
+  que a escreva. Não foi reaproveitada: o modelo (nota, aroma, foto) é outro
+  e os privilégios dela ainda são os de default (ALL para `anon`). Fica para
+  uma limpeza própria.
+- **Migration que estende `interruptores_conhecidos()` torna a migration
+  antiga não reaplicável**: a `20260815230000` recria a função com a lista
+  de quatro e o `CHECK` recusa a linha `diario`. Em produção as migrations
+  rodam uma vez, em ordem, então não é cenário — mas o bloco de idempotência
+  do teste reaplica **só** a migration nova, e o teste antigo dos
+  interruptores continua contando quatro porque roda sozinho.
+- Mexeu nisso? Rode `supabase/tests/20260916_diario_infusoes_test.sql`.
+
 ## Compliance
 - Nenhum script de tracking (analytics, pixel) dispara antes do **consentimento** do usuário (LGPD / Consent Mode v2).
 - Dados pessoais têm base legal, política de retenção e caminho de exclusão.

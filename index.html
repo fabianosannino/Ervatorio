@@ -2858,6 +2858,31 @@
   <div id="caminhoContainer"></div>
 </div>
 
+<!-- DIÁRIO DE INFUSÕES (PR 08b) — atrás do interruptor `diario`. Erva +
+     horário + sensação (lista fechada). Sem texto livre, sem dado de saúde,
+     nada neste aparelho: diarioState vive em memória (js/app.js). -->
+<div class="page" id="page-diario">
+  <div class="sec-title" data-i18n="page.diario.title">Diário de infusões</div>
+  <div class="sec-sub" data-i18n="page.diario.subtitle">O que você tomou, quando, e como se sentiu</div>
+  <p class="perfil-hint" id="diarioOff" data-i18n="diario.off">O diário ainda não está disponível.</p>
+  <div id="diarioGuest" hidden>
+    <p class="perfil-hint" data-i18n="diario.guest">O diário fica na sua conta e só você lê. Entre para começar.</p>
+    <button type="button" class="perfil-btn-ghost" onclick="ervaria.showAuthModal()" data-i18n="diario.login">Entrar ou criar conta</button>
+  </div>
+  <form class="diario-form" id="diarioForm" onsubmit="registrarInfusao();return false" hidden>
+    <label class="perfil-field-label" for="diarioErva" data-i18n="diario.erva_label">Erva ou chá</label>
+    <input class="perfil-input" id="diarioErva" list="diarioErvasList" autocomplete="off" data-i18n-placeholder="diario.erva_ph" placeholder="Comece a digitar e escolha da lista" required>
+    <datalist id="diarioErvasList"></datalist>
+    <label class="perfil-field-label" for="diarioQuando" data-i18n="diario.when_label">Quando</label>
+    <input class="perfil-input" id="diarioQuando" type="datetime-local">
+    <div class="perfil-sublabel" id="diarioSensacoesLabel" data-i18n="diario.sensacao_label">Como se sentiu</div>
+    <div class="perfil-chips" id="diarioSensacoes" role="group" aria-labelledby="diarioSensacoesLabel"></div>
+    <p class="perfil-hint" data-i18n="diario.hint">Fica na sua conta; só você lê. Não anote saúde aqui: o diário guarda erva, hora e sensação.</p>
+    <button type="submit" class="perfil-save-btn" id="diarioAdd" data-i18n="diario.add">Registrar infusão</button>
+  </form>
+  <div class="diario-lista" id="diarioLista" aria-live="polite" hidden></div>
+</div>
+
 <!-- end appContainer -->
 </div>
 
