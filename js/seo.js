@@ -92,6 +92,14 @@ const SEO_META = {
     de: { title:'Meine Reise — Abzeichen & Errungenschaften | Ervatório', desc:'Verfolge deine Ervatório-Reise: verdiente Abzeichen, Wissensstufe und botanischen Fortschritt.' },
     fr: { title:'Mon parcours — badges & accomplissements | Ervatório', desc:'Suivez votre parcours Ervatório : badges gagnés, niveau de connaissance et progrès botanique.' },
   },
+  diario: {
+    pt: { title:'Diário de infusões — Ervatório', desc:'Registre o que tomou, quando e como se sentiu. Fica na sua conta; só você lê.' },
+    en: { title:'Infusion diary — Ervatório', desc:'Log what you drank, when, and how you felt. It stays in your account; only you can read it.' },
+    es: { title:'Diario de infusiones — Ervatório', desc:'Registra qué tomaste, cuándo y cómo te sentiste. Queda en tu cuenta; solo tú lo lees.' },
+    ja: { title:'お茶日記 — Ervatório', desc:'何をいつ飲んで、どう感じたかを記録。アカウントに保存され、あなただけが読めます。' },
+    de: { title:'Aufguss-Tagebuch — Ervatório', desc:'Halte fest, was du wann getrunken hast und wie du dich gefühlt hast. Bleibt in deinem Konto; nur du liest es.' },
+    fr: { title:'Journal d\'infusions — Ervatório', desc:'Notez ce que vous avez bu, quand, et comment vous vous êtes senti. Reste dans votre compte ; vous seul le lisez.' },
+  },
 };
 
 const SEO_DEFAULT = {

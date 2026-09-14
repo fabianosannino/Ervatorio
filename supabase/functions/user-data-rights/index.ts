@@ -36,6 +36,8 @@ const OWNED_TABLES: Array<{ table: string; key: string }> = [
   // resto e cai com a conta por CASCADE. Retirar só o consentimento é
   // DELETE na linha, feito pela própria tela (RLS do dono).
   { table: 'perfil_saude', key: 'user_id' },
+  // Diário de infusões (migration 20260916120000): erva + horário + sensação.
+  { table: 'diario_infusoes', key: 'user_id' },
 ];
 
 Deno.serve(async (req) => {

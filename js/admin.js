@@ -274,6 +274,12 @@ const ADM_INTERRUPTORES = [
     descricao: 'Captacao de e-mail no rodape e no modal.',
     aoDesligar: 'O formulario some. Quem ja se inscreveu continua inscrito e continua recebendo.',
   },
+  {
+    chave: 'diario',
+    nome: 'Diario de infusoes',
+    descricao: 'Tela "Diario" em Meu Ervatorio: erva + horario + sensacao, na conta do usuario.',
+    aoDesligar: 'A tela some do menu e o banco recusa registro novo (policy de INSERT/UPDATE em diario_infusoes). O que ja foi registrado continua la: o dono continua lendo e apagando, e sai no export de dados.',
+  },
 ];
 
 async function loadInterruptores(){
