@@ -1235,9 +1235,11 @@ body.light .leaflet-popup-content-wrapper{background:#f5f0e8;color:#2a1e0a}
 ══════════════════════════════════════════════ */
 /* Hub */
 .ferr-hub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:1.25rem}
-.ferr-hub-card{background:var(--bg3);border:0.5px solid var(--faint);border-radius:var(--r-lg);padding:1.5rem;cursor:pointer;transition:all .25s;display:flex;flex-direction:column;gap:8px;text-align:center;align-items:center}
+.ferr-hub-card{background:var(--bg3);border:0.5px solid var(--faint);border-radius:var(--r-lg);padding:1.5rem;cursor:pointer;transition:all .25s;display:flex;flex-direction:column;gap:8px;text-align:center;align-items:center;text-decoration:none;color:inherit;min-height:44px}
+.ferr-hub-card:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .ferr-hub-card:hover{border-color:rgba(200,168,75,.4);background:rgba(200,168,75,.04);transform:translateY(-2px)}
-.ferr-hub-icon{font-size:2.4rem;line-height:1}
+.ferr-hub-icon{line-height:1;color:var(--gold2)}
+.ferr-hub-nota{font-size:.72rem;color:var(--muted);line-height:1.4}
 .ferr-hub-name{font-family:'Cormorant Garamond',serif;font-size:1.25rem;color:var(--gold2);font-weight:400}
 .ferr-hub-desc{font-size:.82rem;color:var(--cream2);line-height:1.5}
 /* Cards & inputs comuns */

@@ -44,14 +44,6 @@ const SEO_META = {
     de: { title:'Botanisches Spiel — Ervatório', desc:'Teste dein Wissen über brasilianische Heilkräuter. Identifiziere Pflanzen anhand von Hinweisen und sammle Punkte.' },
     fr: { title:'Jeu Botanique — Ervatório', desc:'Testez vos connaissances sur les herbes médicinales brésiliennes. Identifiez les plantes à partir d\'indices.' },
   },
-  chazerias: {
-    pt: { title:'Onde beber — casas de chá | Ervatório', desc:'Guia curado de casas de chá em Brasil, Europa, Ásia e Américas. Mais de 16 espaços com endereço, horários e descrição.' },
-    en: { title:'Where to drink — tea houses | Ervatório', desc:'Curated guide to tea houses in Brazil, Europe, Asia and the Americas. 16+ venues with addresses, hours and descriptions.' },
-    es: { title:'Dónde beber — casas de té | Ervatório', desc:'Guía curada de casas de té en Brasil, Europa, Asia y las Américas. Más de 16 espacios.' },
-    ja: { title:'飲める場所 — 茶屋 | Ervatório', desc:'ブラジル、ヨーロッパ、アジア、南北アメリカの厳選茶屋ガイド。16以上の場所。' },
-    de: { title:'Wo trinken — Teehäuser | Ervatório', desc:'Kuratierter Leitfaden zu Teehäusern in Brasilien, Europa, Asien und Amerika. Über 16 Orte.' },
-    fr: { title:'Où boire — maisons de thé | Ervatório', desc:'Guide curé des maisons de thé au Brésil, en Europe, en Asie et dans les Amériques. Plus de 16 lieux.' },
-  },
   ferramentas: {
     pt: { title:'Como preparar — Ervatório', desc:'Guia de preparo, calculadora de infusão, timer e monitor de cafeína. Tudo para preparar o chá certo.' },
     en: { title:'How to brew — Ervatório', desc:'Brewing guide, infusion calculator, timer and caffeine monitor. Everything to brew the right tea.' },

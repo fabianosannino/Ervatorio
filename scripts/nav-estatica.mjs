@@ -45,6 +45,7 @@ const icon = (name, size) => `<svg class="ui-ico" viewBox="0 0 24 24"${size ? ` 
 function hrefEstatico(p) {
   if (p.href) return p.href;
   if (p.estatico) return p.estatico;
+  if (p.slug && PAGE_HASH[p.id + '/' + p.slug]) return '/#' + PAGE_HASH[p.id + '/' + p.slug];
   return '/#' + (PAGE_HASH[p.id] || p.id) + (p.slug ? '/' + p.slug : '');
 }
 const visiveis = (g) => g.pages.filter((p) => !p.hidden && !p.flag);

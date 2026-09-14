@@ -14,7 +14,7 @@ import { test, expect } from '@playwright/test';
 // cobrem. Também evita ~12 s de reset de conexão por página em ambiente
 // sem saída para a internet.
 test.beforeEach(async ({ page }) => {
-  await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|supabase\.co/, (r) => r.abort());
+  await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|supabase\.co|unpkg\.com|cartocdn\.com/, (r) => r.abort());
   await page.addInitScript(() => {
     try { localStorage.setItem('erv_consent_v1', JSON.stringify({ analytics: false, marketing: false })); } catch (_) {}
   });
@@ -41,7 +41,8 @@ test.describe('rotas por hash (D6)', () => {
     ['#ervas',          'page-ervatorio',     '#ervas'],
     ['#mundo',          'page-mundo',         '#origens'],
     ['#origens',        'page-mundo',         '#origens'],
-    ['#chazerias',      'page-chazerias',     '#onde-beber'],
+    ['#chazerias',      'page-mundo',         '#onde-beber'],
+    ['#onde-beber',     'page-mundo',         '#onde-beber'],
     ['#ferramentas',    'page-ferramentas',   '#como-preparar'],
     ['#como-preparar',  'page-ferramentas',   '#como-preparar'],
     ['#roda-funcional', 'page-roda-funcional','#roda-funcional'],
@@ -70,6 +71,47 @@ test.describe('rotas por hash (D6)', () => {
       expect((await paginaAtiva(page)).landing).toBe(false);
     });
   }
+
+  // PR 07: «Onde beber» é a 4ª visão de Origens; o hash e a sub-navegação
+  // acompanham a visão nos dois sentidos.
+  test('#onde-beber abre Origens na visão «Onde beber»; trocar a visão troca o hash', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/#onde-beber', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#page-mundo')).toHaveClass(/\bon\b/);
+    await expect(page.locator('#mundoBeberView')).toBeVisible();
+    await expect(page.locator('#mundoMapView')).toBeHidden();
+    await expect(page.locator('#btnBeber')).toHaveClass(/\bon\b/);
+    await expect(page.locator('#ervSubnav a[href="#onde-beber"]')).toHaveAttribute('aria-current', 'page');
+    expect(await page.locator('#ervSubnav a[href="#origens"][aria-current]').count()).toBe(0);
+    expect(await page.locator('#page-chazerias').count()).toBe(0);
+    await page.click('#btnMapa');
+    await expect.poll(() => page.evaluate(() => location.hash)).toBe('#origens');
+    await expect(page.locator('#ervSubnav a[href="#origens"]')).toHaveAttribute('aria-current', 'page');
+    await page.click('#btnBeber');
+    await expect.poll(() => page.evaluate(() => location.hash)).toBe('#onde-beber');
+  });
+
+  // PR 07: o hub «Como preparar» tem seis cards, todos links de verdade.
+  test('#como-preparar mostra seis cards <a>, sem emoji, com as páginas estáticas', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/#como-preparar', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#page-ferramentas')).toHaveClass(/\bon\b/);
+    const cards = page.locator('#page-ferramentas a.ferr-hub-card');
+    await expect(cards).toHaveCount(6);
+    expect(await page.locator('#page-ferramentas .ferr-hub-card:not(a)').count()).toBe(0);
+    expect(await page.locator('#page-ferramentas [onclick]').count()).toBe(0);
+    for (const txt of await cards.allTextContents()) expect(txt).not.toMatch(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u);
+    await expect(page.locator('#page-ferramentas a[href="/como-se-faz/"]')).toHaveCount(1);
+    await expect(page.locator('#page-ferramentas a[href="/lexico/"]')).toHaveCount(1);
+    await expect(page.locator('#page-ferramentas a[href="/biblioteca/"]')).toHaveCount(1);
+    // O aviso de que o monitor fica no aparelho (o idioma segue o navegador:
+    // aqui pode ser EN, por isso não se compara o texto).
+    await expect(page.locator('#page-ferramentas a[href="#ferramenta/cafeina"] .ferr-hub-nota')).toHaveCount(1);
+    expect(await page.locator('#page-ferramentas a[href="#familias"]').count()).toBe(0);
+    // O card da calculadora abre a ferramenta.
+    await page.click('#page-ferramentas a[href="#ferramenta/infusao"]');
+    await expect(page.locator('#page-ferramenta')).toHaveClass(/\bon\b/);
+  });
 
   test('#encontrar/sono aplica a intenção na tela de intenções', async ({ page }) => {
     await entrar(page);

@@ -29,7 +29,7 @@ var NAV_GROUPS = [
       { id:'familia',        hidden:true },
       { id:'chas',           label:'nav.traditional_teas' },
       { id:'mundo',          label:'nav.world_teas' },
-      { id:'chazerias',      label:'nav.teahouses' },
+      { id:'mundo', slug:'beber', label:'nav.teahouses' },
       { id:'guia-sensorial', label:'nav.flavor_guide' } ] },
   { id:'preparar', label:'nav.prepare', sub:'nav.sub_prepare', home:'receitas', pages:[
       { id:'receitas',       label:'nav.recipes' },
@@ -60,6 +60,6 @@ var NAV_GROUPS = [
 // Hashes canônicos das telas que têm nome próprio na URL (os demais usam
 // o id): `#ervas` abre page-ervatorio, `#estante` abre page-favs…
 var PAGE_HASH = {
-  search:'encontrar', ervatorio:'ervas', mundo:'origens', chazerias:'onde-beber',
+  search:'encontrar', ervatorio:'ervas', mundo:'origens', 'mundo/beber':'onde-beber',
   ferramentas:'como-preparar', marketplace:'loja', suppliers:'produtores', favs:'estante', caminho:'jornada',
 };

@@ -2344,9 +2344,10 @@
 
   <!-- View toggle -->
   <div class="mundo-view-row">
-    <button class="mundo-view-btn on" id="btnMapa" onclick="setMundoView('mapa',this)" data-i18n="mundo.view_map">Mapa Global</button>
-    <button class="mundo-view-btn" id="btnLista" onclick="setMundoView('lista',this)" data-i18n="mundo.view_list">Por País</button>
-    <button class="mundo-view-btn" id="btnBrasil" onclick="setMundoView('brasil',this)" data-i18n="mundo.view_brazil">Brasil & Chá</button>
+    <button type="button" class="mundo-view-btn on" id="btnMapa" onclick="setMundoView('mapa',this)" data-i18n="mundo.view_map">Mapa Global</button>
+    <button type="button" class="mundo-view-btn" id="btnLista" onclick="setMundoView('lista',this)" data-i18n="mundo.view_list">Por País</button>
+    <button type="button" class="mundo-view-btn" id="btnBrasil" onclick="setMundoView('brasil',this)" data-i18n="mundo.view_brazil">Brasil & Chá</button>
+    <button type="button" class="mundo-view-btn" id="btnBeber" onclick="setMundoView('beber',this)" data-i18n="page.chazerias.guide_title">Onde beber</button>
   </div>
 
   <!-- MAP VIEW -->
@@ -2376,14 +2377,14 @@
   <div id="mundoBrasilView" style="display:none">
     <div id="brasilContent"></div>
   </div>
-</div>
 
-<!-- CHAZERIAS PAGE -->
-<div class="page" id="page-chazerias">
-  <div class="sec-title" data-i18n="page.chazerias.guide_title">Guia de Chazerias</div>
-  <div class="sec-sub" data-i18n="page.chazerias.guide_sub">Locais curados de chá e ervas ao redor do mundo</div>
-  <div id="chaz-map" style="width:100%;height:340px;border-radius:var(--r-lg);overflow:hidden;margin-bottom:1.5rem;border:0.5px solid var(--faint)"></div>
-  <div id="chaz-cards"></div>
+  <!-- ONDE BEBER (PR 07): era a página #chazerias; agora é a 4ª visão de
+       Origens. O hash canônico continua #onde-beber (= mundo/beber). -->
+  <div id="mundoBeberView" style="display:none">
+    <p class="sec-sub" data-i18n="page.chazerias.guide_sub">Locais curados de chá e ervas ao redor do mundo</p>
+    <div id="chaz-map" style="width:100%;height:340px;border-radius:var(--r-lg);overflow:hidden;margin-bottom:1.5rem;border:0.5px solid var(--faint)"></div>
+    <div id="chaz-cards"></div>
+  </div>
 </div>
 
 <!-- FERRAMENTAS HUB -->

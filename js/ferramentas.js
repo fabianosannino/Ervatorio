@@ -531,26 +531,31 @@
   function renderHub() {
     var p = document.getElementById('page-ferramentas');
     if (!p) return;
+    var tt = function (k) { return (typeof t === 'function') ? t(k) : k; };
+    var ico = function (n) { return (typeof svgIcon === 'function') ? svgIcon(n, 34) : ''; };
+    // Seis cards, todos <a> de verdade (teclado, leitor de tela), sem emoji.
+    // Famílias botânicas saíram daqui: moram em Descobrir. As três últimas
+    // são páginas estáticas — o link é o caminho real.
+    var cards = [
+      { href: pageHash('ferramenta', 'infusao'), icon: 'thermometer', nome: tt('ferr.calc'),    desc: tt('ferr.calc_desc') },
+      { href: pageHash('ferramenta', 'timer'),   icon: 'tea',         nome: tt('ferr.timer'),   desc: tt('ferr.timer_desc') },
+      { href: pageHash('ferramenta', 'cafeina'), icon: 'bulb',        nome: tt('ferr.cafeina'), desc: tt('ferr.cafeina_desc'), nota: tt('ferr.cafeina_local') },
+      { href: '/como-se-faz/', icon: 'spoon',    nome: tt('nav.how_made'), desc: tt('ferr.como_desc') },
+      { href: '/lexico/',      icon: 'leaf',     nome: tt('nav.lexicon'),  desc: tt('ferr.lexico_desc') },
+      { href: '/biblioteca/',  icon: 'calendar', nome: tt('nav.library'),  desc: tt('ferr.biblio_desc') },
+    ];
     p.innerHTML = ''
-      + '<div class="sec-title">Ferramentas</div>'
-      + '<div class="sec-sub">Calculadoras, timer e guia de famílias</div>'
+      + '<div class="sec-title">' + esc(tt('page.ferramentas.title')) + '</div>'
+      + '<div class="sec-sub">' + esc(tt('ferr.hub_sub')) + '</div>'
       + '<div class="ferr-hub-grid">'
-      +   '<div class="ferr-hub-card" onclick="goPage(\'ferramenta\',null,\'infusao\')">'
-      +     '<div class="ferr-hub-icon">🌡</div><div class="ferr-hub-name">Calculadora de Infusão</div>'
-      +     '<div class="ferr-hub-desc">Temperatura, tempo e dose ajustados ao seu volume e força preferidos</div>'
-      +   '</div>'
-      +   '<div class="ferr-hub-card" onclick="goPage(\'ferramenta\',null,\'timer\')">'
-      +     '<div class="ferr-hub-icon">⏱</div><div class="ferr-hub-name">Timer Multi-Step</div>'
-      +     '<div class="ferr-hub-desc">Ocidental, Gongfu ou personalizado — com alarme e vibração</div>'
-      +   '</div>'
-      +   '<div class="ferr-hub-card" onclick="goPage(\'ferramenta\',null,\'cafeina\')">'
-      +     '<div class="ferr-hub-icon">☕</div><div class="ferr-hub-name">Cafeína Hoje</div>'
-      +     '<div class="ferr-hub-desc">Acompanhe seu consumo diário e histórico de 7 dias</div>'
-      +   '</div>'
-      +   '<div class="ferr-hub-card" onclick="goPage(\'familias\')">'
-      +     '<div class="ferr-hub-icon">🌿</div><div class="ferr-hub-name">Famílias de Chá</div>'
-      +     '<div class="ferr-hub-desc">Os nove caminhos do chá — preto, verde, branco, oolong, mate e mais</div>'
-      +   '</div>'
+      + cards.map(function (c) {
+          return '<a class="ferr-hub-card" href="' + c.href + '">'
+            + '<span class="ferr-hub-icon" aria-hidden="true">' + ico(c.icon) + '</span>'
+            + '<span class="ferr-hub-name">' + esc(c.nome) + '</span>'
+            + '<span class="ferr-hub-desc">' + esc(c.desc) + '</span>'
+            + (c.nota ? '<span class="ferr-hub-nota">' + esc(c.nota) + '</span>' : '')
+            + '</a>';
+        }).join('')
       + '</div>';
   }
 

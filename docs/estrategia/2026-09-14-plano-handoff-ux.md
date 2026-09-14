@@ -64,7 +64,7 @@ três commits** (D2).
 | 03b | Mesmo cabeçalho nas páginas estáticas (via `prerender.mjs`) | **Quarta rodada (16/09)** — ver D22–D23. | PR `feat/unified-nav-static` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 05 | «Encontre seu chá» em 3 passos, motor único de recomendação, restrição como barreira | Aguarda o roteiro de teste com usuários (README §Fase 2 §04) | `feat/encontrar` |
 | 06 | Ficha: resumo leigo, timer embutido, «Onde encontrar» (indicação), e-mail | Depois do 05 | `feat/ficha-actions` |
-| 07 | Descobrir e Preparar como abas de verdade (fusão de renderizadores) | Parte já entra no 03 como sub-navegação; a fusão fica aqui | `feat/descobrir-preparar` |
+| 07 | Descobrir e Preparar como abas de verdade (fusão de renderizadores) | **Quinta rodada (16/09)** — Origens absorve Onde beber; hub «Como preparar» com seis cards. Ver D24–D25 para o que fica. | PR `feat/descobrir-preparar` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 08 | Meu Ervatório + `perfil_saude` (tabela própria, RLS, consentimento com timestamp); cadastro reduzido; «Excluir meus dados» | **Segunda rodada (15/09)** — ver D15–D17. O Diário fica para o 08b. | PR `feat/conta-e-consentimento` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 08b | Diário de infusões (`diario_infusoes`, RLS dono, interruptor `diario`) | **Terceira rodada (16/09)** — ver D19–D21. | PR `feat/diario-infusoes` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 09 | `privacidade.html`: CNPJ/DPO, dado de saúde, base legal, retenção | Depende de decisão do dono (CNPJ/DPO) | `docs/privacy-update` |
@@ -226,6 +226,14 @@ para `mailto:`, até existir `/parceiros/`.
   chama de `aria-label-misuse`. A sub-navegação do app tem isso em
   `index.html` (`#ervSubnav`); nas estáticas já nasceu sem. Vale tirar do
   app no próximo PR que tocar o cabeçalho.
+- **(07) O hub de ferramentas era quatro `<div onclick>` com emoji** — o
+  mesmo defeito que o CLAUDE.md descreve no menu do painel, num lugar que
+  o `html-validate` não alcança porque o HTML nasce em JavaScript. Agora são
+  `<a>`; o teste E2E conta `[onclick]` dentro da página e exige zero.
+- **(07) A sub-navegação marcava a entrada sem slug junto com a de slug**
+  (`!p.slug` era verdadeiro sempre). Não aparecia porque só Blends tinha
+  duas entradas na mesma tela e as duas têm slug. Com Origens/Onde beber
+  apareceria; corrigido na condição.
 
 **D15 — O Diário de infusões não entra no PR 08.** O critério de aceite do
 handoff para o 08 é o consentimento («sem consentimento, campos desabilitados
@@ -301,6 +309,27 @@ e «Entrar» também ficam de fora: as páginas são PT, tema claro fixo, sem
 Supabase. O que aparece é o que funciona sem JavaScript — e a folha do
 celular é o único pedaço com script (`js/nav-estatica.js`, 40 linhas).
 
+**D24 — A aba Assistente do blend fica até o PR 05.** O handoff a remove
+porque «virou `/encontrar`». O `/encontrar` de três passos ainda não existe
+(espera o teste com usuários), e o assistente é hoje o único lugar que
+cruza sintoma, hora e restrição de sessão com as fichas. Remover antes de
+ter o substituto é tirar função sem dar outra. Sai no 05, quando o motor
+único entrar.
+
+**D25 — Famílias botânicas continuam entrada própria em Descobrir.** O
+handoff as põe como «filtro/aba secundária do Guia de Ervas». O filtro do
+Guia é reescrito no 05/06 (chips canônicos, «Sem cafeína»); enfiar
+Famílias lá agora seria mexer no Guia duas vezes. O que muda já: Famílias
+sai do hub «Como preparar», onde não fazia sentido, e fica só em Descobrir.
+
+**D26 — «Onde beber» é uma visão de Origens, com hash próprio.** Fundir os
+dois renderizadores numa página só (`initMundo` + `initChazerias` como 4ª
+visão) sem perder o link `#onde-beber` exigiu que `pageHash` e o roteador
+entendessem `tela/slug` com nome próprio: `PAGE_HASH['mundo/beber'] =
+'onde-beber'`. Trocar a visão dentro da página troca o hash
+(`replaceState`) e a sub-navegação; o `#chazerias` antigo segue valendo
+por alias. O Leaflet e as chazerias só carregam quando a visão abre.
+
 ## 4. Como testar esta rodada
 
 ```
@@ -358,6 +387,16 @@ npx html-validate erva/guarana/index.html pausa.html privacidade.html termos.htm
 12. No app, a sub-navegação de «Preparar & criar» mostra Como se faz,
     Léxico e Biblioteca, e cada um abre a página estática.
 
+Quinta rodada (07), além do de cima:
+
+13. `/#onde-beber` abre Origens já na visão «Onde beber» (mapa das casas
+    de chá, carregado só ali); `/#chazerias` cai no mesmo lugar. Clicar
+    «Mapa Global» muda o hash para `#origens` e a sub-navegação acompanha.
+14. `/#como-preparar`: seis cards (Calculadora, Timer, Monitor de cafeína
+    com o aviso «fica só neste aparelho», Como se faz, Léxico, Biblioteca),
+    todos operáveis por Tab + Enter; nenhum «Famílias» ali.
+15. Trocar o idioma para EN e voltar ao hub: os textos dos cards trocam.
+
 ## 5. Rollback
 
 Cada etapa é um commit; `git revert <sha>` desfaz uma sem tocar nas outras.
@@ -373,3 +412,7 @@ usuário): o bloco ROLLBACK no cabeçalho de `20260916120000_diario_infusoes.sql
 **03b.** `git revert` do commit e `npm run prerender` — o gerador antigo
 reescreve as páginas sem o cabeçalho; os marcadores nas páginas escritas à
 mão voltam vazios com o revert. Sem migration, sem função, sem dado.
+
+**07.** `git revert` do commit e `npm run prerender` (a sub-navegação das
+páginas estáticas volta a apontar para `#onde-beber` como página). Sem
+migration, sem função, sem dado.
