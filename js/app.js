@@ -137,42 +137,9 @@ let currentHerb = null;
 // sub-navegação com as páginas que já existem — os renderizadores não mudam.
 //
 // A lista é UX: quem decide o que aparece de comércio é lojaAtiva() (D3).
-var NAV_GROUPS = [
-  { id:'encontrar', label:'nav.functional_wheel', sub:'nav.sub_find', home:'search', pages:[
-      { id:'search',         label:'nav.functional_wheel' },
-      { id:'roda-funcional', label:'nav.wheel_advanced' },
-      { id:'roda',           label:'nav.tea_wheel' },
-      { id:'quiz',           label:'nav.quiz' } ] },
-  { id:'descobrir', label:'nav.discover', sub:'nav.sub_discover', home:'ervatorio', pages:[
-      { id:'ervatorio',      label:'nav.encyclopedia' },
-      { id:'ficha',          hidden:true },
-      { id:'familias',       label:'nav.families' },
-      { id:'familia',        hidden:true },
-      { id:'chas',           label:'nav.traditional_teas' },
-      { id:'mundo',          label:'nav.world_teas' },
-      { id:'chazerias',      label:'nav.teahouses' },
-      { id:'guia-sensorial', label:'nav.flavor_guide' } ] },
-  { id:'preparar', label:'nav.prepare', sub:'nav.sub_prepare', home:'receitas', pages:[
-      { id:'receitas',       label:'nav.recipes' },
-      { id:'blends', slug:'manual',  label:'nav.blends' },
-      { id:'blends', slug:'prontos', label:'nav.ready_blends' },
-      { id:'blend',          hidden:true },
-      { id:'ferramentas',    label:'nav.tools' },
-      { id:'ferramenta',     hidden:true } ] },
-  { id:'loja', label:'nav.marketplace', sub:'nav.sub_shop', home:'marketplace', loja:true, pages:[
-      { id:'marketplace',    label:'nav.marketplace' },
-      { id:'suppliers',      label:'nav.suppliers' },
-      { id:'pedidos',        label:'nav.orders' } ] },
-  // Meu Ervatório não é item de texto no menu: é o botão da direita e a
-  // grade da folha mobile. Continua sendo um grupo para a sub-navegação.
-  { id:'conta', label:'nav.account', home:'favs', icone:true, pages:[
-      { id:'favs',           label:'nav.favorites' },
-      { id:'caminho',        label:'nav.path' },
-      { id:'diario',         label:'nav.diary', flag:'diario' },
-      { id:'jogo',           label:'nav.game' },
-      { id:'perfil',         label:'nav.profile' },
-      { id:'sobre',          label:'nav.about' } ] },
-];
+// NAV_GROUPS e PAGE_HASH moram em js/nav-data.js (PR 03b): o gerador das
+// páginas estáticas (scripts/prerender.mjs) lê o mesmo arquivo, para que o
+// cabeçalho seja um só. Carregado antes deste script no index.html.
 
 function navT(key){ return (typeof t === 'function') ? t(key) : key; }
 function navGroupOf(pageId){
@@ -182,7 +149,7 @@ function navGroupOf(pageId){
   }
   return null;
 }
-function navHref(p){ return pageHash(p.id, p.slug); }
+function navHref(p){ return p.href ? p.href : pageHash(p.id, p.slug); }
 
 // Barra do desktop: um botão por grupo. Loja só com lojaAtiva() (o atributo
 // data-loja deixa o CSS esconder e o applyLojaState remover).
@@ -2797,10 +2764,7 @@ var HASH_ALIASES = {
   'sabores':'guia-sensorial', 'shop':'marketplace', 'cerimonia':'chas', 'criarblend':'blends/manual',
 };
 // Inverso: id da pagina -> nome canonico na URL. Quem nao esta aqui usa o proprio id.
-var PAGE_HASH = {
-  search:'encontrar', ervatorio:'ervas', mundo:'origens', chazerias:'onde-beber',
-  ferramentas:'como-preparar', marketplace:'loja', suppliers:'produtores', favs:'estante', caminho:'jornada',
-};
+// PAGE_HASH: ver js/nav-data.js.
 // Secoes da landing (D7): os ids no HTML tem prefixo `lp-`; estes sao os
 // nomes antigos, que ainda podem chegar por link. Nao ha pagina — o navegador rola.
 // `diario` saiu daqui no PR 08b: agora é página do app (#diario). A seção da

@@ -20,6 +20,8 @@
 // ============================================================
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+// Cabeçalho único (PR 03b): o mesmo menu do app, em HTML puro.
+import { moldura, aplicarMarcadores } from './nav-estatica.mjs';
 
 const SITE = 'https://ervatorio.com.br';
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -239,11 +241,11 @@ function fichaPage(slug, f, idx) {
 </div></header>
 <main class="wrap">
   <p>
-    <a class="cta gold" href="/#ficha/${esc(slug)}">🌿 Abrir no Ervatório</a>
-    <a class="cta" href="/#page=search">Explorar todas as ervas</a>
+    <a class="cta gold" href="/#ficha/${esc(slug)}">Abrir no Ervatório</a>
+    <a class="cta" href="/#ervas">Explorar todas as ervas</a>
   </p>
   ${body}
-  <div class="health">🌿 <strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+  <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
   <section><h2>Ervas relacionadas</h2><div class="related">${related}</div></section>
 </main>
 <footer>
@@ -302,7 +304,7 @@ function hubPage() {
   <p class="tagline">${slugs.length} ervas do Brasil e do mundo — ciência, preparo, segurança e cultura em cada ficha.</p>
 </div></header>
 <main class="wrap">
-  <p><a class="cta gold" href="/">🌿 Abrir o Ervatório</a> <a class="cta" href="/lexico/">Léxico da Chazeria →</a> <a class="cta" href="/como-se-faz/">Como se faz →</a> <a class="cta" href="/biblioteca/">Biblioteca →</a></p>
+  <p><a class="cta gold" href="/">Abrir o Ervatório</a> <a class="cta" href="/lexico/">Léxico da Chazeria →</a> <a class="cta" href="/como-se-faz/">Como se faz →</a> <a class="cta" href="/biblioteca/">Biblioteca →</a></p>
   <div class="ervo-tools">
     <input type="search" id="ervoSearch" class="ervo-search" placeholder="Buscar por nome ou nome científico…" aria-label="Buscar erva" autocomplete="off">
     <div class="ervo-count" id="ervoCount">${slugs.length} ervas</div>
@@ -418,7 +420,7 @@ function lexicoTermPage(term) {
     <a class="cta gold" href="/lexico/">Explorar o Léxico</a>
     <a class="cta" href="/erva/">Ir para a Ervopédia</a>
   </div>
-  <div class="health">🌿 <strong>Aviso:</strong> conteúdo cultural e educacional sobre a linguagem do chá — não constitui aconselhamento de saúde.</div>
+  <div class="health"><strong>Aviso:</strong> conteúdo cultural e educacional sobre a linguagem do chá — não constitui aconselhamento de saúde.</div>
 </main>
 <footer>
   <p>© 2026 Ervatório · <a href="/">ervatorio.com.br</a> · <a href="/privacidade.html">Privacidade</a> · <a href="/termos.html">Termos</a></p>
@@ -568,7 +570,7 @@ function comoSeFazPage(proc) {
   ${relErvas ? section('Ervas relacionadas', `<div class="related">${relErvas}</div>`) : ''}
   ${refs ? `<section><h2>Referências</h2><ul class="refs">${refs}</ul></section>` : ''}
   <section><h2>Nesta série</h2>${nav}</section>
-  <div class="health">🌿 <strong>Aviso:</strong> conteúdo cultural e educacional sobre o processamento de chás e ervas — não constitui aconselhamento de saúde.</div>
+  <div class="health"><strong>Aviso:</strong> conteúdo cultural e educacional sobre o processamento de chás e ervas — não constitui aconselhamento de saúde.</div>
 </main>
 <footer>
   <p>© 2026 Ervatório · <a href="/">ervatorio.com.br</a> · <a href="/privacidade.html">Privacidade</a> · <a href="/termos.html">Termos</a></p>
@@ -724,7 +726,7 @@ function bibliotecaGuiaPage(guia) {
 <main class="wrap">
   <button class="print-btn" onclick="window.print()">🖨 Salvar como PDF / Imprimir</button>
   ${guiaCorpo(guia)}
-  <div class="health">🌿 <strong>Aviso:</strong> guia educacional sobre preparo e cultura do chá — não constitui aconselhamento de saúde.</div>
+  <div class="health"><strong>Aviso:</strong> guia educacional sobre preparo e cultura do chá — não constitui aconselhamento de saúde.</div>
 </main>
 <footer>
   <p>© 2026 Ervatório · <a href="/">ervatorio.com.br</a> · <a href="/privacidade.html">Privacidade</a> · <a href="/termos.html">Termos</a></p>
@@ -789,40 +791,43 @@ let count = 0;
 for (const [i, slug] of slugs.entries()) {
   const dir = join('erva', slug);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, 'index.html'), fichaPage(slug, FICHAS[slug], i));
+  writeFileSync(join(dir, 'index.html'), moldura(fichaPage(slug, FICHAS[slug], i), { secao: '/erva/' }));
   count++;
 }
-writeFileSync(join('erva', 'index.html'), hubPage());
+writeFileSync(join('erva', 'index.html'), moldura(hubPage(), { secao: '/erva/' }));
 
 // Léxico da Chazeria
 let lexCount = 0;
 for (const term of LEXICO_TERMOS) {
   const dir = join('lexico', term.slug);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, 'index.html'), lexicoTermPage(term));
+  writeFileSync(join(dir, 'index.html'), moldura(lexicoTermPage(term), { secao: '/lexico/' }));
   lexCount++;
 }
-writeFileSync(join('lexico', 'index.html'), lexicoHubPage());
+writeFileSync(join('lexico', 'index.html'), moldura(lexicoHubPage(), { secao: '/lexico/' }));
 
 // Série "Como se faz"
 let procCount = 0;
 for (const proc of PROCESSOS) {
   const dir = join('como-se-faz', proc.slug);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, 'index.html'), comoSeFazPage(proc));
+  writeFileSync(join(dir, 'index.html'), moldura(comoSeFazPage(proc), { secao: '/como-se-faz/' }));
   procCount++;
 }
-writeFileSync(join('como-se-faz', 'index.html'), comoSeFazHub());
+writeFileSync(join('como-se-faz', 'index.html'), moldura(comoSeFazHub(), { secao: '/como-se-faz/' }));
 
 // Biblioteca (guias imprimíveis)
 let bibCount = 0;
 for (const guia of BIBLIOTECA_GUIAS) {
   const dir = join('biblioteca', guia.slug);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, 'index.html'), bibliotecaGuiaPage(guia));
+  writeFileSync(join(dir, 'index.html'), moldura(bibliotecaGuiaPage(guia), { secao: '/biblioteca/' }));
   bibCount++;
 }
-writeFileSync(join('biblioteca', 'index.html'), bibliotecaHub());
+writeFileSync(join('biblioteca', 'index.html'), moldura(bibliotecaHub(), { secao: '/biblioteca/' }));
+
+// Páginas escritas à mão: recebem o mesmo cabeçalho pelos marcadores.
+for (const arquivo of ['pausa.html', 'privacidade.html', 'termos.html']) aplicarMarcadores(arquivo, {});
 
 // sitemap.xml
 const staticUrls = [

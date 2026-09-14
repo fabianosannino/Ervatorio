@@ -41,9 +41,29 @@ ul{padding-left:22px}li{margin:5px 0;font-size:.95rem}
 footer{background:var(--verde);color:#c3b89e;padding:22px 20px;font-size:.8rem;text-align:center}
 footer a{color:var(--ouro2)}
 @media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}</style>
-  <link rel="stylesheet" href="/css/editorial-pages.css">
+<link rel="stylesheet" href="/css/nav.css">
 </head>
 <body>
+<nav class="erv-nav erv-estatico" aria-label="Navegação principal">
+  <div class="erv-nav-bar">
+    <button type="button" class="erv-nav-burger" aria-label="Abrir menu" aria-expanded="false" aria-controls="ervMenuSheet"><svg class="ui-ico" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <a class="erv-logo" href="/" title="Voltar à página inicial"><span class="erv-logo-mark">Ervatório</span><span class="erv-logo-sub">Ervas do Brasil e do Mundo</span></a>
+    <div class="erv-nav-groups"><a class="erv-nav-item" data-group="encontrar" href="/#encontrar">Encontre seu chá</a><a class="erv-nav-item on" data-group="descobrir" href="/erva/" aria-current="page">Descobrir</a><a class="erv-nav-item" data-group="preparar" href="/#receitas">Preparar &amp; criar</a></div>
+    <div class="erv-nav-actions">
+      <a class="erv-nav-icon erv-nav-search" href="/#encontrar" aria-label="Buscar"><svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><span class="erv-nav-icon-label">Buscar erva, sintoma ou receita</span></a>
+      <a class="erv-nav-icon" href="/#estante" aria-label="Minha estante"><svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10z"/></svg></a>
+      <a class="erv-nav-icon" href="/#perfil" aria-label="Meu Ervatório"><svg class="ui-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></a>
+    </div>
+  </div>
+  <div class="erv-subnav"><div class="erv-subnav-inner"><a class="erv-subnav-item on" href="/erva/" aria-current="page">Guia de Ervas</a><a class="erv-subnav-item" href="/#familias">Famílias botânicas</a><a class="erv-subnav-item" href="/#chas">Tipos de chá</a><a class="erv-subnav-item" href="/#origens">Origens</a><a class="erv-subnav-item" href="/#onde-beber">Onde beber</a><a class="erv-subnav-item" href="/#guia-sensorial">Guia de sabores</a></div></div>
+</nav>
+<div class="erv-sheet erv-estatico" id="ervMenuSheet" role="dialog" aria-modal="true" aria-label="Menu" hidden>
+  <div class="erv-sheet-top"><span class="erv-sheet-title">Menu</span><button type="button" class="erv-sheet-close" aria-label="Fechar"><svg class="ui-ico" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="erv-sheet-groups"><a class="erv-sheet-group" href="/#encontrar"><span class="erv-sheet-group-name">Encontre seu chá</span><span class="erv-sheet-group-sub">Conte como você está e veja chás para o seu momento</span></a><a class="erv-sheet-group" href="/erva/"><span class="erv-sheet-group-name">Descobrir</span><span class="erv-sheet-group-sub">Guia de Ervas, tipos de chá, origens e sabores</span></a><a class="erv-sheet-group" href="/#receitas"><span class="erv-sheet-group-name">Preparar &amp; criar</span><span class="erv-sheet-group-sub">Receitas, criar meu blend e como preparar</span></a></div>
+  <div class="erv-sheet-label">Meu Ervatório</div>
+  <div class="erv-sheet-grid"><a class="erv-sheet-cell" href="/#estante">Minha estante</a><a class="erv-sheet-cell" href="/#jornada">Minha jornada</a><a class="erv-sheet-cell" href="/#jogo">Jogo</a><a class="erv-sheet-cell" href="/#perfil">Perfil</a></div>
+  <div class="erv-sheet-foot"><a href="/#sobre">Sobre</a><span aria-hidden="true">·</span><a href="/#lp-clube">Clube</a><span aria-hidden="true">·</span><a href="/pausa.html">Cultura da Pausa</a><span aria-hidden="true">·</span><a href="/privacidade.html">Privacidade</a></div>
+</div>
 <header class="hero"><div class="wrap">
   <a class="back" href="/erva/">← Ervopédia</a>
   <h1>Funcho</h1>
@@ -52,8 +72,8 @@ footer a{color:var(--ouro2)}
 </div></header>
 <main class="wrap">
   <p>
-    <a class="cta gold" href="/#ficha/funcho">🌿 Abrir no Ervatório</a>
-    <a class="cta" href="/#page=search">Explorar todas as ervas</a>
+    <a class="cta gold" href="/#ficha/funcho">Abrir no Ervatório</a>
+    <a class="cta" href="/#ervas">Explorar todas as ervas</a>
   </p>
   <section><h2>Identificação</h2><dl><div class="row"><dt>Nome científico</dt><dd>Foeniculum vulgare Mill.</dd></div><div class="row"><dt>Família botânica</dt><dd>Apiaceae (família do coentro, da cenoura, do anis)</dd></div><div class="row"><dt>Tipo</dt><dd>Fitoterápico digestivo / carminativo / antiespasmódico</dd></div><div class="row"><dt>Parte usada</dt><dd>Frutos (sementes) secos; folhas (uso culinário).</dd></div></dl><ul><li>Funcho · erva-doce · anis-falso (confusão)</li><li>Fennel (inglês) · Fenouil (francês) · Fenchel (alemão) · Hinojo (espanhol)</li><li>ATENÇÃO: &quot;erva-doce&quot; no Brasil refere-se tanto ao funcho (F. vulgare) quanto ao anis-estrelado (Illicium verum) — sabores similares, plantas distintas.</li></ul></section>
 <section><h2>Características</h2><dl><div class="row"><dt>Sabor</dt><dd>Doce-anis intenso e redondo, levemente licoroso, fresco, aromático. Um dos sabores mais imediatamente agradáveis do catálogo digestivo.</dd></div><div class="row"><dt>Aroma</dt><dd>Anis-doce característico (trans-anetol), levemente mentolado-fresco, feno adocicado.</dd></div><div class="row"><dt>Cor da infusão</dt><dd>Amarelo-pálido a âmbar claro. #E8D878</dd></div><div class="row"><dt>Intensidade</dt><dd>3/5 — aromático presente e agradável.</dd></div></dl></section>
@@ -65,11 +85,23 @@ footer a{color:var(--ouro2)}
 <section><h2>História e cultura</h2><p>O funcho era a planta do herói grego — Prometeu, na mitologia, roubou o fogo dos deuses escondendo-o em um caule de funcho (pelo interior esponjoso e combustível lento). O festival de Maratona, onde Fídípides correu 42 km para anunciar a vitória grega, aconteceu num campo de funcho — &quot;marathon&quot; vem do grego para funcho (marathron).  Em Roma, os gladiadores comiam funcho antes dos combates — estamina e digestão. Na Índia, sementes de funcho são mastigadas após as refeições em restaurantes como digestivo e refrescante bucal — prática que persiste em restaurantes indianos no mundo inteiro.</p></section>
 <section><h2>Status regulatório</h2><dl><div class="row"><dt>ANVISA (Brasil)</dt><dd>Monografia oficial. Indicações: carminativo, antiespasmódico digestivo.</dd></div><div class="row"><dt>EMA (Europa)</dt><dd>Monografia HMPC — well-established use para flatulência.</dd></div><div class="row"><dt>Sazonalidade</dt><dd>Sementes maduras: verão-outono</dd></div></dl></section>
 
-  <div class="health">🌿 <strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+  <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
   <section><h2>Ervas relacionadas</h2><div class="related"><a href="/erva/salvia/">Sálvia</a><a href="/erva/boldo-do-chile/">Boldo-do-Chile</a><a href="/erva/calendula/">Calêndula</a><a href="/erva/malva/">Malva</a></div></section>
 </main>
-<footer>
-  <p>© 2026 Ervatório · <a href="/">ervatorio.com.br</a> · <a href="/privacidade.html">Privacidade</a> · <a href="/termos.html">Termos</a></p>
+<footer class="erv-footer erv-estatico" aria-label="Rodapé">
+  <div class="erv-footer-inner">
+    <div class="erv-footer-links">
+      <a href="/#sobre">Sobre</a>
+      <a href="/#lp-clube">Clube</a>
+      <a href="/pausa.html">Cultura da Pausa</a>
+      <a href="/privacidade.html">Privacidade</a>
+      <a href="/termos.html">Termos</a>
+      <a href="mailto:contato@ervatorio.com.br">Contato</a>
+    </div>
+    <div>© 2026 Ervatório · Conteúdo educacional; não substitui orientação médica.</div>
+    <p class="erv-footer-aviso">Conteúdo educacional — não substitui orientação médica. Consulte um profissional antes de usar plantas medicinais, especialmente na gravidez, amamentação ou uso de medicamentos.</p>
+  </div>
 </footer>
+<script defer src="/js/nav-estatica.js"></script>
 </body>
 </html>
