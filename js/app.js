@@ -449,7 +449,7 @@ function aplicarIntencao(intencao){
     'imunidade':  {cat:'Todos',    safe:'',           momento:'', search:'imunidade'},
     'explorar':   null,
   };
-  if(intencao==='explorar'){ goPage('roda',document.querySelector('.nav-tab:nth-child(2)')); return; }
+  if(intencao==='explorar'){ goPage('roda'); return; }
   const filtros = mapa[intencao];
   if(!filtros) return;
   activeFilters.cat = filtros.cat;
@@ -2134,10 +2134,21 @@ function hideLanding(){
 function goPage(id,btn,slug){
   // Cerimônia foi integrada em #page-chas — redireciona deep links antigos.
   if(id==='cerimonia') id='chas';
-  // Criar Blend foi unificado em Blends com sub-abas (Prontos/Assistente/Manual).
-  // Deep links antigos para 'criarblend' caem na aba Assistente.
+  // O hub "Sabores" saiu (D13): dois cards e conteudo nenhum. Quem chega por
+  // ele cai no Guia de sabores; a Roda dos Chas continua em #roda.
+  if(id==='sabores') id='guia-sensorial';
+  // Blends tem sub-abas (Prontos/Assistente/Manual). A aba vem no slug
+  // (#blends/manual); 'criarblend' legado abre o Assistente.
   var _blendOpenTab = null;
   if(id==='criarblend'){ id='blends'; _blendOpenTab='assistente'; }
+  if(id==='blends'){
+    if(slug==='manual'||slug==='prontos'||slug==='assistente') _blendOpenTab=slug;
+    slug=_blendOpenTab||undefined;
+  }
+  // #encontrar/<intencao>: a tela de intencoes ja abre com a intencao aplicada
+  // (chips do hero da landing). Ver D8.
+  var _intent = null;
+  if(id==='search' && slug){ _intent=slug; slug=undefined; }
   // Gate: quem já entrou no app (login real OU "continuar sem login") pode
   // navegar livremente entre as páginas. Features que exigem conta real
   // (sync de favoritos, salvar blend no cloud, etc.) checam ervaria.user
@@ -2159,6 +2170,7 @@ function goPage(id,btn,slug){
   if(id==='suppliers')renderSuppliers();
   if(id==='roda')window.initRoda();
   if(id==='perfil')renderPerfil();
+  if(id==='search' && _intent && typeof aplicarIntencao==='function') setTimeout(function(){ aplicarIntencao(_intent); }, 50);
   if(id==='blends'){
     // Inicializa todas as sub-abas (barato o bastante para rodar sempre)
     buildWizard();renderTray();
@@ -2191,57 +2203,87 @@ function goPage(id,btn,slug){
   if(typeof updateSEO==='function') updateSEO(id);
 
   // Registra a navegação no histórico do browser para que o botão Voltar funcione.
+  // A URL usa o nome canonico (PAGE_HASH); vindo de hashchange (alias ou
+  // link), substitui a entrada em vez de empilhar.
   if(!window._goPageFromHistory){
-    var newHash='#'+id+(slug?'/'+slug:'');
-    if(window.location.hash!==newHash)
-      history.pushState({page:id,slug:slug||null},''  ,newHash);
-    else
+    var newHash=pageHash(id,slug);
+    if(window._goPageFromHash || window.location.hash===newHash)
       history.replaceState({page:id,slug:slug||null},'',newHash);
+    else
+      history.pushState({page:id,slug:slug||null},''  ,newHash);
   }
 }
 
-// Hash route handler for parameterized Ervatorio v1.1 routes
-(function(){
-  // Inclui as rotas SPA novas: ferramentas, ferramenta/<slug>, familias, familia/<slug>,
-  // chazerias, quiz, quiz/resultado/<slug>
-  var SPA_ROUTE_RE = /^#(ficha|blend|ervatorio|blends|roda-funcional|ferramentas|ferramenta|familias|familia|chazerias|quiz|chas|mundo|receitas|jogo)(\/.+)?$/;
-  function handleHash(){
-    var hash = window.location.hash || '';
-    if(SPA_ROUTE_RE.test(hash)) hideLanding();
-    var m;
-    if((m = hash.match(/^#ficha\/([a-z0-9-]+)$/))) {
-      goPage('ficha', null, m[1]);
-    } else if((m = hash.match(/^#blend\/([a-z0-9-]+)$/))) {
-      goPage('blend', null, m[1]);
-    } else if((m = hash.match(/^#ferramenta\/([a-z0-9-]+)$/))) {
-      goPage('ferramenta', null, m[1]);
-    } else if((m = hash.match(/^#familia\/([a-z0-9-]+)$/))) {
-      goPage('familia', null, m[1]);
-    } else if((m = hash.match(/^#quiz\/(.+)$/))) {
-      goPage('quiz', null, m[1]);
-    } else if(hash === '#ervatorio') {
-      goPage('ervatorio');
-    } else if(hash === '#blends') {
-      goPage('blends');
-    } else if(hash === '#roda-funcional') {
-      goPage('roda-funcional');
-    } else if(hash === '#ferramentas') {
-      goPage('ferramentas');
-    } else if(hash === '#familias') {
-      goPage('familias');
-    } else if(hash === '#chazerias') {
-      goPage('chazerias');
-    } else if(hash === '#quiz') {
-      goPage('quiz');
-    }
+// ── ROTAS POR HASH ──────────────────────────────────────────────
+// Decisões D6–D8 em docs/estrategia/2026-09-14-plano-handoff-ux.md.
+//
+// Qualquer `#<pagina>[/<slug>]` cujo `#page-<pagina>` exista abre a tela —
+// antes, `#chas`, `#mundo`, `#receitas` e `#jogo` escondiam a landing mas
+// nao abriam a pagina, porque o roteador era uma lista fechada.
+//
+// HASH_ALIASES: nome que aparece na URL -> id da pagina (com sub-aba opcional).
+// Os nomes novos vem do handoff de UX (14/09); os antigos continuam
+// funcionando para nao quebrar link ja compartilhado.
+var HASH_ALIASES = {
+  // vocabulario novo
+  'encontrar':'search', 'ervas':'ervatorio', 'origens':'mundo', 'onde-beber':'chazerias',
+  'como-preparar':'ferramentas', 'criar-blend':'blends/manual', 'loja':'marketplace',
+  'produtores':'suppliers', 'estante':'favs', 'jornada':'caminho', 'conta':'favs',
+  // hashes antigos e atalhos
+  'sabores':'guia-sensorial', 'shop':'marketplace', 'cerimonia':'chas', 'criarblend':'blends/manual',
+};
+// Inverso: id da pagina -> nome canonico na URL. Quem nao esta aqui usa o proprio id.
+var PAGE_HASH = {
+  search:'encontrar', ervatorio:'ervas', mundo:'origens', chazerias:'onde-beber',
+  ferramentas:'como-preparar', marketplace:'loja', suppliers:'produtores', favs:'estante', caminho:'jornada',
+};
+// Secoes da landing (D7): os ids no HTML tem prefixo `lp-`; estes sao os
+// nomes antigos, que ainda podem chegar por link. Nao ha pagina — o navegador rola.
+var LANDING_ANCHORS = { 'clube':'lp-clube', 'colecoes':'lp-colecoes', 'mapa':'lp-mapa', 'diario':'lp-diario' };
+
+function pageHash(id, slug){
+  return '#' + (PAGE_HASH[id] || id) + (slug ? '/' + slug : '');
+}
+
+function resolveHash(hash){
+  var m = String(hash || '').match(/^#([a-z0-9-]+)(?:\/(.+))?$/i);
+  if(!m) return null;
+  var id = m[1].toLowerCase(), slug = m[2] || '';
+  if(LANDING_ANCHORS[id]) return { landing: LANDING_ANCHORS[id] };
+  if(id.indexOf('lp-') === 0) return null;
+  var target = HASH_ALIASES[id] || id;
+  var parts = target.split('/');
+  var page = parts[0];
+  if(!slug && parts[1]) slug = parts[1];
+  if(!document.getElementById('page-' + page)) return null;
+  return { page: page, slug: slug };
+}
+
+function handleHash(){
+  var r = resolveHash(window.location.hash);
+  if(!r) return;
+  if(r.landing){
+    // Link antigo para uma secao da landing: mostra a landing (se o app
+    // estiver por cima) e rola ate ela.
+    if(typeof backToLanding === 'function') backToLanding();
+    var el = document.getElementById(r.landing);
+    if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
   }
-  window.addEventListener('hashchange', handleHash);
-  // Handle initial load with hash
-  if(window.location.hash && SPA_ROUTE_RE.test(window.location.hash)){
-    hideLanding();
-    setTimeout(handleHash, 300);
-  }
-})();
+  hideLanding();
+  // A URL ja mudou (clique em <a href="#…">, digitacao, alias): goPage
+  // substitui a entrada em vez de empilhar outra.
+  window._goPageFromHash = true;
+  try { goPage(r.page, null, r.slug || undefined); }
+  finally { window._goPageFromHash = false; }
+}
+window.addEventListener('hashchange', handleHash);
+// Carga inicial com hash: o roteador so roda depois que os scripts `defer`
+// seguintes (ervatorio-pages, receitas, quiz…) registraram seus renderizadores.
+if(window.location.hash && resolveHash(window.location.hash) && !resolveHash(window.location.hash).landing){
+  hideLanding();
+  setTimeout(handleHash, 300);
+}
 
 // Botão Voltar/Avançar do browser
 window.addEventListener('popstate', function(e){

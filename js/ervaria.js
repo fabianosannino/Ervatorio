@@ -743,7 +743,7 @@ const ervaria = {
         : `<span class="auth-avatar">${esc(name[0].toUpperCase())}</span> ${esc(name)}`;
       btn.onclick = () => this.toggleProfileMenu();
     } else {
-      btn.innerHTML = '⚷ Entrar';
+      btn.textContent = (typeof t === 'function' && t('ui.login') !== 'ui.login') ? t('ui.login') : 'Entrar';
       btn.onclick = () => this.showAuthModal();
     }
   },

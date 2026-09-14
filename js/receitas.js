@@ -354,15 +354,18 @@ function renderReceitasHub() {
   const el = document.getElementById('receitasContainer');
   if (!el) return;
 
+  // Filtros como texto (handoff 14/09): emoji fora da identidade e ruim
+  // para leitor de tela. Os rotulos vem do i18n (rec.filter_*).
+  const _t = typeof t === 'function' ? t : (k, fb) => fb;
   const cats = [
-    {id:'todas',   label:'Todas',      emoji:'☕'},
-    {id:'quente',  label:'Quentes',    emoji:'🍵'},
-    {id:'gelado',  label:'Geladas',    emoji:'🧊'},
-    {id:'mocktail',label:'Mocktails',  emoji:'🍹'},
-    {id:'medicinal',label:'Medicinais',emoji:'🌿'},
-    {id:'culinario',label:'Culinárias',emoji:'🍯'},
-    {id:'ritual',  label:'Rituais',    emoji:'🕯️'},
-  ];
+    {id:'todas',    label:_t('rec.filter_all')       || 'Todas'},
+    {id:'quente',   label:_t('rec.filter_hot')       || 'Quentes'},
+    {id:'gelado',   label:_t('rec.filter_cold')      || 'Geladas'},
+    {id:'mocktail', label:_t('rec.filter_mocktail')  || 'Mocktails'},
+    {id:'medicinal',label:_t('rec.filter_medicinal') || 'Medicinais'},
+    {id:'culinario',label:_t('rec.filter_culinary')  || 'Culinárias'},
+    {id:'ritual',   label:_t('rec.filter_ritual')    || 'Rituais'},
+  ].map(c => ({...c, label: c.label.startsWith('rec.') ? c.id : c.label}));
 
   const lista = receitasFiltro === 'todas'
     ? RECEITAS
@@ -376,8 +379,9 @@ function renderReceitasHub() {
     <div class="rec-filter-bar">
       ${cats.map(c=>`
         <button class="rec-filter-btn${receitasFiltro===c.id?' on':''}"
-                onclick="setReceitaFiltro('${c.id}')">
-          ${c.emoji} ${c.label}
+                onclick="setReceitaFiltro('${c.id}')"
+                aria-pressed="${receitasFiltro===c.id?'true':'false'}">
+          ${c.label}
         </button>`).join('')}
     </div>
     <div class="rec-count" style="font-size:.7rem;color:var(--muted);margin-bottom:.75rem">

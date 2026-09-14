@@ -1504,7 +1504,7 @@ body.light .leaflet-popup-content-wrapper{background:#f5f0e8;color:#2a1e0a}
 
 /* ── Hero section ───────────────────���────────────────────────── */
 .caminho-hero{text-align:center;padding:1.5rem 1rem 2rem;background:var(--bg3);border:0.5px solid var(--faint);border-radius:var(--r-lg);margin-bottom:2rem}
-.caminho-level-icon{font-size:3.2rem;margin-bottom:.4rem;line-height:1}
+.caminho-level-icon{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:500;letter-spacing:.06em;color:var(--gold2);margin-bottom:.4rem;line-height:1}
 .caminho-level-name{font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:var(--gold2);font-weight:400;margin-bottom:.2rem}
 .caminho-level-desc{font-size:.82rem;color:var(--muted);margin-bottom:1.2rem}
 
