@@ -8,10 +8,22 @@
 // ============================================================
 import { test, expect } from '@playwright/test';
 
+// Sem rede externa: fontes e o CDN do Supabase são abortados. O app já trata
+// a ausência do cliente (ervaria.init em try/catch) e, sem resposta do banco,
+// a loja é considerada desligada — exatamente o cenário que estes testes
+// cobrem. Também evita ~12 s de reset de conexão por página em ambiente
+// sem saída para a internet.
+test.beforeEach(async ({ page }) => {
+  await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|supabase\.co/, (r) => r.abort());
+  await page.addInitScript(() => {
+    try { localStorage.setItem('erv_consent_v1', JSON.stringify({ analytics: false, marketing: false })); } catch (_) {}
+  });
+});
+
 // Pula o modal de login: quem já "entrou" navega livremente (erb_entered).
 async function entrar(page) {
   await page.addInitScript(() => {
-    try { localStorage.setItem('erb_entered', '1'); localStorage.setItem('erv_consent_v1', JSON.stringify({ analytics: false, marketing: false })); } catch (_) {}
+    try { localStorage.setItem('erb_entered', '1'); } catch (_) {}
   });
 }
 
@@ -52,9 +64,10 @@ test.describe('rotas por hash (D6)', () => {
       await entrar(page);
       await page.goto('/' + pedido, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('#' + pagina)).toHaveClass(/\bon\b/, { timeout: 5000 });
-      const st = await paginaAtiva(page);
-      expect(st.landing).toBe(false);
-      expect(st.hash).toBe(canonico);
+      // page-search já nasce `.on`; o roteador roda 300 ms depois do load —
+      // por isso o hash canônico é esperado por polling, não lido na hora.
+      await expect.poll(() => page.evaluate(() => location.hash), { timeout: 5000 }).toBe(canonico);
+      expect((await paginaAtiva(page)).landing).toBe(false);
     });
   }
 
@@ -82,5 +95,60 @@ test.describe('rotas por hash (D6)', () => {
     expect(await page.evaluate(() => location.hash)).toBe('#chas');
     await page.goBack();
     await expect(page.locator('#page-ervatorio')).toHaveClass(/\bon\b/);
+  });
+});
+
+test.describe('CTAs e comércio (PR 02 do handoff)', () => {
+  test('nenhum <a href="#"> no documento', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    expect(await page.locator('a[href="#"]').count()).toBe(0);
+  });
+
+  test('loja desligada: nada de compra visível e deep link cai na home', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/#marketplace', { waitUntil: 'domcontentloaded' });
+    // Sem resposta do banco a loja é considerada desligada (falha fechada).
+    await expect(page.locator('#page-search')).toHaveClass(/\bon\b/, { timeout: 5000 });
+    for (const sel of ['#page-marketplace', '#page-suppliers', '#page-pedidos', '#cartOverlay', '.nav-tab[data-loja]']) {
+      const el = page.locator(sel).first();
+      if (await el.count()) await expect(el).toBeHidden();
+    }
+    // Sem "em breve"/"manutenção" visível no app.
+    const texto = await page.locator('#appContainer').innerText();
+    expect(texto).not.toMatch(/em manutenção|Seção em desenvolvimento/i);
+  });
+
+  test('loja ligada (interruptor `pagamentos`): Loja e carrinho voltam', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => { window.ERV_INTERRUPTORES = { pagamentos: true }; applyLojaState(true); });
+    expect(await page.evaluate(() => document.documentElement.classList.contains('loja-on'))).toBe(true);
+    await page.evaluate(() => goPage('marketplace'));
+    await expect(page.locator('#page-marketplace')).toHaveClass(/\bon\b/);
+    await expect(page.locator('#page-marketplace')).toBeVisible();
+  });
+
+  test('loja desligada confirmada: blocos de comércio saem do DOM', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => { window.ERV_INTERRUPTORES = { pagamentos: false }; applyLojaState(true); });
+    expect(await page.locator('[data-loja]').count()).toBe(0);
+    expect(await page.locator('#cartOverlay').count()).toBe(0);
+  });
+
+  test('home tem o bloco "Avise-me" da loja com formulário real', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    const form = page.locator('#lp-loja form');
+    await expect(form).toBeAttached();
+    await expect(form.locator('input[type="email"]')).toBeAttached();
+    await expect(form.locator('button[type="submit"]')).toBeAttached();
+  });
+
+  test('mapa mundi é um arquivo, não base64 inline', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    const src = await page.locator('#mundoMapImg').getAttribute('src');
+    expect(src).toBe('/images/editorial/mapa-mundi.png');
+    const r = await page.request.get(src);
+    expect(r.ok()).toBeTruthy();
   });
 });

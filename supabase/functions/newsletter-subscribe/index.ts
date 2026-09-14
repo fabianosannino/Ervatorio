@@ -42,7 +42,10 @@ import { clientIp, rateLimitAllow, tooManyRequests } from '../_shared/ratelimit.
 // migration. Validar aqui em vez de deixar o CHECK estourar troca um
 // erro 23514 cru por uma recusa limpa — e evita que uma origem
 // inválida vire 500 na cara do visitante.
-const SOURCES = ['pausa', 'rodape', 'blog', 'checkout', 'admin'];
+// As cinco ultimas vieram com o handoff de UX (migration 20260914120000):
+// captura contextual na home (loja), no Clube, na ficha, na receita e no
+// resultado de "Encontre seu chá".
+const SOURCES = ['pausa', 'rodape', 'blog', 'checkout', 'admin', 'loja', 'clube', 'ficha', 'receita', 'encontrar'];
 const LOCALES = ['pt', 'en', 'es'];
 
 // Mesmo formato que o cliente usa em pausa.html, com teto de

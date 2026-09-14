@@ -769,7 +769,9 @@
         // Onda 6.2 (backlog #40): CTA de compra quando existe produto
         // vendável correspondente no marketplace — a ficha é a página
         // de maior intenção e terminava sem botão de compra.
-        var mktP = (typeof fichaMktProduct === 'function') ? fichaMktProduct(f) : null;
+        // Loja desligada: sem botão de compra (D4) — o "Onde encontrar" por
+        // indicação entra no feat/ficha-actions.
+        var mktP = (typeof lojaAtiva === 'function' && lojaAtiva() && typeof fichaMktProduct === 'function') ? fichaMktProduct(f) : null;
         var buyBtn = '';
         if (mktP) {
           var inCartNow = (typeof cart !== 'undefined' && Array.isArray(cart)) && cart.some(function(c) { return c.id === mktP.id; });
@@ -896,8 +898,8 @@
         '</dl></section>';
     }
 
-    // Onde comprar (produtos do Supabase)
-    if (produtos.length > 0) {
+    // Onde comprar (produtos do Supabase) — só com a loja ligada (D4)
+    if (produtos.length > 0 && typeof lojaAtiva === 'function' && lojaAtiva()) {
       html += '<section class="ficha-section"><h2>Onde comprar</h2><div class="ev-produtos-grid">';
       produtos.forEach(function(p) {
         html += '<div class="ev-produto-card">' +

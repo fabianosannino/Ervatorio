@@ -95,23 +95,25 @@ const ervaria = {
    */
   async loadInterruptores() {
     window.ERV_INTERRUPTORES = window.ERV_INTERRUPTORES || {};
+    let confirmado = false;
     try {
       const { data, error } = await this.client.from('interruptores').select('chave,ligado');
-      if (error || !data) return;
-      data.forEach((i) => { window.ERV_INTERRUPTORES[i.chave] = i.ligado === true; });
-      try { typeof renderMkt === 'function' && renderMkt(); } catch (_) {}
+      if (!error && data) {
+        data.forEach((i) => { window.ERV_INTERRUPTORES[i.chave] = i.ligado === true; });
+        confirmado = true;
+        try { typeof renderMkt === 'function' && renderMkt(); } catch (_) {}
+      }
     } catch (_) {}
+    // Com ou sem resposta: decide o que a tela mostra de comércio (D4).
+    // Sem resposta, lojaAtiva() cai para SITE_SETTINGS e depois para false,
+    // e os blocos ficam escondidos (não removidos) até a resposta chegar.
+    try { typeof applyLojaState === 'function' && applyLojaState(confirmado); } catch (_) {}
   },
 
   applyPaymentsState() {
-    const enabled = window.SITE_SETTINGS?.payments_enabled === true;
-    const banner = document.getElementById('mkt-dev-banner');
-    if (!banner) return;
-    if (enabled) {
-      banner.style.display = 'none';
-    } else {
-      banner.style.display = 'flex';
-    }
+    // O banner "em manutenção" saiu com o handoff de UX: a Loja desligada
+    // não renderiza (D4). O que resta é sincronizar o estado da tela.
+    try { typeof applyLojaState === 'function' && applyLojaState(); } catch (_) {}
   },
 
   // ── AUTH METHODS ─────────────────────────────────────────
@@ -820,7 +822,7 @@ const ervaria = {
         <div class="profile-menu-email">${esc(email)}</div>
         <div class="profile-menu-sync">✓ Sincronizado</div>
       </div>
-      <button onclick="goPage('pedidos');ervaria.removeProfileMenu()">📦 Meus pedidos</button>
+      ${(typeof lojaAtiva === 'function' && lojaAtiva()) ? `<button onclick="goPage('pedidos');ervaria.removeProfileMenu()">Meus pedidos</button>` : ''}
       <button onclick="ervaria.syncFromCloud();ervaria.removeProfileMenu()">↻ Sincronizar agora</button>
       <button onclick="ervaria.exportMyData();ervaria.removeProfileMenu()">⬇ Baixar meus dados</button>
       <button onclick="ervaria.deleteMyAccount()" style="color:#e08080">🗑 Excluir minha conta</button>

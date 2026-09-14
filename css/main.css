@@ -110,6 +110,10 @@ body.light .perfil-chip{border-color:var(--faint);color:var(--muted)}
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--cream);font-family:'Jost',sans-serif;font-weight:300;min-height:100vh;overflow-x:hidden}
 
+/* LOJA (D4): blocos de comércio nascem escondidos; `loja-on` no <html> revela.
+   Com a loja desligada, applyLojaState() remove os nós do DOM. */
+html:not(.loja-on) [data-loja]{display:none!important}
+
 /* NAV */
 nav{position:sticky;top:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(12px);border-bottom:0.5px solid var(--nav-border);display:flex;flex-wrap:wrap;align-items:center;padding:.6rem 1.25rem;gap:6px}
 .nav-top{display:flex;align-items:center;justify-content:space-between;width:100%}

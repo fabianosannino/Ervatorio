@@ -124,6 +124,78 @@ let wizState = {sintomas:[],hora:'',sabor:''};
 let activeSup = 'Todos';
 let currentHerb = null;
 
+// ── LOJA: um interruptor, uma função ─────────────────────────
+// D3/D4 em docs/estrategia/2026-09-14-plano-handoff-ux.md.
+//
+// `loja_ativa` do handoff É o interruptor `pagamentos` (migration
+// 20260815230000), que já projeta `site_settings.payments_enabled`. Aqui no
+// cliente **só esta função** decide o que aparece. Quem recusa a compra é o
+// servidor (`exigirLigado`) — isto é UX.
+//
+// Falha para DESLIGADO: sem resposta do banco, nada de compra aparece.
+function lojaAtiva(){
+  var i = window.ERV_INTERRUPTORES;
+  if(i && typeof i.pagamentos === 'boolean') return i.pagamentos;
+  if(window.SITE_SETTINGS) return window.SITE_SETTINGS.payments_enabled === true;
+  return false;
+}
+var LOJA_PAGES = ['marketplace','suppliers','pedidos'];
+
+// Chamada quando os interruptores respondem (ervaria.loadInterruptores) e no
+// boot. Ligado → a classe `loja-on` no <html> revela os blocos [data-loja].
+// Desligado → os blocos saem do DOM: nenhum carrinho, nenhuma Loja, nenhum
+// "Meus pedidos" para clicar e falhar.
+// `confirmado`: a resposta do banco chegou. Sem ela (rede fora, CDN
+// bloqueado), os blocos ficam só escondidos — remover e depois receber
+// "ligado" deixaria a loja sem tela até o próximo reload.
+function applyLojaState(confirmado){
+  var on = lojaAtiva();
+  document.documentElement.classList.toggle('loja-on', on);
+  if(!on){
+    if(confirmado) document.querySelectorAll('[data-loja]').forEach(function(el){ el.remove(); });
+    // Sem carrinho no DOM, o que estiver no localStorage não tem para onde ir —
+    // e o contador (se ainda existir em algum lugar) não deve dizer "3".
+    if(LOJA_PAGES.indexOf(window._currentPage) !== -1) goPage('search');
+  } else {
+    if(typeof updateCartCount === 'function') updateCartCount();
+  }
+  document.querySelectorAll('[data-loja-href]').forEach(function(a){
+    a.setAttribute('href', on ? a.getAttribute('data-loja-href') : (a.getAttribute('data-loja-href-off') || '#lp-loja'));
+  });
+}
+
+// "Avise-me quando a loja abrir" (home). Mesmo contrato de pausa.html:
+// fetch para newsletter-subscribe, resposta igual para novo e duplicado.
+function subscribeLojaAviso(form){
+  var cfg = window.ERVATORIO_CONFIG || {};
+  var input = form.querySelector('input[type="email"]');
+  var btn = form.querySelector('button[type="submit"]');
+  var msg = form.parentElement.querySelector('[data-loja-msg]');
+  var v = (input.value || '').trim().toLowerCase();
+  var _t = typeof t === 'function' ? t : function(k, fb){ return fb; };
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ input.focus(); input.setAttribute('aria-invalid','true'); return false; }
+  input.removeAttribute('aria-invalid');
+  if(btn) btn.disabled = true;
+  var locale = 'pt';
+  try { locale = localStorage.getItem('erb_lang') || 'pt'; } catch(e){}
+  if(['pt','en','es'].indexOf(locale) === -1) locale = 'pt';
+  fetch(cfg.FUNCTIONS_URL + '/newsletter-subscribe', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', apikey: cfg.SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + cfg.SUPABASE_PUBLISHABLE_KEY },
+    body: JSON.stringify({ email: v, source: 'loja', locale: locale })
+  }).then(function(res){
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    form.style.display = 'none';
+    if(msg){ msg.textContent = _t('lp.loja.ok', 'Anotado. Você será avisado primeiro.'); msg.hidden = false; }
+    try { localStorage.setItem('erv_loja_optin', '1'); } catch(e){}
+  }).catch(function(err){
+    console.error('[Loja/avise-me]', err);
+    if(btn) btn.disabled = false;
+    if(msg){ msg.textContent = _t('lp.loja.err', 'Não consegui salvar agora. Tente de novo em instantes.'); msg.hidden = false; }
+  });
+  return false;
+}
+
 // ── NAVIGATION ──
 function goPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
@@ -1282,7 +1354,6 @@ function filterShopBySup(supId){
   const searchInput=document.getElementById('mktSearch');
   if(searchInput) searchInput.value=sup?sup.name:'';
   goPage('marketplace');
-  document.querySelectorAll('.nav-tab').forEach(t=>{ t.classList.toggle('on', (t.getAttribute('onclick')||'').includes("goPage('marketplace'")); });
 }
 
 function updateCartCount(){
@@ -2154,6 +2225,13 @@ function goPage(id,btn,slug){
   // (sync de favoritos, salvar blend no cloud, etc.) checam ervaria.user
   // individualmente dentro de cada renderizador.
   const baseId = id.split('/')[0];
+  // Loja desligada: as telas de comércio não existem (D4). Deep link cai na
+  // home com o aviso — o servidor já recusava; a tela não oferece mais.
+  if(LOJA_PAGES.indexOf(baseId) !== -1 && !lojaAtiva()){
+    id = 'search'; slug = undefined;
+    if(typeof t === 'function') toast(t('lp.loja.soon'));
+    setTimeout(function(){ var el = document.getElementById('lp-loja'); if(el && typeof backToLanding === 'function'){ backToLanding(); el.scrollIntoView({behavior:'smooth',block:'start'}); } }, 60);
+  }
   const hasEntered = (window.ervaria && ervaria.user)
                   || localStorage.getItem('erb_auth')
                   || localStorage.getItem('erb_entered');
@@ -3447,6 +3525,9 @@ function renderSobre(){
 
 // ── INIT ──
 if(typeof initI18n==='function') initI18n();
+// Estado inicial da loja: o CSS já esconde [data-loja]; aqui só sincroniza os
+// hrefs. A remoção do DOM acontece quando os interruptores respondem.
+document.querySelectorAll('[data-loja-href]').forEach(function(a){ a.setAttribute('href', a.getAttribute('data-loja-href-off') || '#lp-loja'); });
 if(typeof updateSEO==='function') updateSEO('search');
 buildFilters();
 renderHerbs();
