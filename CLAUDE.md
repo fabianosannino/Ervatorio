@@ -101,6 +101,19 @@
 - **Nunca** coloque `service_role`, tokens de API ou secrets em arquivos servidos ao navegador, no HTML, ou no repositório.
 - Segredos vivem em Supabase Secrets / Vercel Environment Variables. A única chave pública aceitável é a `sb_publishable_...` (anon/publishable).
 - Antes de commitar, rode varredura de segredos (gitleaks/trufflehog). O CI também roda.
+- **O `secret-scan` varre o diff de cada commit, não a árvore.** Valor removido
+  num commit seguinte **continua acusado** no commit que o introduziu — e está
+  certo: apagar depois não desvaza nada. Se entrar segredo de verdade, o
+  caminho é **rotacionar a credencial**, não limpar o arquivo.
+- **Não escreva valor de alta entropia à mão, nem de mentira.** Um UUID
+  inventado num literal chamado `TOKEN` é indistinguível de credencial, e o
+  gitleaks acerta em acusar (aconteceu em `tests/e2e/descadastro.spec.mjs`).
+  Em teste, sorteie: `randomUUID()`.
+- **Exceção vai em `.gitleaksignore`, por fingerprint, uma por achado.** O
+  fingerprint prende commit, arquivo, regra e linha, então não desliga regra
+  nem vale para o commit seguinte. Toda entrada leva o comentário dizendo por
+  que aquilo não é segredo. Regra inteira desligada é o que transforma a
+  varredura em passo verde decorativo.
 
 ## Migrations
 - Toda mudança de schema é uma migration versionada e **idempotente** (`IF NOT EXISTS`, `CREATE OR REPLACE`, `DROP ... IF EXISTS`), em `supabase/migrations/`.
