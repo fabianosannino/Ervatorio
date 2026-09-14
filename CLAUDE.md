@@ -214,6 +214,33 @@ e as decisões D1–D14. As que mais mudam o jeito de trabalhar aqui:
 - **O Assistente de blends não existe mais** (D29): `BLEND_DB` é o blend
   sugerido por intenção; `#blends/assistente` e `#criarblend` caem em
   `#encontrar`.
+- **A ficha é uma tela só, e o resumo dela nasce numa função só** (PR 06,
+  D31–D34). `js/ficha-resumo.js` é script clássico de dados-e-funções puras
+  lido pelo app (`renderFichaPage`, em `js/ervatorio-pages.js`) e pelo
+  `prerender` (`/erva/<slug>/`): `fichaSecoes()` separa o que o schema 1.1
+  mistura em `acoes_principais` (marcadores «Contraindicações:»,
+  «Interações:», «Componentes ativos:»…) e `fichaResumo()` monta «para que
+  serve · como preparar · quem deve evitar». Por isso `HERBS` mora em
+  `js/herbs-data.js` — o gerador precisa dos mesmos `ef`/`avoid`/`tempo`.
+  Ficha com `resumo: {para_que_serve, como_preparar, quem_deve_evitar}`
+  escrito à mão vence o derivado. Não reimplemente a leitura dos
+  marcadores em outro lugar; quando a migração de dados separar as seções
+  de verdade, a função vira passagem direta.
+  - `#ficha/<slug>` lê `FICHAS_ANCORA` primeiro e o Supabase só para slug
+    fora do pacote; produtos (`slug_ficha`) e blends do banco chegam depois
+    e só acrescentam à lateral. O overlay `renderFichaModal` não existe
+    mais: `openFicha(slug)` navega.
+  - «Onde encontrar» segue as regras de **Indicação** acima: parceiro só
+    com o interruptor `indicacao` ligado (`mktIsVisible` falha para
+    escondido), link pela rota `/indicacao?produto=<id>` e **sem preço**;
+    «Comprar na Loja» só com `lojaAtiva()` e produto próprio. Sem nenhum
+    dos dois, a ficha diz que ainda não tem parceiro — nunca «em breve».
+  - O e-mail da ficha é `subscribeEmail(form, 'ficha', …)` — o mesmo
+    contrato do «Avise-me» da home, com outra `source`. A copy promete o
+    que acontece (a Pausa semanal), não «receber esta ficha» (D32).
+  - Caixa de aviso é fundo de token (`rgba(200,168,75,.1)`), nunca cor
+    fixa escura: o tema claro remapeia `--cream2` para tinta escura e
+    `#3a2a1a` + `--cream2` fica ilegível.
 
 ## Dado de saúde — tabela própria, consentimento próprio (PR 08 do handoff)
 

@@ -40,7 +40,15 @@ ul{padding-left:22px}li{margin:5px 0;font-size:.95rem}
 .related a{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:6px 14px;text-decoration:none;color:var(--verde);font-size:.85rem}
 footer{background:var(--verde);color:#c3b89e;padding:22px 20px;font-size:.8rem;text-align:center}
 footer a{color:var(--ouro2)}
-@media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}</style>
+@media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}
+.resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:26px 0 14px}
+.resumo h3{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#8c6a2f;margin:0 0 6px}
+.resumo p{font-size:.95rem;margin:0 0 6px}.resumo ul{padding-left:18px;margin:0 0 6px}.resumo li{font-size:.92rem;margin:2px 0}
+.resumo .det{font-size:.82rem;color:#6b5a2e}
+.alerta{background:#fff3e0;border:1px solid #e0b060;border-left:4px solid #b8965a;border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;font-size:.92rem}
+.alerta ul{margin-top:6px}
+h2.tecnico{margin-top:30px;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;color:#6b5a2e;border-bottom:2px solid var(--ouro)}
+.mute{color:#8b7e68;font-style:italic}</style>
 <link rel="stylesheet" href="/css/nav.css">
 </head>
 <body>
@@ -71,21 +79,29 @@ footer a{color:var(--ouro2)}
   <p class="tagline">A erva do amor mediterrâneo — aromático culinário universal com ação antimicrobiana potente, adaptogênica leve e perfil sensorial que é simultaneamente o mais famoso e o menos explorado medicinalmente do catálogo.</p>
 </div></header>
 <main class="wrap">
+  <section class="resumo" aria-label="Resumo">
+    <div><h3>Para que serve</h3><p>A erva do amor mediterrâneo — aromático culinário universal com ação antimicrobiana potente, adaptogênica leve e perfil sensorial que é simultaneamente o mais famoso e o menos explorado medicinalmente do catálogo.</p><p class="det">Antimicrobiano potente. Antifúngico</p></div>
+    <div><h3>Como preparar</h3><p></p></div>
+    <div><h3>Quem deve evitar</h3><p>Nenhuma contraindicação registrada nesta ficha.</p></div>
+  </section>
   <p>
     <a class="cta gold" href="/#ficha/manjericao">Abrir no Ervatório</a>
     <a class="cta" href="/#ervas">Explorar todas as ervas</a>
   </p>
+  
+  <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+  <h2 class="tecnico">Detalhe técnico</h2>
   <section><h2>Identificação</h2><dl><div class="row"><dt>Nome científico</dt><dd>Ocimum basilicum L.</dd></div><div class="row"><dt>Família botânica</dt><dd>Lamiaceae</dd></div><div class="row"><dt>Tipo</dt><dd>Especiaria aromática / antimicrobiana / adaptogênica leve</dd></div><div class="row"><dt>Parte usada</dt><dd>Folhas frescas ou secas; flores.</dd></div></dl><ul><li>Manjericão · alfavaca · alfavaca-cravo</li><li>Basil (inglês) · Basilic (francês) · Basilikum (alemão)</li><li>Tulsi-não-sagrado (diferenciação popular do tulsi O. tenuiflorum)</li></ul></section>
 <section><h2>Características</h2><dl><div class="row"><dt>Sabor</dt><dd>Aromático-floral-apimentado complexo, levemente anisado (metilchavicol), pimentado (eugenol), herbáceo fresco. Sabor que define a culinária mediterrânea e italiana.</dd></div><div class="row"><dt>Aroma</dt><dd>Linalol-floral + metilchavicol-anisado + eugenol-apimentado — aroma que evoca imediatamente Itália, Provence, cozinha de verão.</dd></div><div class="row"><dt>Cor da infusão</dt><dd>Verde-pálido claro. #C8DC78</dd></div><div class="row"><dt>Intensidade</dt><dd>3/5 — aromático presente.</dd></div></dl></section>
 
-<section><h2>Ações principais</h2><ul><li>Antimicrobiano potente (linalol + eugenol)</li><li>Antifúngico (Candida — eugenol)</li><li>Adaptogênico leve (OE — modulação de estresse)</li><li>Antioxidante</li><li>Anti-inflamatório</li><li>Carminativo</li><li>Antidepressivo leve (linalol)</li><li>Contraindicações: Estragol (metilchavicol) — genotóxico em doses altas de OE (culinária: seguro). Gestação em doses de OE.</li></ul></section>
-<section><h2>Componentes ativos</h2><ul><li><strong>Quimiotipo</strong> — Componente dominante — Perfil</li><li><strong>Europeu (linalol)</strong> — Linalol (60%) — Floral, ansiolítico</li><li><strong>Tropical (metilchavicol)</strong> — Metilchavicol (estragol) (80%) — Anisado, mais picante</li><li><strong>Cravo (eugenol)</strong> — Eugenol (70%) — Apimentado, antimicrobiano forte</li></ul></section>
+<section><h2>Ações principais</h2><ul><li>Antimicrobiano potente (linalol + eugenol)</li><li>Antifúngico (Candida — eugenol)</li><li>Adaptogênico leve (OE — modulação de estresse)</li><li>Antioxidante</li><li>Anti-inflamatório</li><li>Carminativo</li><li>Antidepressivo leve (linalol)</li></ul></section>
+<section><h2>Componentes ativos</h2><ul><li><strong>Quimiotipo</strong> — Componente dominante — Perfil</li><li><strong>Europeu (linalol)</strong> — Linalol (60%) — Floral, ansiolítico</li><li><strong>Tropical (metilchavicol)</strong> — Metilchavicol (estragol) (80%) — Anisado, mais picante</li><li><strong>Cravo (eugenol)</strong> — Eugenol (70%) — Apimentado, antimicrobiano forte</li></ul><p>Contraindicações: Estragol (metilchavicol) — genotóxico em doses altas de OE (culinária: seguro). Gestação em doses de OE.</p></section>
+
 
 
 <section><h2>História e cultura</h2><p>Basilikos em grego significa &quot;real&quot; ou &quot;do rei&quot; — o manjericão era planta de reis. Na Grécia antiga, era cultivado apenas em jardins reais. Na Índia, cada casa hindu tem uma planta sagrada de tulsi (O. tenuiflorum, parente próximo) — e o manjericão carrega essa aura sagrada por toda a tradição mediterrânea.  Em Itália, oferecer um ramo de manjericão a alguém era declaração de amor. Em Roma, a serva que colocava manjericão na janela sinalizava que estava disponível para um pretendente. A planta do amor, da realeza e da cozinha — tudo ao mesmo tempo.</p></section>
 <section><h2>Status regulatório</h2><dl><div class="row"><dt>ANVISA (Brasil)</dt><dd>Uso alimentar.</dd></div><div class="row"><dt>Sazonalidade</dt><dd>Disponível o ano todo (cultivo perene tropical)</dd></div></dl></section>
-
-  <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+<section><h2>Fontes</h2><p class="mute">Fontes em revisão.</p></section>
   <section><h2>Ervas relacionadas</h2><div class="related"><a href="/erva/rosa-mosqueta/">Rosa-Mosqueta</a><a href="/erva/tilia/">Tília</a><a href="/erva/erva-de-santa-barbara/">Erva-de-Santa-Bárbara</a><a href="/erva/camomila-romana/">Camomila-Romana</a></div></section>
 </main>
 <footer class="erv-footer erv-estatico" aria-label="Rodapé">

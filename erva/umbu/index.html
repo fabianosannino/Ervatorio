@@ -40,7 +40,15 @@ ul{padding-left:22px}li{margin:5px 0;font-size:.95rem}
 .related a{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:6px 14px;text-decoration:none;color:var(--verde);font-size:.85rem}
 footer{background:var(--verde);color:#c3b89e;padding:22px 20px;font-size:.8rem;text-align:center}
 footer a{color:var(--ouro2)}
-@media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}</style>
+@media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}
+.resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:26px 0 14px}
+.resumo h3{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#8c6a2f;margin:0 0 6px}
+.resumo p{font-size:.95rem;margin:0 0 6px}.resumo ul{padding-left:18px;margin:0 0 6px}.resumo li{font-size:.92rem;margin:2px 0}
+.resumo .det{font-size:.82rem;color:#6b5a2e}
+.alerta{background:#fff3e0;border:1px solid #e0b060;border-left:4px solid #b8965a;border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;font-size:.92rem}
+.alerta ul{margin-top:6px}
+h2.tecnico{margin-top:30px;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;color:#6b5a2e;border-bottom:2px solid var(--ouro)}
+.mute{color:#8b7e68;font-style:italic}</style>
 <link rel="stylesheet" href="/css/nav.css">
 </head>
 <body>
@@ -71,21 +79,29 @@ footer a{color:var(--ouro2)}
   <p class="tagline">O sabor do sertão — fruto endêmico da caatinga com vitamina C excepcional, adaptação extrema à seca e uma identidade cultural nordestina insubstituível.</p>
 </div></header>
 <main class="wrap">
+  <section class="resumo" aria-label="Resumo">
+    <div><h3>Para que serve</h3><p>O sabor do sertão — fruto endêmico da caatinga com vitamina C excepcional, adaptação extrema à seca e uma identidade cultural nordestina insubstituível.</p><p class="det">Antioxidante. Anti-inflamatório</p></div>
+    <div><h3>Como preparar</h3><p></p></div>
+    <div><h3>Quem deve evitar</h3><p>Nenhuma contraindicação registrada nesta ficha.</p></div>
+  </section>
   <p>
     <a class="cta gold" href="/#ficha/umbu">Abrir no Ervatório</a>
     <a class="cta" href="/#ervas">Explorar todas as ervas</a>
   </p>
+  
+  <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+  <h2 class="tecnico">Detalhe técnico</h2>
   <section><h2>Identificação</h2><dl><div class="row"><dt>Nome científico</dt><dd>Spondias tuberosa Arruda</dd></div><div class="row"><dt>Família botânica</dt><dd>Anacardiaceae (família da manga, do caju)</dd></div><div class="row"><dt>Tipo</dt><dd>Alimento funcional / fitoterápico</dd></div><div class="row"><dt>Parte usada</dt><dd>Fruto (polpa e suco); folhas (infusão); casca (decocção); raiz tuberosa (reservatório de água — uso de sobrevivência indígena).</dd></div></dl><ul><li>Umbu · imbu · imbuzeiro (árvore)</li><li>Umbuzeiro (arvore sagrada do sertão)</li></ul></section>
 <section><h2>Características</h2><dl><div class="row"><dt>Aroma</dt><dd>Cítrico tropical intenso, manga jovem, frutas amarelas, levemente fermentado agradável.</dd></div><div class="row"><dt>Bioma de origem</dt><dd>Caatinga — endêmico. CE, RN, PB, PE, AL, SE, BA, PI, MG.</dd></div></dl></section>
 
-<section><h2>Ações principais</h2><ul><li>Antioxidante (vitamina C excepcional — até 3x a laranja)</li><li>Anti-inflamatório (folhas)</li><li>Antidiarreico (casca adstringente)</li><li>Vitamínico e nutritivo</li><li>Hidratante (fruto rico em água — adaptação ao bioma)</li><li>Contraindicações: Sem contraindicações relevantes em uso alimentar. Casca: gestação — cautela.</li></ul></section>
-<section><h2>Componentes ativos</h2><ul><li><strong>VITAMINA C (ácido ascórbico)</strong> — Antioxidante, imunidade — concentração excepcional</li><li><strong>CAROTENÓIDES (beta-caroteno)</strong> — Antioxidante, pró-vitamina A</li><li><strong>TANINOS (casca/folhas)</strong> — Antidiarreico, anti-inflamatório</li><li><strong>ÁCIDOS ORGÂNICOS (cítrico, málico)</strong> — Digestivo, acidulante natural</li><li><strong>FLAVONÓIDES</strong> — Antioxidante</li></ul></section>
+<section><h2>Ações principais</h2><ul><li>Antioxidante (vitamina C excepcional — até 3x a laranja)</li><li>Anti-inflamatório (folhas)</li><li>Antidiarreico (casca adstringente)</li><li>Vitamínico e nutritivo</li><li>Hidratante (fruto rico em água — adaptação ao bioma)</li></ul></section>
+<section><h2>Componentes ativos</h2><ul><li><strong>VITAMINA C (ácido ascórbico)</strong> — Antioxidante, imunidade — concentração excepcional</li><li><strong>CAROTENÓIDES (beta-caroteno)</strong> — Antioxidante, pró-vitamina A</li><li><strong>TANINOS (casca/folhas)</strong> — Antidiarreico, anti-inflamatório</li><li><strong>ÁCIDOS ORGÂNICOS (cítrico, málico)</strong> — Digestivo, acidulante natural</li><li><strong>FLAVONÓIDES</strong> — Antioxidante</li></ul><p>Contraindicações: Sem contraindicações relevantes em uso alimentar. Casca: gestação — cautela.</p></section>
+
 
 
 <section><h2>História e cultura</h2><p>O umbuzeiro é a árvore sagrada do sertão nordestino. João Guimarães Rosa descreveu o encontro com o umbuzeiro como o encontro com o próprio sertão. A árvore é objeto de proteção cultural informal — sertanejos não derrubam umbuzeiro mesmo em terra degradada. Sua raiz tuberosa (xilopódio) armazena até 3.000 litros de água — mecanismo de adaptação à seca que também serviu como fonte de água para viajantes e animais em séculos de exploração do sertão.</p><p>O umbu é a fruta que o Nordeste mais ama e que o Brasil quase não conhece. São Paulo e Rio consomem manga, açaí, graviola — mas o umbu, endêmico da caatinga, nunca cruzou o Nordeste em escala comercial. A polpa congelada existe em nichos, mas o fruto fresco é quase impossível de encontrar fora da caatinga. Isso é oportunidade e missão para o Ervatório.</p></section>
 <section><h2>Status regulatório</h2><dl><div class="row"><dt>ANVISA (Brasil)</dt><dd>Regulado como alimento</dd></div><div class="row"><dt>Sazonalidade</dt><dd>Frutificação: dezembro–março (pico de umidificação da caatinga)</dd></div></dl></section>
-
-  <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+<section><h2>Fontes</h2><p class="mute">Fontes em revisão.</p></section>
   <section><h2>Ervas relacionadas</h2><div class="related"><a href="/erva/angico/">Angico</a><a href="/erva/mastruz/">Mastruz</a><a href="/erva/sucupira/">Sucupira</a><a href="/erva/fava-de-anta/">Fava-de-Anta</a></div></section>
 </main>
 <footer class="erv-footer erv-estatico" aria-label="Rodapé">

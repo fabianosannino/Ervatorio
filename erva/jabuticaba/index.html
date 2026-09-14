@@ -40,7 +40,15 @@ ul{padding-left:22px}li{margin:5px 0;font-size:.95rem}
 .related a{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:6px 14px;text-decoration:none;color:var(--verde);font-size:.85rem}
 footer{background:var(--verde);color:#c3b89e;padding:22px 20px;font-size:.8rem;text-align:center}
 footer a{color:var(--ouro2)}
-@media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}</style>
+@media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}
+.resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:26px 0 14px}
+.resumo h3{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#8c6a2f;margin:0 0 6px}
+.resumo p{font-size:.95rem;margin:0 0 6px}.resumo ul{padding-left:18px;margin:0 0 6px}.resumo li{font-size:.92rem;margin:2px 0}
+.resumo .det{font-size:.82rem;color:#6b5a2e}
+.alerta{background:#fff3e0;border:1px solid #e0b060;border-left:4px solid #b8965a;border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;font-size:.92rem}
+.alerta ul{margin-top:6px}
+h2.tecnico{margin-top:30px;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;color:#6b5a2e;border-bottom:2px solid var(--ouro)}
+.mute{color:#8b7e68;font-style:italic}</style>
 <link rel="stylesheet" href="/css/nav.css">
 </head>
 <body>
@@ -71,21 +79,29 @@ footer a{color:var(--ouro2)}
   <p class="tagline">A uva que nasce no tronco — fruto endêmico do Brasil com antocianinas superiores ao mirtilo, resveratrol documentado e uma das identidades gastronômicas mais singulares do mundo.</p>
 </div></header>
 <main class="wrap">
+  <section class="resumo" aria-label="Resumo">
+    <div><h3>Para que serve</h3><p>A uva que nasce no tronco — fruto endêmico do Brasil com antocianinas superiores ao mirtilo, resveratrol documentado e uma das identidades gastronômicas mais singulares do mundo.</p><p class="det">Antioxidante máximo. Anti-inflamatório</p></div>
+    <div><h3>Como preparar</h3><p></p></div>
+    <div><h3>Quem deve evitar</h3><p>Nenhuma contraindicação registrada nesta ficha.</p></div>
+  </section>
   <p>
     <a class="cta gold" href="/#ficha/jabuticaba">Abrir no Ervatório</a>
     <a class="cta" href="/#ervas">Explorar todas as ervas</a>
   </p>
+  
+  <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+  <h2 class="tecnico">Detalhe técnico</h2>
   <section><h2>Identificação</h2><dl><div class="row"><dt>Nome científico</dt><dd>Plinia cauliflora (Mart.) Kausel (sin.: Myrciaria cauliflora)</dd></div><div class="row"><dt>Família botânica</dt><dd>Myrtaceae</dd></div><div class="row"><dt>Tipo</dt><dd>Alimento funcional antioxidante / anti-inflamatório</dd></div><div class="row"><dt>Parte usada</dt><dd>Fruto (polpa e casca); casca seca em infusão; casca em vinho/licor.</dd></div></dl><ul><li>Jabuticaba · jaboticaba · jabuticabeira</li><li>Brazilian grape tree (inglês) · Jaboticaba (espanhol/francês)</li><li>Uso único no Brasil — sem equivalente cultural externo</li></ul></section>
 <section><h2>Características</h2><dl><div class="row"><dt>Aroma</dt><dd>Frutado-floral intenso, uva-jasmim, fermento suave.</dd></div><div class="row"><dt>Intensidade</dt><dd>3/5 (fruto) — 2/5 (infusão de casca).</dd></div><div class="row"><dt>Bioma de origem</dt><dd>Mata Atlântica — endêmica do Brasil; SP, MG, RJ, PR, MS, GO.</dd></div></dl></section>
 <section><h2>Como preparar</h2><dl><div class="row"><dt>Combina com</dt><dd>Hibisco · Açaí · Pitanga (blends roxos antioxidantes da Mata Atlântica)</dd></div></dl></section>
-<section><h2>Ações principais</h2><ul><li>Antioxidante máximo (antocianinas superiores ao mirtilo em alguns estudos)</li><li>Anti-inflamatório</li><li>Cardioprotetor (resveratrol + antocianinas)</li><li>Antidiarreico (casca — taninos)</li><li>Hipoglicemiante leve</li><li>Antimicrobiano</li><li>Contraindicações: Sem contraindicações relevantes. Casca em excesso: constipação (taninos).</li></ul></section>
-<section><h2>Componentes ativos</h2><ul><li><strong>ANTOCIANINAS (delfinidina-3-glucosídeo, cianidina-3-glucosídeo)</strong> — Altas na casca — Antioxidante, anti-inflamatório, cardioprotetor</li><li><strong>RESVERATROL</strong> — Casca e sementes — Cardioprotetor, neuroprotetor, antienvelhecimento</li><li><strong>ÁCIDO ELÁGICO</strong> — Presente — Antioxidante, antiproliferativo</li><li><strong>TANINOS</strong> — Casca — Adstringente, antimicrobiano, antidiarreico</li><li><strong>VITAMINA C</strong> — Alta — Antioxidante, imunidade</li></ul></section>
+<section><h2>Ações principais</h2><ul><li>Antioxidante máximo (antocianinas superiores ao mirtilo em alguns estudos)</li><li>Anti-inflamatório</li><li>Cardioprotetor (resveratrol + antocianinas)</li><li>Antidiarreico (casca — taninos)</li><li>Hipoglicemiante leve</li><li>Antimicrobiano</li></ul></section>
+<section><h2>Componentes ativos</h2><ul><li><strong>ANTOCIANINAS (delfinidina-3-glucosídeo, cianidina-3-glucosídeo)</strong> — Altas na casca — Antioxidante, anti-inflamatório, cardioprotetor</li><li><strong>RESVERATROL</strong> — Casca e sementes — Cardioprotetor, neuroprotetor, antienvelhecimento</li><li><strong>ÁCIDO ELÁGICO</strong> — Presente — Antioxidante, antiproliferativo</li><li><strong>TANINOS</strong> — Casca — Adstringente, antimicrobiano, antidiarreico</li><li><strong>VITAMINA C</strong> — Alta — Antioxidante, imunidade</li></ul><p>Contraindicações: Sem contraindicações relevantes. Casca em excesso: constipação (taninos).</p></section>
+
 
 
 <section><h2>História e cultura</h2><p>A jabuticaba só existe no Brasil — e não existe fora dele. O fruto é tão perecível (fermenta em 3–4 dias após colhido) que nunca pôde ser exportado fresco para mercados distantes. Essa perecibilidade construiu uma identidade cultural absoluta: para comer jabuticaba, você precisa estar no Brasil, perto de uma jabuticabeira, no tempo certo. É o fruto da presença — do aqui e agora.  A jabuticabeira produz frutos diretamente no tronco e nos galhos grossos (caulifloria) — comportamento botânico raro que cria uma das imagens mais surrealistas do mundo vegetal: uma árvore coberta de uvas negras brotando direto da madeira, sem hastes nem cachos.</p><p>A jabuticaba é o fruto que mais representa o &quot;brasileiro que não se valoriza&quot; — um superalimento com antocianinas superiores ao mirtilo importado, vendido por R$ 10/kg em feiras, enquanto o mirtilo (blueberry) importado é vendido a R$ 50+/100g em mercados premium. O Ervatório pode e deve narrar essa injustiça de valorização.</p></section>
 <section><h2>Status regulatório</h2><dl><div class="row"><dt>ANVISA (Brasil)</dt><dd>Alimento. Potencial Novel Food para exportação UE em processo.</dd></div><div class="row"><dt>Sazonalidade</dt><dd>Frutificação: setembro–outubro e fevereiro–março (duas safras)</dd></div></dl></section>
-
-  <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+<section><h2>Fontes</h2><p class="mute">Fontes em revisão.</p></section>
   <section><h2>Ervas relacionadas</h2><div class="related"><a href="/erva/capim-santo/">Capim-Santo</a><a href="/erva/murici-de-tabuleiro/">Murici-de-Tabuleiro</a><a href="/erva/camu-camu/">Camu-Camu</a><a href="/erva/acafroa/">Açafroa</a></div></section>
 </main>
 <footer class="erv-footer erv-estatico" aria-label="Rodapé">

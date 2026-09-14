@@ -40,7 +40,15 @@ ul{padding-left:22px}li{margin:5px 0;font-size:.95rem}
 .related a{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:6px 14px;text-decoration:none;color:var(--verde);font-size:.85rem}
 footer{background:var(--verde);color:#c3b89e;padding:22px 20px;font-size:.8rem;text-align:center}
 footer a{color:var(--ouro2)}
-@media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}</style>
+@media(max-width:560px){dl .row{flex-direction:column;gap:2px}dt{flex:none}}
+.resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:26px 0 14px}
+.resumo h3{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#8c6a2f;margin:0 0 6px}
+.resumo p{font-size:.95rem;margin:0 0 6px}.resumo ul{padding-left:18px;margin:0 0 6px}.resumo li{font-size:.92rem;margin:2px 0}
+.resumo .det{font-size:.82rem;color:#6b5a2e}
+.alerta{background:#fff3e0;border:1px solid #e0b060;border-left:4px solid #b8965a;border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;font-size:.92rem}
+.alerta ul{margin-top:6px}
+h2.tecnico{margin-top:30px;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;color:#6b5a2e;border-bottom:2px solid var(--ouro)}
+.mute{color:#8b7e68;font-style:italic}</style>
 <link rel="stylesheet" href="/css/nav.css">
 </head>
 <body>
@@ -71,21 +79,29 @@ footer a{color:var(--ouro2)}
   <p class="tagline">O ouro do cerrado — fruto-símbolo do bioma que concentra carotenóides, ácidos graxos raros e uma cultura culinária-medicinal única no mundo.</p>
 </div></header>
 <main class="wrap">
+  <section class="resumo" aria-label="Resumo">
+    <div><h3>Para que serve</h3><p>O ouro do cerrado — fruto-símbolo do bioma que concentra carotenóides, ácidos graxos raros e uma cultura culinária-medicinal única no mundo.</p><p class="det">Antioxidante potente. Anti-inflamatório</p></div>
+    <div><h3>Como preparar</h3><p></p></div>
+    <div><h3>Quem deve evitar</h3><p>Nenhuma contraindicação registrada nesta ficha.</p></div>
+  </section>
   <p>
     <a class="cta gold" href="/#ficha/pequi">Abrir no Ervatório</a>
     <a class="cta" href="/#ervas">Explorar todas as ervas</a>
   </p>
+  
+  <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+  <h2 class="tecnico">Detalhe técnico</h2>
   <section><h2>Identificação</h2><dl><div class="row"><dt>Nome científico</dt><dd>Caryocar brasiliense Cambess.</dd></div><div class="row"><dt>Família botânica</dt><dd>Caryocaraceae</dd></div><div class="row"><dt>Tipo</dt><dd>Alimento funcional / fitoterápico</dd></div><div class="row"><dt>Parte usada</dt><dd>Polpa (alimentar), óleo da polpa e da amêndoa (cosmético e medicinal), folhas (infusão).</dd></div></dl><ul><li>Pequi · piqui · souari nut (inglês) · amande du Brésil (francês — incorreto, confunde com castanha-do-pará)</li></ul></section>
 <section><h2>Características</h2><dl><div class="row"><dt>Bioma de origem</dt><dd>Cerrado — endêmico do bioma; GO, MG, TO, MT, BA, PI, MA.</dd></div></dl></section>
 
-<section><h2>Ações principais</h2><ul><li>Antioxidante potente (beta-caroteno, licopeno, zeaxantina)</li><li>Anti-inflamatório (ácido oleico, ácido palmitoleico)</li><li>Imunomodulador</li><li>Neuroprotetor (carotenóides lipofílicos)</li><li>Cardioprotetor (perfil de ácidos graxos)</li><li>Contraindicações: Alergia ao fruto (rara). Cálculo renal de oxalato — cautela com consumo excessivo de polpa.</li></ul></section>
-<section><h2>Componentes ativos</h2><ul><li><strong>BETA-CAROTENO</strong> — Alta — óleo de polpa — Antioxidante, pró-vitamina A</li><li><strong>LICOPENO</strong> — Presente — Antioxidante, antiproliferativo</li><li><strong>ÁCIDO OLEICO (C18:1)</strong> — 46–54% do óleo — Cardioprotetor</li><li><strong>ÁCIDO PALMITOLEICO (C16:1)</strong> — 25–30% — Anti-inflamatório raro</li><li><strong>ZEAXANTINA</strong> — Presente — Proteção visual, antioxidante</li></ul></section>
+<section><h2>Ações principais</h2><ul><li>Antioxidante potente (beta-caroteno, licopeno, zeaxantina)</li><li>Anti-inflamatório (ácido oleico, ácido palmitoleico)</li><li>Imunomodulador</li><li>Neuroprotetor (carotenóides lipofílicos)</li><li>Cardioprotetor (perfil de ácidos graxos)</li></ul></section>
+<section><h2>Componentes ativos</h2><ul><li><strong>BETA-CAROTENO</strong> — Alta — óleo de polpa — Antioxidante, pró-vitamina A</li><li><strong>LICOPENO</strong> — Presente — Antioxidante, antiproliferativo</li><li><strong>ÁCIDO OLEICO (C18:1)</strong> — 46–54% do óleo — Cardioprotetor</li><li><strong>ÁCIDO PALMITOLEICO (C16:1)</strong> — 25–30% — Anti-inflamatório raro</li><li><strong>ZEAXANTINA</strong> — Presente — Proteção visual, antioxidante</li></ul><p>Contraindicações: Alergia ao fruto (rara). Cálculo renal de oxalato — cautela com consumo excessivo de polpa.</p></section>
+
 
 
 <section><h2>História e cultura</h2><p>O pequi é o símbolo alimentar do cerrado como o açaí é da Amazônia — não é apenas um alimento, é identidade cultural. O arroz-com-pequi é o prato de festa do interior de Goiás e Minas Gerais. A culinária sertaneja, o cerrado e o pequi são inseparáveis na memória gastronômica do Brasil Central.  O mito indígena kayapó narra que o pequi nasceu do corpo de uma jovem — daí seus espinhos internos (que perfuram quem come com avidez) serem chamados de &quot;a defesa da moça&quot;. É a planta que ensina a comer com calma.</p><p>O pequi é um dos produtos mais promissores da bioeconomia do cerrado para exportação como &quot;superalimento&quot; — alto valor de carotenóides, ácido palmitoleico (raro em fontes vegetais) e perfil de marketing exótico-brasileiro. Startups de biocosmética brasileira já exportam óleo de pequi para Europa e Japão em formulações premium de skincare.</p></section>
 <section><h2>Status regulatório</h2><dl><div class="row"><dt>ANVISA (Brasil)</dt><dd>Regulado como alimento. Óleo cosmético — regulamentado.</dd></div><div class="row"><dt>Sazonalidade</dt><dd>Frutificação: outubro–janeiro</dd></div></dl></section>
-
-  <div class="health"><strong>Aviso:</strong> conteúdo exclusivamente educacional — não substitui prescrição, diagnóstico ou aconselhamento médico. Consulte profissional de saúde qualificado antes de usar plantas medicinais, especialmente em gravidez, amamentação, uso de medicamentos ou doenças preexistentes.</div>
+<section><h2>Fontes</h2><p class="mute">Fontes em revisão.</p></section>
   <section><h2>Ervas relacionadas</h2><div class="related"><a href="/erva/barbatimao/">Barbatimão</a><a href="/erva/pata-de-vaca/">Pata-de-Vaca</a><a href="/erva/erva-mate/">Erva-Mate</a><a href="/erva/guaco/">Guaco</a></div></section>
 </main>
 <footer class="erv-footer erv-estatico" aria-label="Rodapé">

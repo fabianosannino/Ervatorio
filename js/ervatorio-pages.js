@@ -669,33 +669,163 @@
   };
 
   // ================================================================
-  // #ficha/:slug — Ficha individual (full page)
+  // #ficha/:slug — Ficha individual (PR 06: leigo primeiro, técnico depois)
   // ================================================================
-  window.renderFichaPage = async function(slug) {
+  // Fonte: FICHAS_ANCORA (js/fichas-data.js — a mesma das páginas /erva/)
+  // primeiro, instantânea e offline; o Supabase só entra para slug que não
+  // está no pacote (D34). Produtos e blends do banco chegam depois e só
+  // acrescentam à lateral. O bloco-resumo e a separação das seções vêm de
+  // js/ficha-resumo.js, que o prerender também usa — uma fonte para as
+  // duas fichas.
+  function tt(k, fb) { var v = (typeof t === 'function') ? t(k) : null; return (v && v !== k) ? v : fb; }
+  function fmt(s, vars) { return String(s).replace(/\{(\w+)\}/g, function (_, k) { return vars[k] != null ? vars[k] : ''; }); }
+  function cap(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // A erva do catálogo do app que corresponde à ficha (nome popular ou os
+  // dois primeiros termos do nome científico). Sem correspondência, uma
+  // entrada sintética entra em HERBS só para favoritos e bandeja — marcada
+  // para o resumo não a tratar como fonte de texto.
+  function herbDaFicha(f) {
+    var pr = f.preparo || {};
+    var _nrm = function (s) { return String(s || '').normalize('NFC').toLowerCase().trim(); };
+    var herbs = (typeof HERBS !== 'undefined' && Array.isArray(HERBS)) ? HERBS : [];
+    var h = herbs.find(function (x) {
+      return _nrm(x.n) === _nrm(f.nome_popular) ||
+        (x.lat && f.nome_cientifico && _nrm(f.nome_cientifico).startsWith(_nrm(x.lat.split(' ').slice(0, 2).join(' '))));
+    });
+    if (h) return h;
+    if (!f.nome_popular) return null;
+    var _stableId = function (n) { var v = 5381; for (var i = 0; i < n.length; i++) v = ((v << 5) + v) ^ n.charCodeAt(i); return (v >>> 0) % 90000 + 10000; };
+    var id = _stableId(f.nome_popular);
+    h = herbs.find(function (x) { return x.id === id; });
+    if (!h) {
+      h = { id: id, n: f.nome_popular, lat: f.nome_cientifico || '', icon: '🌿', cat: '', ef: '', tags: [], safe: [], avoid: [], temp: pr.temperatura_ideal || '', tempo: pr.tempo_de_infusao || '', dose: pr.quantidade || '', freq: pr.melhor_momento || '', tagline: f.tagline || '', _sintetico: true };
+      herbs.push(h);
+    }
+    return h;
+  }
+
+  // Produto vendável do marketplace que corresponde a esta ficha (nome
+  // normalizado). Produtos is_test respeitam a visibilidade da Onda 6.1.
+  function fichaMktProduct(ficha) {
+    if (typeof MKT_PRODUCTS === 'undefined' || !Array.isArray(MKT_PRODUCTS)) return null;
+    var norm = function (s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(); };
+    var alvo = norm(ficha.nome_popular);
+    if (!alvo) return null;
+    for (var i = 0; i < MKT_PRODUCTS.length; i++) {
+      var p = MKT_PRODUCTS[i];
+      if (typeof mktIsVisible === 'function' && !mktIsVisible(p)) continue;
+      if (typeof mktEhIndicacao === 'function' && mktEhIndicacao(p)) continue;
+      var pn = norm(p.name);
+      if (pn === alvo || pn.indexOf(alvo + ' ') === 0 || alvo.indexOf(pn + ' ') === 0) return p;
+    }
+    return null;
+  }
+
+  // Parceiros de indicação para esta ficha: os do catálogo do app (casados
+  // por nome) e as linhas de admin_products com slug_ficha. Só entram com o
+  // interruptor `indicacao` ligado (mktIsVisible falha para escondido) e
+  // sempre pela rota /indicacao?produto=<id> — nunca a URL do parceiro
+  // (ver «Indicação» no CLAUDE.md). Sem preço, por contrato dos programas.
+  function fichaParceiros(slug, produtos) {
+    var out = [], visto = {};
+    if (typeof mktEhIndicacao !== 'function' || typeof mktIsVisible !== 'function' || typeof mktLinkDeIndicacao !== 'function') return out;
+    var add = function (p) {
+      if (!p || !mktEhIndicacao(p) || !mktIsVisible(p)) return;
+      var link = mktLinkDeIndicacao(p);
+      if (!link || visto[p.dbId]) return;
+      visto[p.dbId] = true;
+      out.push({ nome: p.parceiro || p.seller || 'parceiro', link: link });
+    };
+    if (typeof MKT_PRODUCTS !== 'undefined' && Array.isArray(MKT_PRODUCTS) && typeof mktFichaSlug === 'function') {
+      MKT_PRODUCTS.forEach(function (p) { if (mktFichaSlug(p) === slug) add(p); });
+    }
+    (produtos || []).forEach(function (row) {
+      add({ dbId: row.id, modo_de_venda: row.modo_de_venda, link_externo: row.link_externo, parceiro: row.parceiro || row.supplier || row.brand, is_test: row.is_test });
+    });
+    return out;
+  }
+
+  window.renderFichaPage = async function (slug) {
     var container = document.getElementById('fichaPageContent');
     if (!container) return;
-    container.innerHTML = '<div class="ev-loading">Carregando ficha...</div>';
-    try {
-      var results = await Promise.all([
-        ErvatorioData.getFichaBySlug(slug),
-        ErvatorioData.getProdutosByFichaSlug(slug),
-        ErvatorioData.getBlendsByFichaSlug(slug)
-      ]);
-      var fichaData = results[0];
-      var produtos = results[1] || [];
-      var blends = results[2] || [];
-
-      if (!fichaData || !fichaData.ficha) {
-        container.innerHTML = '<p class="ev-error">Ficha "' + safeEsc(slug) + '" nao encontrada.</p>';
+    slug = String(slug || '');
+    // Receitas antigas chamavam goPage('ficha', null, <id numérico da erva>):
+    // resolve pela erva e corrige o hash.
+    if (/^\d+$/.test(slug) && typeof HERBS !== 'undefined' && typeof _fichaAncoraForHerb === 'function') {
+      var hh = HERBS.find(function (h) { return h.id === Number(slug); });
+      var fa = hh ? _fichaAncoraForHerb(hh) : null;
+      if (fa && fa.slug) { slug = fa.slug; window._currentSlug = slug; try { history.replaceState(history.state, '', '#ficha/' + slug); } catch (_) { /* ok */ } }
+    }
+    if (typeof fichaTimerFechar === 'function') fichaTimerFechar();
+    var f = (typeof FICHAS_ANCORA !== 'undefined' && FICHAS_ANCORA[slug]) ? FICHAS_ANCORA[slug] : null;
+    if (!f) {
+      container.innerHTML = '<div class="ev-loading">Carregando ficha...</div>';
+      try {
+        var fd = await ErvatorioData.getFichaBySlug(slug);
+        f = fd && fd.ficha;
+      } catch (e) {
+        console.error('[Ervatorio] Ficha:', e);
+      }
+      if (!f) {
+        container.innerHTML = '<p class="ev-error">Ficha "' + safeEsc(slug) + '" não encontrada. <a href="#ervas">' + safeEsc(tt('ficha.back', 'Guia de Ervas')) + '</a></p>';
         return;
       }
-      var f = fichaData.ficha;
-      container.innerHTML = buildFichaHTML(f, produtos, blends, slug);
-    } catch (e) {
-      container.innerHTML = '<p class="ev-error">Erro ao carregar ficha.</p>';
-      console.error('[Ervatorio] Ficha:', e);
     }
+    container.innerHTML = buildFichaHTML(f, [], [], slug);
+    // Sem banco a ficha já está inteira; com banco, produtos e blends
+    // acrescentam à lateral quando chegarem (se a pessoa ainda estiver aqui).
+    try {
+      var extra = await Promise.all([ErvatorioData.getProdutosByFichaSlug(slug), ErvatorioData.getBlendsByFichaSlug(slug)]);
+      var produtos = extra[0] || [], blends = extra[1] || [];
+      if ((produtos.length || blends.length) && window._currentPage === 'ficha' && window._currentSlug === slug) {
+        var onde = document.getElementById('fichaOnde'), rec = document.getElementById('fichaReceitas');
+        if (onde && produtos.length) onde.innerHTML = buildFichaOnde(f, produtos, slug);
+        if (rec && blends.length) rec.innerHTML = buildFichaReceitas(f, herbDaFicha(f), blends);
+      }
+    } catch (_) { /* sem Supabase: nada a acrescentar */ }
   };
+
+  function buildFichaOnde(f, produtos, slug) {
+    var html = '<div class="enc-eyebrow">' + safeEsc(tt('ficha.where', 'Onde encontrar')) + '</div>';
+    var loja = typeof lojaAtiva === 'function' && lojaAtiva();
+    var mktP = loja ? fichaMktProduct(f) : null;
+    var parceiros = fichaParceiros(slug, produtos);
+    if (mktP) {
+      var inCartNow = (typeof cart !== 'undefined' && Array.isArray(cart)) && cart.some(function (c) { return c.id === mktP.id; });
+      var priceTxt = (mktP.price != null && !isNaN(Number(mktP.price))) ? ' · R$ ' + Number(mktP.price).toFixed(2).replace('.', ',') : '';
+      html += '<button type="button" class="enc-btn enc-btn-gold ficha-onde-btn" data-loja onclick="addMktCart(' + mktP.id + ');this.textContent=' + JSON.stringify(tt('ficha.in_cart', 'No carrinho')) + ';this.disabled=true"' + (inCartNow ? ' disabled' : '') + '>' +
+        safeEsc(inCartNow ? tt('ficha.in_cart', 'No carrinho') : tt('ficha.where_buy', 'Comprar na Loja Ervatório') + priceTxt) + '</button>';
+    }
+    if (parceiros.length) {
+      html += '<p class="ficha-onde-nota">' + safeEsc(tt('ficha.where_partners', 'Parceiros de confiança (indicação — o preço é o do parceiro):')) + '</p>' +
+        '<div class="ficha-parceiros">' + parceiros.map(function (p) {
+          return '<a class="ficha-parceiro" href="' + safeEsc(p.link) + '" target="_blank" rel="noopener sponsored">' + safeEsc(p.nome) + ' ↗</a>';
+        }).join('') + '</div>';
+    }
+    if (!mktP && !parceiros.length) {
+      html += '<p class="ficha-onde-nota">' + safeEsc(tt('ficha.where_none', 'Ainda não temos parceiro para esta erva. Procure casas de chá e ervanárias de confiança.')) + '</p>' +
+        '<a class="ficha-aside-link" href="#onde-beber">' + safeEsc(tt('ficha.where_teahouses', 'Casas de chá no guia')) + ' →</a>';
+    }
+    return html;
+  }
+
+  function buildFichaReceitas(f, herb, blends) {
+    var nome = f.nome_popular || '';
+    var html = '<div class="enc-eyebrow">' + safeEsc(fmt(tt('ficha.recipes', 'Receitas com {erva}'), { erva: nome })) + '</div>';
+    var itens = [];
+    if (herb && typeof RECEITAS !== 'undefined' && Array.isArray(RECEITAS)) {
+      RECEITAS.filter(function (r) { return Array.isArray(r.ervas_ids) && r.ervas_ids.indexOf(herb.id) >= 0; }).forEach(function (r) {
+        itens.push('<a class="ficha-aside-link" href="#receitas/' + safeEsc(r.id) + '">' + safeEsc(r.nome) + (r.tempo_total ? ' <span>' + safeEsc(r.tempo_total) + '</span>' : '') + '</a>');
+      });
+    }
+    (blends || []).forEach(function (b) {
+      itens.push('<a class="ficha-aside-link" href="#blend/' + safeEsc(b.slug || '') + '">' + safeEsc(b.nome || b.slug) + (b.proposito ? ' <span>' + safeEsc(b.proposito) + '</span>' : '') + '</a>');
+    });
+    if (itens.length) html += '<div class="ficha-aside-list">' + itens.join('') + '</div>';
+    else html += '<p class="ficha-onde-nota">' + safeEsc(tt('ficha.recipes_none', 'Ainda sem receita com esta erva.')) + '</p><a class="ficha-aside-link" href="#receitas">' + safeEsc(tt('ficha.recipes_all', 'Ver todas as receitas')) + ' →</a>';
+    return html;
+  }
 
   function buildFichaHTML(f, produtos, blends, slug) {
     var id = f.identificacao || {};
@@ -705,229 +835,200 @@
     var ac = f.acoes_e_seguranca || {};
     var cu = f.cultura || {};
     var rg = f.regulacao || {};
-    var mk = f.marketplace || {};
-
-    // Onda 6.2: localiza o produto vendável do marketplace que
-    // corresponde a esta ficha (nome normalizado, sem acentos).
-    // Produtos is_test respeitam a visibilidade da Onda 6.1.
-    function fichaMktProduct(ficha) {
-      if (typeof MKT_PRODUCTS === 'undefined' || !Array.isArray(MKT_PRODUCTS)) return null;
-      var norm = function(s) {
-        return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-      };
-      var alvo = norm(ficha.nome_popular);
-      if (!alvo) return null;
-      for (var i = 0; i < MKT_PRODUCTS.length; i++) {
-        var p = MKT_PRODUCTS[i];
-        if (typeof mktIsVisible === 'function' && !mktIsVisible(p)) continue;
-        var pn = norm(p.name);
-        if (pn === alvo || pn.indexOf(alvo + ' ') === 0 || alvo.indexOf(pn + ' ') === 0) return p;
-      }
-      return null;
-    }
+    var herb = herbDaFicha(f);
+    var herbId = herb ? herb.id : null;
+    var R = (typeof fichaResumo === 'function') ? fichaResumo(f, (herb && !herb._sintetico) ? herb : null) : null;
+    var sec = R ? R.secoes : { acoes: ac.acoes_principais || [], contraindicacoes: ac.contraindicacoes || [], interacoes: [], interacoes_estruturadas: ac.interacoes || [], notas_componentes: [], notas_evidencia: [], alertas: [], notas: [], efeitos_adversos: ac.efeitos_adversos || '', dose_maxima: ac.dose_maxima || '' };
     var gustativo = Array.isArray(ps.gustativo) ? ps.gustativo : [];
     var trig = Array.isArray(ps.trigeminal) ? ps.trigeminal : [];
     var evid = Array.isArray(ac.evidencia) ? ac.evidencia : [];
+    var nome = f.nome_popular || '';
 
-    var html = '<article class="ficha-page-article">';
+    var html = '<article class="ficha-page"><div class="ficha-main">';
+    html += '<a class="ficha-back" href="#ervas">← ' + safeEsc(tt('ficha.back', 'Guia de Ervas')) + '</a>';
 
-    // Header
-    var heroImg  = resolveErvaImg(f.nome_popular, f.nome_cientifico) || ('images/produtos/' + slug + '.jpg');
-    var heroPng  = safeEsc('images/produtos/' + slug + '.png');
-    var heroPh   = 'images/produtos/placeholder.svg';
+    // Cabeçalho: foto, nome, nome científico, chips do catálogo, tagline.
+    var heroImg = resolveErvaImg(f.nome_popular, f.nome_cientifico) || ('images/produtos/' + slug + '.jpg');
+    var heroPng = safeEsc('images/produtos/' + slug + '.png');
+    var heroPh = 'images/produtos/placeholder.svg';
     var heroOerr = "if(!this._fb){this._fb=1;this.src='" + heroPng + "';}else{this.src='" + heroPh + "';this.onerror=null;}";
-    html += '<header class="ficha-hero ficha-hero--with-img">' +
-      '<figure class="ficha-hero-img">' +
-        '<img src="' + safeEsc(heroImg) + '" alt="' + safeEsc(f.nome_popular || '') + '" loading="lazy" onerror="' + heroOerr + '">' +
-        '<figcaption class="ficha-hero-caption">Imagem meramente ilustrativa</figcaption>' +
-      '</figure>' +
-      '<div class="ficha-hero-text">' +
-        '<h1 class="ficha-title">' + safeEsc(f.nome_popular || '') + '</h1>' +
+    var chips = [];
+    if (herb && !herb._sintetico && herb.cat) chips.push(herb.cat);
+    if (herb && !herb._sintetico && herb.bioma) chips.push(herb.bioma);
+    html += '<header class="ficha-head">' +
+      '<figure class="ficha-head-img"><img src="' + safeEsc(heroImg) + '" alt="' + safeEsc(nome) + '" loading="lazy" onerror="' + heroOerr + '"></figure>' +
+      '<div class="ficha-head-text">' +
+        '<h1 class="ficha-title">' + safeEsc(nome) + '</h1>' +
         '<div class="ficha-latin">' + safeEsc(f.nome_cientifico || '') + '</div>' +
-        (f.tagline ? '<blockquote class="ficha-tagline">' + safeEsc(f.tagline) + '</blockquote>' : '') +
-        (Array.isArray(f.destaques) && f.destaques.length ?
-          '<ul class="ficha-destaques">' + f.destaques.map(function(d) { return '<li><strong>' + safeEsc(d.label) + '</strong> ' + safeEsc(d.texto) + '</li>'; }).join('') + '</ul>' : '') +
+        (chips.length ? '<div class="ficha-chips">' + chips.map(function (c) { return '<span class="ficha-chip">' + safeEsc(c) + '</span>'; }).join('') + '</div>' : '') +
+        (f.tagline ? '<p class="ficha-tagline">' + safeEsc(f.tagline) + '</p>' : '') +
+      '</div></header>';
+
+    // Bloco-resumo: para que serve · como preparar · quem deve evitar.
+    if (R) {
+      var prep = R.preparo;
+      var prepHtml = prep.texto ? '<p class="ficha-resumo-txt">' + safeEsc(prep.texto) + '</p>' :
+        '<p class="ficha-resumo-txt">' + [prep.temp, prep.tempo, prep.dose].filter(Boolean).map(safeEsc).join(' · ') + '</p>' +
+        (prep.freq ? '<p class="ficha-resumo-det">' + safeEsc(prep.freq) + '</p>' : '') +
+        (prep.metodo ? '<p class="ficha-resumo-det">' + safeEsc(prep.metodo) + '</p>' : '');
+      var evitarHtml = R.evitar.length
+        ? '<ul class="ficha-resumo-lista">' + R.evitar.map(function (x) { return '<li>' + safeEsc(cap(x)) + '</li>'; }).join('') + '</ul>'
+        : '<p class="ficha-resumo-txt">' + safeEsc(tt('ficha.no_contra', 'Nenhuma contraindicação registrada nesta ficha.')) + '</p>';
+      if (R.seguro.length) evitarHtml += '<p class="ficha-resumo-det ficha-resumo-seguro">' + safeEsc(tt('ficha.safe_for', 'Seguro para')) + ': ' + R.seguro.map(safeEsc).join(', ') + '</p>';
+      if (R.interacoes) evitarHtml += '<p class="ficha-resumo-det">' + safeEsc(fmt(tt('ficha.interactions_note', 'Toma remédio? Há {n} interações conhecidas — veja no detalhe técnico.'), { n: R.interacoes })) + '</p>';
+      html += '<section class="ficha-resumo" aria-label="' + safeEsc(tt('ficha.summary', 'Resumo')) + '">' +
+        '<div class="ficha-resumo-cell"><div class="enc-eyebrow">' + safeEsc(tt('ficha.summary.serve', 'Para que serve')) + '</div><p class="ficha-resumo-txt">' + safeEsc(cap(R.serve)) + '</p>' + (R.serveDetalhe ? '<p class="ficha-resumo-det">' + safeEsc(R.serveDetalhe) + '</p>' : '') + '</div>' +
+        '<div class="ficha-resumo-cell"><div class="enc-eyebrow">' + safeEsc(tt('ficha.summary.prep', 'Como preparar')) + '</div>' + prepHtml + '</div>' +
+        '<div class="ficha-resumo-cell"><div class="enc-eyebrow">' + safeEsc(tt('ficha.summary.avoid', 'Quem deve evitar')) + '</div>' + evitarHtml + '</div>' +
+      '</section>';
+    }
+
+    // Ações: iniciar preparo (timer no lugar), salvar, adicionar ao blend.
+    if (herbId !== null) {
+      var favs = (typeof favorites !== 'undefined' && Array.isArray(favorites)) ? favorites : [];
+      var tray = (typeof blendTray !== 'undefined' && Array.isArray(blendTray)) ? blendTray : [];
+      var inFav = favs.indexOf(herbId) >= 0, inTray = tray.indexOf(herbId) >= 0;
+      var min = R && R.minutos ? R.minutos : 0;
+      var labelPreparo = min ? fmt(tt('ficha.start', 'Iniciar preparo · {min} min'), { min: min }) : tt('ficha.start_nomin', 'Iniciar preparo');
+      var lSave = tt('ficha.save', '♡ Salvar'), lSaved = tt('ficha.saved', '♥ Salvo');
+      var lAdd = tt('ficha.blend_add', '＋ Adicionar ao meu blend'), lAdded = tt('ficha.blend_added', '✓ No meu blend');
+      html += '<div class="ficha-acoes">' +
+        '<button type="button" class="enc-btn enc-btn-gold ficha-btn-preparo" aria-controls="fichaTimer" aria-expanded="false" onclick="fichaTimerToggle(this,' + min + ',' + JSON.stringify(nome).replace(/"/g, '&quot;') + ')">' + safeEsc(labelPreparo) + '</button>' +
+        '<button type="button" class="enc-btn ficha-btn-salvar' + (inFav ? ' on' : '') + '" data-fav-herb="' + herbId + '" data-label-on="' + safeEsc(lSaved) + '" data-label-off="' + safeEsc(lSave) + '" aria-pressed="' + (inFav ? 'true' : 'false') + '" onclick="toggleFichaFav(' + herbId + ')">' + safeEsc(inFav ? lSaved : lSave) + '</button>' +
+        '<button type="button" class="enc-btn ficha-btn-blend' + (inTray ? ' in-tray' : '') + '" data-blend-herb="' + herbId + '" data-label-on="' + safeEsc(lAdded) + '" data-label-off="' + safeEsc(lAdd) + '" aria-pressed="' + (inTray ? 'true' : 'false') + '" onclick="toggleTrayModal(' + herbId + ')">' + safeEsc(inTray ? lAdded : lAdd) + '</button>' +
       '</div>' +
-      (function() {
-        var _nrm = function(s) { return String(s || '').normalize('NFC').toLowerCase().trim(); };
-        var fichaHerb = (typeof HERBS !== 'undefined' && Array.isArray(HERBS)) ? HERBS.find(function(h) {
-          return _nrm(h.n) === _nrm(f.nome_popular) ||
-            (h.lat && f.nome_cientifico && _nrm(f.nome_cientifico).startsWith(_nrm(h.lat.split(' ').slice(0, 2).join(' '))));
-        }) : null;
-        if (!fichaHerb && f.nome_popular) {
-          var _stableId = function(n) { var h = 5381; for (var i = 0; i < n.length; i++) h = ((h << 5) + h) ^ n.charCodeAt(i); return (h >>> 0) % 90000 + 10000; };
-          var newId = _stableId(f.nome_popular);
-          fichaHerb = { id: newId, n: f.nome_popular, lat: f.nome_cientifico || '', icon: '🌿', cat: '', ef: '', tags: [], safe: [], avoid: [], temp: pr.temperatura_ideal || '', tempo: pr.tempo_de_infusao || '', dose: pr.quantidade || '', freq: pr.melhor_momento || '', tagline: f.tagline || '' };
-          if (typeof HERBS !== 'undefined' && !HERBS.find(function(h) { return h.id === newId; })) HERBS.push(fichaHerb);
-        }
-        if (!fichaHerb) return '';
-        var herbId = fichaHerb.id;
-        var tray = (typeof blendTray !== 'undefined' && Array.isArray(blendTray)) ? blendTray : [];
-        var favs = (typeof favorites !== 'undefined' && Array.isArray(favorites)) ? favorites : [];
-        var inTray = tray.includes(herbId);
-        var inFav = favs.includes(herbId);
-        // Onda 6.2 (backlog #40): CTA de compra quando existe produto
-        // vendável correspondente no marketplace — a ficha é a página
-        // de maior intenção e terminava sem botão de compra.
-        // Loja desligada: sem botão de compra (D4) — o "Onde encontrar" por
-        // indicação entra no feat/ficha-actions.
-        var mktP = (typeof lojaAtiva === 'function' && lojaAtiva() && typeof fichaMktProduct === 'function') ? fichaMktProduct(f) : null;
-        var buyBtn = '';
-        if (mktP) {
-          var inCartNow = (typeof cart !== 'undefined' && Array.isArray(cart)) && cart.some(function(c) { return c.id === mktP.id; });
-          var priceTxt = (mktP.price != null && !isNaN(Number(mktP.price))) ? ' · R$ ' + Number(mktP.price).toFixed(2).replace('.', ',') : '';
-          buyBtn = '<button class="ficha-buy-btn" style="flex:1;background:var(--gold,#c8a84b);color:#1c1608;border:none;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer" ' +
-            'onclick="addMktCart(' + mktP.id + ');this.textContent=\'✓ No carrinho\';this.disabled=true">' +
-            (inCartNow ? '✓ No carrinho' : '🛒 Comprar esta erva' + priceTxt) +
-            '</button>';
-        }
-        return '<div class="ficha-action-row">' +
-          buyBtn +
-          '<button data-fav-herb="' + herbId + '" class="ficha-fav-btn' + (inFav ? ' on' : '') + '" onclick="toggleFichaFav(' + herbId + ')">' +
-          (inFav ? '♥ Favorito' : '♡ Favoritar') +
-          '</button>' +
-          '<button data-blend-herb="' + herbId + '" class="modal-blend-toggle' + (inTray ? ' in-tray' : '') + '" style="flex:1" onclick="toggleTrayModal(' + herbId + ')">' +
-          (inTray ? '✓ Selecionado para blend' : '＋ Selecionar para blend') +
-          '</button>' +
-          '</div>';
-      })() +
-      '</header>';
+      '<div id="fichaTimer" class="ficha-timer" hidden></div>';
+    }
 
-    html += '<div class="ficha-page-body">';
-
-    // Alerta critico
+    // Alertas fortes em caixa própria, antes de tudo o mais.
     if (ac.alerta_critico) {
       html += '<section class="ficha-alert" role="alert">' +
-        '<div class="ficha-alert-title">' + safeEsc(ac.alerta_critico.titulo || 'Alerta critico') + '</div>' +
+        '<div class="ficha-alert-title">' + safeEsc(ac.alerta_critico.titulo || tt('ficha.alert', 'Atenção')) + '</div>' +
         (ac.alerta_critico.titulo2 ? '<div class="ficha-alert-sub">' + safeEsc(ac.alerta_critico.titulo2) + '</div>' : '') +
         '<div class="ficha-alert-body">' + safeEsc(ac.alerta_critico.corpo || '') + '</div>' +
         '</section>';
     }
+    (sec.alertas || []).forEach(function (a) {
+      html += '<section class="ficha-alert"><div class="ficha-alert-title">' + safeEsc(a.titulo) + '</div>' +
+        (a.itens.length ? '<ul class="ficha-bullets">' + listMaybe(a.itens) + '</ul>' : '') + '</section>';
+    });
 
-    // Identificacao
-    html += '<section class="ficha-section"><h2>Identificacao</h2><dl class="ficha-dl">' +
-      (id.nome_cientifico ? '<div class="ficha-kv"><dt>Nome cientifico</dt><dd><em>' + safeEsc(id.nome_cientifico) + '</em></dd></div>' : '') +
-      (id.familia_botanica ? '<div class="ficha-kv"><dt>Familia</dt><dd>' + safeEsc(id.familia_botanica) + '</dd></div>' : '') +
+    // Aviso de saúde: antes do técnico, não no fim.
+    html += '<p class="ficha-aviso">' + safeEsc(tt('health.disclaimer', 'Conteúdo educacional — não substitui orientação médica.')) + '</p>';
+
+    // Detalhe técnico, recolhido: tudo o que a ficha sempre teve.
+    var tec = '';
+    tec += '<section class="ficha-section"><h2>Identificação</h2><dl class="ficha-dl">' +
+      (id.nome_cientifico ? '<div class="ficha-kv"><dt>Nome científico</dt><dd><em>' + safeEsc(id.nome_cientifico) + '</em></dd></div>' : '') +
+      (id.familia_botanica ? '<div class="ficha-kv"><dt>Família</dt><dd>' + safeEsc(id.familia_botanica) + '</dd></div>' : '') +
       (id.tipo_botanico ? '<div class="ficha-kv"><dt>Tipo</dt><dd>' + safeEsc(id.tipo_botanico) + '</dd></div>' : '') +
       (id.parte_usada ? '<div class="ficha-kv"><dt>Parte usada</dt><dd>' + safeEsc(id.parte_usada) + '</dd></div>' : '') +
       '</dl>' +
-      (Array.isArray(id.sinonimos) && id.sinonimos.length ? '<div class="ficha-sub">Sinonimos</div><ul class="ficha-bullets">' + listMaybe(id.sinonimos) + '</ul>' : '') +
+      (Array.isArray(id.sinonimos) && id.sinonimos.length ? '<div class="ficha-sub">Sinônimos</div><ul class="ficha-bullets">' + listMaybe(id.sinonimos) + '</ul>' : '') +
       '</section>';
 
-    // Caracterizacao
-    html += '<section class="ficha-section"><h2>Caracterizacao</h2><dl class="ficha-dl">' +
+    tec += '<section class="ficha-section"><h2>Caracterização</h2><dl class="ficha-dl">' +
       (car.sabor_dominante ? '<div class="ficha-kv"><dt>Sabor</dt><dd>' + safeEsc(car.sabor_dominante) + '</dd></div>' : '') +
       (car.aroma ? '<div class="ficha-kv"><dt>Aroma</dt><dd>' + safeEsc(car.aroma) + '</dd></div>' : '') +
-      (car.cor_da_infusao ? '<div class="ficha-kv"><dt>Cor da infusao</dt><dd>' + safeEsc(car.cor_da_infusao) + '</dd></div>' : '') +
+      (car.cor_da_infusao ? '<div class="ficha-kv"><dt>Cor da infusão</dt><dd>' + safeEsc(car.cor_da_infusao) + '</dd></div>' : '') +
       (car.intensidade ? '<div class="ficha-kv"><dt>Intensidade</dt><dd>' + safeEsc(car.intensidade) + '</dd></div>' : '') +
       (car.notas ? '<div class="ficha-kv"><dt>Notas</dt><dd>' + safeEsc(car.notas) + '</dd></div>' : '') +
       (car.bioma_de_origem ? '<div class="ficha-kv"><dt>Bioma</dt><dd>' + safeEsc(car.bioma_de_origem) + '</dd></div>' : '') +
       '</dl>' +
-      (Array.isArray(car.distribuicao_geografica) && car.distribuicao_geografica.length ? '<div class="ficha-sub">Distribuicao geografica</div><ul class="ficha-bullets">' + listMaybe(car.distribuicao_geografica) + '</ul>' : '') +
+      (Array.isArray(car.distribuicao_geografica) && car.distribuicao_geografica.length ? '<div class="ficha-sub">Distribuição geográfica</div><ul class="ficha-bullets">' + listMaybe(car.distribuicao_geografica) + '</ul>' : '') +
       '</section>';
 
-    // Preparo
-    html += '<section class="ficha-section"><h2>Preparo</h2><dl class="ficha-dl">' +
+    tec += '<section class="ficha-section"><h2>Preparo</h2><dl class="ficha-dl">' +
       (pr.temperatura_ideal ? '<div class="ficha-kv"><dt>Temperatura</dt><dd>' + safeEsc(pr.temperatura_ideal) + '</dd></div>' : '') +
-      (pr.tempo_de_infusao ? '<div class="ficha-kv"><dt>Tempo de infusao</dt><dd>' + safeEsc(pr.tempo_de_infusao) + '</dd></div>' : '') +
+      (pr.tempo_de_infusao ? '<div class="ficha-kv"><dt>Tempo de infusão</dt><dd>' + safeEsc(pr.tempo_de_infusao) + '</dd></div>' : '') +
       (pr.quantidade ? '<div class="ficha-kv"><dt>Quantidade</dt><dd>' + safeEsc(pr.quantidade) + '</dd></div>' : '') +
-      (pr.metodo ? '<div class="ficha-kv"><dt>Metodo</dt><dd>' + safeEsc(pr.metodo) + '</dd></div>' : '') +
-      (pr.reinfusoes ? '<div class="ficha-kv"><dt>Reinfusoes</dt><dd>' + safeEsc(pr.reinfusoes) + '</dd></div>' : '') +
+      (pr.metodo ? '<div class="ficha-kv"><dt>Método</dt><dd>' + safeEsc(pr.metodo) + '</dd></div>' : '') +
+      (pr.reinfusoes ? '<div class="ficha-kv"><dt>Reinfusões</dt><dd>' + safeEsc(pr.reinfusoes) + '</dd></div>' : '') +
       (pr.melhor_momento ? '<div class="ficha-kv"><dt>Melhor momento</dt><dd>' + safeEsc(pr.melhor_momento) + '</dd></div>' : '') +
       (pr.combina_com ? '<div class="ficha-kv"><dt>Combina com</dt><dd>' + safeEsc(pr.combina_com) + '</dd></div>' : '') +
       '</dl>' +
       (f.preparo_ritual ? '<div class="ficha-sub">' + safeEsc(f.preparo_ritual.titulo || 'Preparo cerimonial') + '</div><p>' + safeEsc(f.preparo_ritual.texto || '') + '</p>' : '') +
       '</section>';
 
-    // Usos topicos
-    if (f.usos_topicos) {
-      html += '<section class="ficha-section"><h2>Usos topicos</h2>' +
-        (f.usos_topicos.evidencia ? '<p><strong>Evidencia:</strong> ' + safeEsc(f.usos_topicos.evidencia) + '</p>' : '') +
-        (Array.isArray(f.usos_topicos.aplicacoes) ? f.usos_topicos.aplicacoes.map(function(a) { return '<div class="ficha-sub">' + safeEsc(a.titulo || '') + '</div><p>' + safeEsc(a.texto || '') + '</p>'; }).join('') : '') +
+    if (f.usos_topicos && (f.usos_topicos.evidencia || (Array.isArray(f.usos_topicos.aplicacoes) && f.usos_topicos.aplicacoes.length))) {
+      tec += '<section class="ficha-section"><h2>Usos tópicos</h2>' +
+        (f.usos_topicos.evidencia ? '<p><strong>Evidência:</strong> ' + safeEsc(f.usos_topicos.evidencia) + '</p>' : '') +
+        (Array.isArray(f.usos_topicos.aplicacoes) ? f.usos_topicos.aplicacoes.map(function (a) { return typeof a === 'string' ? '<p>' + safeEsc(a) + '</p>' : '<div class="ficha-sub">' + safeEsc(a.titulo || '') + '</div><p>' + safeEsc(a.texto || '') + '</p>'; }).join('') : '') +
         (f.usos_topicos.contraindicacoes ? '<p class="ficha-warn-inline">' + safeEsc(f.usos_topicos.contraindicacoes) + '</p>' : '') +
         '</section>';
     }
 
-    // Acoes e seguranca
-    html += '<section class="ficha-section"><h2>Acoes e seguranca</h2>' +
-      (Array.isArray(ac.acoes_principais) && ac.acoes_principais.length ? '<div class="ficha-sub">Acoes principais</div><ul class="ficha-bullets">' + listMaybe(ac.acoes_principais) + '</ul>' : '') +
+    // Ações e segurança — cada coisa na sua seção (fichaSecoes).
+    tec += '<section class="ficha-section" id="fichaSeguranca"><h2>Ações e segurança</h2>' +
+      (sec.acoes.length ? '<div class="ficha-sub">Ações principais</div><ul class="ficha-bullets ficha-acoes-lista">' + listMaybe(sec.acoes) + '</ul>' : '') +
       (Array.isArray(ac.componentes_ativos) && ac.componentes_ativos.length ? '<div class="ficha-sub">Componentes ativos</div><dl class="ficha-dl">' + dlList(ac.componentes_ativos) + '</dl>' : '') +
-      (evid.length ? '<div class="ficha-sub">Indicacoes com evidencia</div><table class="ficha-table"><caption>Evidencia clinica e populacional</caption><thead><tr><th>Indicacao</th><th>Evidencia</th><th>Populacao</th></tr></thead><tbody>' + evid.map(function(e) { return '<tr><td>' + safeEsc(e.indicacao) + '</td><td>' + safeEsc(e.evidencia) + '</td><td>' + safeEsc(e.populacao) + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
-      (Array.isArray(ac.contraindicacoes) && ac.contraindicacoes.length ? '<div class="ficha-sub">Contraindicacoes</div><ul class="ficha-bullets">' + listMaybe(ac.contraindicacoes) + '</ul>' : '') +
-      (Array.isArray(ac.interacoes) && ac.interacoes.length ? '<div class="ficha-sub">Interacoes</div><dl class="ficha-dl">' + dlList(ac.interacoes) + '</dl>' : '') +
-      (ac.efeitos_adversos ? '<div class="ficha-sub">Efeitos adversos</div><p>' + safeEsc(ac.efeitos_adversos) + '</p>' : '') +
-      (ac.dose_maxima ? '<div class="ficha-sub">Dose maxima</div><p>' + safeEsc(ac.dose_maxima) + '</p>' : '') +
-      (Array.isArray(ac.fontes) && ac.fontes.length ? '<div class="ficha-sub">Fontes</div><ul class="ficha-bullets ficha-sources">' + listMaybe(ac.fontes) + '</ul>' : '') +
+      (sec.notas_componentes.length ? paragraphs(sec.notas_componentes) : '') +
+      (evid.length ? '<div class="ficha-sub">Indicações com evidência</div><table class="ficha-table"><caption>Evidência clínica e populacional</caption><thead><tr><th>Indicação</th><th>Evidência</th><th>População</th></tr></thead><tbody>' + evid.map(function (e) { return '<tr><td>' + safeEsc(e.indicacao) + '</td><td>' + safeEsc(e.evidencia) + '</td><td>' + safeEsc(e.populacao) + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
+      (sec.notas_evidencia.length ? paragraphs(sec.notas_evidencia) : '') +
+      (sec.contraindicacoes.length ? '<div class="ficha-sub">Contraindicações</div><ul class="ficha-bullets ficha-contra-lista">' + listMaybe(sec.contraindicacoes) + '</ul>' : '') +
+      (sec.interacoes_estruturadas.length || sec.interacoes.length ? '<div class="ficha-sub">Interações</div>' +
+        (sec.interacoes_estruturadas.length ? '<dl class="ficha-dl">' + dlList(sec.interacoes_estruturadas) + '</dl>' : '') +
+        (sec.interacoes.length ? '<ul class="ficha-bullets">' + listMaybe(sec.interacoes) + '</ul>' : '') : '') +
+      (sec.efeitos_adversos ? '<div class="ficha-sub">Efeitos adversos</div><p>' + safeEsc(sec.efeitos_adversos) + '</p>' : '') +
+      (sec.dose_maxima ? '<div class="ficha-sub">Dose máxima</div><p>' + safeEsc(sec.dose_maxima) + '</p>' : '') +
+      (sec.notas || []).map(function (n) { return '<div class="ficha-sub">' + safeEsc(n.titulo) + '</div>' + (n.itens.length ? '<ul class="ficha-bullets">' + listMaybe(n.itens) + '</ul>' : ''); }).join('') +
       '</section>';
 
-    // Perfil sensorial
-    html += '<section class="ficha-section"><h2>Perfil sensorial</h2>' +
-      (gustativo.length ? '<table class="ficha-table"><caption>Perfil gustativo</caption><thead><tr><th>Dimensao</th><th>Intensidade</th><th>Observacao</th></tr></thead><tbody>' + gustativo.map(function(g) { return '<tr><td>' + safeEsc(g.dimensao) + '</td><td>' + safeEsc(g.intensidade) + '</td><td>' + safeEsc(g.observacao) + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
-      (ps.olfativo_familia ? '<div class="ficha-sub">Olfativo — ' + safeEsc(ps.olfativo_familia) + '</div>' : '') +
-      (Array.isArray(ps.olfativo_descritores) && ps.olfativo_descritores.length ? '<ul class="ficha-bullets">' + listMaybe(ps.olfativo_descritores) + '</ul>' : '') +
-      (trig.length ? '<table class="ficha-table"><caption>Perfil trigeminal</caption><thead><tr><th>Receptor</th><th>Ativacao</th><th>Molecula</th></tr></thead><tbody>' + trig.map(function(t) { return '<tr><td>' + safeEsc(t.receptor) + '</td><td>' + safeEsc(t.ativacao) + '</td><td>' + safeEsc(t.molecula) + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
-      (ps.tatil ? '<div class="ficha-sub">Tatil</div><p>' + safeEsc(ps.tatil) + '</p>' : '') +
-      (ps.descricao_integrada ? '<blockquote class="ficha-pullquote">' + safeEsc(ps.descricao_integrada) + '</blockquote>' : '') +
-      '</section>';
+    if (gustativo.length || trig.length || ps.olfativo_familia || ps.tatil || ps.descricao_integrada) {
+      tec += '<section class="ficha-section"><h2>Perfil sensorial</h2>' +
+        (gustativo.length ? '<table class="ficha-table"><caption>Perfil gustativo</caption><thead><tr><th>Dimensão</th><th>Intensidade</th><th>Observação</th></tr></thead><tbody>' + gustativo.map(function (g) { return '<tr><td>' + safeEsc(g.dimensao) + '</td><td>' + safeEsc(g.intensidade) + '</td><td>' + safeEsc(g.observacao) + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
+        (ps.olfativo_familia ? '<div class="ficha-sub">Olfativo — ' + safeEsc(ps.olfativo_familia) + '</div>' : '') +
+        (Array.isArray(ps.olfativo_descritores) && ps.olfativo_descritores.length ? '<ul class="ficha-bullets">' + listMaybe(ps.olfativo_descritores) + '</ul>' : '') +
+        (trig.length ? '<table class="ficha-table"><caption>Perfil trigeminal</caption><thead><tr><th>Receptor</th><th>Ativação</th><th>Molécula</th></tr></thead><tbody>' + trig.map(function (x) { return '<tr><td>' + safeEsc(x.receptor) + '</td><td>' + safeEsc(x.ativacao) + '</td><td>' + safeEsc(x.molecula) + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
+        (ps.tatil ? '<div class="ficha-sub">Tátil</div><p>' + safeEsc(ps.tatil) + '</p>' : '') +
+        (ps.descricao_integrada ? '<blockquote class="ficha-pullquote">' + safeEsc(ps.descricao_integrada) + '</blockquote>' : '') +
+        '</section>';
+    }
 
-    // Cultura
-    html += '<section class="ficha-section"><h2>Cultura</h2>' +
-      (cu.historia ? '<div class="ficha-sub">Historia</div>' + paragraphs(cu.historia) : '') +
-      (cu.cerimonial ? '<div class="ficha-sub">Cerimonial</div><p>' + safeEsc(cu.cerimonial) + '</p>' : '') +
-      (cu.brasil ? '<div class="ficha-sub">No Brasil</div>' + paragraphs(cu.brasil) : '') +
-      (cu.curiosidade ? '<blockquote class="ficha-pullquote">' + safeEsc(cu.curiosidade) + '</blockquote>' : '') +
-      '</section>';
+    if (cu.historia || cu.cerimonial || cu.brasil || cu.curiosidade) {
+      tec += '<section class="ficha-section"><h2>Cultura</h2>' +
+        (cu.historia ? '<div class="ficha-sub">História</div>' + paragraphs(cu.historia) : '') +
+        (cu.cerimonial ? '<div class="ficha-sub">Cerimonial</div><p>' + safeEsc(cu.cerimonial) + '</p>' : '') +
+        (cu.brasil ? '<div class="ficha-sub">No Brasil</div>' + paragraphs(cu.brasil) : '') +
+        (cu.curiosidade ? '<blockquote class="ficha-pullquote">' + safeEsc(cu.curiosidade) + '</blockquote>' : '') +
+        '</section>';
+    }
 
-    // Regulacao
-    html += '<section class="ficha-section"><h2>Regulacao e origem</h2><dl class="ficha-dl">' +
-      (rg.eixo_botanico_tpc ? '<div class="ficha-kv"><dt>Eixo botanico</dt><dd>' + safeEsc(rg.eixo_botanico_tpc) + '</dd></div>' : '') +
-      (rg.status_anvisa ? '<div class="ficha-kv"><dt>ANVISA</dt><dd>' + (Array.isArray(rg.status_anvisa) ? rg.status_anvisa.map(safeEsc).join(' ') : safeEsc(rg.status_anvisa)) + '</dd></div>' : '') +
+    var join = function (v) { return Array.isArray(v) ? v.map(safeEsc).join(' ') : safeEsc(v); };
+    tec += '<section class="ficha-section"><h2>Regulação e origem</h2><dl class="ficha-dl">' +
+      (rg.eixo_botanico_tpc ? '<div class="ficha-kv"><dt>Eixo botânico</dt><dd>' + safeEsc(rg.eixo_botanico_tpc) + '</dd></div>' : '') +
+      (rg.status_anvisa ? '<div class="ficha-kv"><dt>ANVISA</dt><dd>' + join(rg.status_anvisa) + '</dd></div>' : '') +
       (rg.status_ema ? '<div class="ficha-kv"><dt>EMA</dt><dd>' + safeEsc(rg.status_ema) + '</dd></div>' : '') +
       (rg.status_fda ? '<div class="ficha-kv"><dt>FDA</dt><dd>' + safeEsc(rg.status_fda) + '</dd></div>' : '') +
-      (rg.certificacao_organica ? '<div class="ficha-kv"><dt>Certificacao organica</dt><dd>' + (Array.isArray(rg.certificacao_organica) ? rg.certificacao_organica.map(safeEsc).join(' ') : safeEsc(rg.certificacao_organica)) + '</dd></div>' : '') +
-      (rg.sazonalidade ? '<div class="ficha-kv"><dt>Sazonalidade</dt><dd>' + (Array.isArray(rg.sazonalidade) ? rg.sazonalidade.map(safeEsc).join(' ') : safeEsc(rg.sazonalidade)) + '</dd></div>' : '') +
+      (rg.certificacao_organica ? '<div class="ficha-kv"><dt>Certificação orgânica</dt><dd>' + join(rg.certificacao_organica) + '</dd></div>' : '') +
+      (rg.sazonalidade ? '<div class="ficha-kv"><dt>Sazonalidade</dt><dd>' + join(rg.sazonalidade) + '</dd></div>' : '') +
       '</dl></section>';
 
-    // Marketplace (da ficha)
-    if (mk && (mk.fornecedores || mk.faixa_de_preco || mk.formatos)) {
-      html += '<section class="ficha-section ficha-section-mute"><h2>Marketplace</h2><dl class="ficha-dl">' +
-        (mk.disponivel_a_venda ? '<div class="ficha-kv"><dt>Disponivel</dt><dd>' + safeEsc(mk.disponivel_a_venda) + '</dd></div>' : '') +
-        (mk.fornecedores ? '<div class="ficha-kv"><dt>Fornecedores</dt><dd>' + safeEsc(mk.fornecedores) + '</dd></div>' : '') +
-        (mk.faixa_de_preco ? '<div class="ficha-kv"><dt>Faixa de preco</dt><dd>' + (Array.isArray(mk.faixa_de_preco) ? mk.faixa_de_preco.map(safeEsc).join(' ') : safeEsc(mk.faixa_de_preco)) + '</dd></div>' : '') +
-        (mk.formatos ? '<div class="ficha-kv"><dt>Formatos</dt><dd>' + safeEsc(mk.formatos) + '</dd></div>' : '') +
-        '</dl></section>';
-    }
+    html += '<details class="ficha-tecnico" id="fichaTecnico"><summary><span class="ficha-tecnico-txt"><span class="ficha-tecnico-h2">' + safeEsc(tt('ficha.tech', 'Detalhe técnico')) + '</span><span class="ficha-tecnico-sub">' + safeEsc(tt('ficha.tech_sub', 'Componentes, evidência, regulação, perfil sensorial e cultura')) + '</span></span></summary>' + tec + '</details>';
 
-    // Onde comprar (produtos do Supabase) — só com a loja ligada (D4)
-    if (produtos.length > 0 && typeof lojaAtiva === 'function' && lojaAtiva()) {
-      html += '<section class="ficha-section"><h2>Onde comprar</h2><div class="ev-produtos-grid">';
-      produtos.forEach(function(p) {
-        html += '<div class="ev-produto-card">' +
-          '<div class="ev-produto-nome">' + safeEsc(p.name || p.nome || '') + '</div>' +
-          (p.brand ? '<div class="ev-produto-marca">' + safeEsc(p.brand) + '</div>' : '') +
-          (p.certificacoes ? '<div class="ev-produto-cert">' + safeEsc(p.certificacoes) + '</div>' : '') +
-          (p.origem_geografica ? '<div class="ev-produto-origem">' + safeEsc(p.origem_geografica) + '</div>' : '') +
-          (p.price ? '<div class="ev-produto-preco">R$ ' + safeEsc(String(p.price)) + '</div>' : '') +
-          '</div>';
-      });
-      html += '</div></section>';
-    }
+    // Fontes: sempre presente — sem fonte, diz que está em revisão.
+    html += '<section class="ficha-section ficha-fontes"><h2>' + safeEsc(tt('ficha.sources', 'Fontes')) + '</h2>' +
+      (R && R.fontes.length ? '<ul class="ficha-bullets ficha-sources">' + listMaybe(R.fontes) + '</ul>' : '<p class="ficha-mute">' + safeEsc(tt('ficha.sources_review', 'Fontes em revisão.')) + '</p>') +
+      '</section>';
 
-    // Em receitas (blends)
-    if (blends.length > 0) {
-      html += '<section class="ficha-section"><h2>Em receitas</h2><div class="ev-blends-list">';
-      blends.forEach(function(b) {
-        html += '<div class="ev-blend-link" onclick="goPage(\'blend\',null,\'' + safeEsc(b.slug || '') + '\')">' +
-          '<span class="ev-blend-nome">' + safeEsc(b.nome || b.slug) + '</span>' +
-          (b.proposito ? '<span class="ev-blend-prop"> — ' + safeEsc(b.proposito) + '</span>' : '') +
-          '</div>';
-      });
-      html += '</div></section>';
-    }
-
-    // Footer
-    html += '<footer class="ficha-foot"><span>Ervatorio v1.1 · ' + safeEsc(f.nome_popular || '') + '</span></footer>';
+    html += '<div class="ficha-foot"><span>Ervatório · ' + safeEsc(nome) + ' · v' + safeEsc(f.schema_version || '1.1') + '</span></div>';
     html += '</div>';
+
+    // Lateral: onde encontrar, receitas, e-mail.
+    html += '<aside class="ficha-aside" id="fichaAside">' +
+      '<section class="ficha-aside-box ficha-onde" id="fichaOnde">' + buildFichaOnde(f, produtos, slug) + '</section>' +
+      '<section class="ficha-aside-box" id="fichaReceitas">' + buildFichaReceitas(f, herb, blends) + '</section>' +
+      '<section class="ficha-aside-box ficha-email">' +
+        '<div class="enc-eyebrow">' + safeEsc(tt('ficha.email', 'Fichas e receitas por e-mail')) + '</div>' +
+        '<p class="ficha-onde-nota">' + safeEsc(tt('ficha.email_sub', 'Uma pausa por semana, com fichas como esta. Sem spam; cancele quando quiser.')) + '</p>' +
+        '<form class="ficha-email-form" onsubmit="return subscribeEmail(this,\'ficha\',\'ficha.email_ok\',\'ficha.email_err\')">' +
+          '<label class="sr-only" for="fichaEmail">' + safeEsc(tt('ficha.email_label', 'Seu e-mail')) + '</label>' +
+          '<input id="fichaEmail" type="email" required autocomplete="email" placeholder="voce@exemplo.com">' +
+          '<button type="submit" class="enc-btn enc-btn-gold">' + safeEsc(tt('ficha.email_btn', 'Quero receber')) + '</button>' +
+        '</form>' +
+        '<p class="ficha-onde-nota" data-email-msg hidden></p>' +
+      '</section>' +
+    '</aside>';
     html += '</article>';
     return html;
   }

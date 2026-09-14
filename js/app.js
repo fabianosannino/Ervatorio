@@ -40,50 +40,8 @@ function svgIcon(name, size){
 
 // ── DATA ──────────────────────────────────────────────────────────────────
 
-const HERBS = [
-  {id:1,n:"Camomila",lat:"Matricaria chamomilla",icon:"🌼",img:"images/produtos/camomila.jpg",tagline:"Relaxamento e digestão leve",cat:"Calmante",ef:"Calmante suave, anti-inflamatória, digestiva",detail:"Apigenina se liga aos receptores GABA, promovendo relaxamento. Ideal para insônia leve, cólicas e digestão irritada. Segura para crianças, idosos e gestantes.",safe:["gestantes","hipertensos","crianças"],avoid:[],temp:"85°C",tempo:"8 min",dose:"1-2 col. sopa / 250ml",freq:"2-3x ao dia",tags:["calmante","digestiva","anti-inflamatória","sono"],momento:["tarde","qualquer"],bioma:"Europa",usos:["chá","medicinal","aromaterapia","cosméticos"],restricoes_pais:[]},
-  {id:2,n:"Valeriana",lat:"Valeriana officinalis",icon:"🌸",img:"images/produtos/valeriana.png",tagline:"Sedação natural para noites difíceis",cat:"Sono",ef:"Sedativa potente, insônia, ansiedade grave",detail:"Actua diretamente no GABA. Reduz tempo para adormecer em 30-60 min. Não associar com álcool ou benzodiazepínicos. Evitar em depressão.",safe:["hipertensos"],avoid:["gestantes","antes de dirigir"],temp:"85°C",tempo:"10 min",dose:"1 col. sopa / 250ml",freq:"1x à noite",tags:["sono","ansiedade","sedativa","calmante"],momento:["noite"],bioma:"Europa",usos:["medicinal","suplemento","chá"],restricoes_pais:["Alemanha: regulada como medicamento, não suplemento alimentar"]},
-  {id:3,n:"Maracujá",lat:"Passiflora spp. (P. alata · P. edulis · P. incarnata)",icon:"🌿",img:"images/produtos/maracuja.png",tagline:"Três espécies oficiais brasileiras, uma farmacologia GABAérgica — ansiolítico popular com evidência clínica robusta.",cat:"Calmante",linha:"Essencial",ef:"Ansiolítico — ação monografada, Sedativo leve, Indutor suave de sono",detail:"Três espécies oficiais brasileiras com farmacologia GABAérgica. Flavonoides (vitexina, isovitexina) se ligam ao receptor GABA-A com afinidade baixa, produzindo calma sem sedação pesada. Monografia oficial da Farmacopeia Brasileira.",safe:["adultos saudáveis","hipertensos"],avoid:[],temp:"95°C",tempo:"10 min",dose:"3 g de folhas secas / 150 ml",freq:"2 a 4 vezes ao dia, fim de tarde e noite",tags:["ansiedade","sono"],momento:["tarde","noite"],bioma:"Mata Atlântica",usos:["chá","medicinal","culinária","coquetel"],restricoes_pais:[]},
-  {id:4,n:"Melissa",lat:"Melissa officinalis",icon:"🍃",img:"images/produtos/melissa.png",tagline:"Calma cítrica e equilíbrio mental",cat:"Calmante",ef:"Calmante, antidepressiva suave, digestiva",detail:"Inibe MAO-B, elevando serotonina e dopamina naturalmente. Excelente para quem 'não consegue parar de pensar'. Sabor agradável de limão. Sem risco de dependência.",safe:["gestantes","crianças","hipertensos"],avoid:[],temp:"85°C",tempo:"7 min",dose:"1-2 col. sopa / 250ml",freq:"3x ao dia",tags:["ansiedade","digestiva","calmante","antidepressiva"],momento:["tarde","noite","qualquer"],bioma:"Europa",usos:["chá","medicinal","aromaterapia","culinária"],restricoes_pais:[]},
-  {id:5,n:"Gengibre",lat:"Zingiber officinale",icon:"🫚",img:"images/produtos/gengibre.jpg",tagline:"Ativação digestiva e imunidade vibrante",cat:"Digestivo",ef:"Anti-náusea, digestivo, termogênico, antigripal",detail:"Procinético: acelera esvaziamento gástrico. Anti-inflamatório que inibe COX-2 e LOX. Eficaz quanto ibuprofeno para dor menstrual em estudos. Usar fresco para máximo efeito.",safe:["hipertensos"],avoid:["gestantes (doses altas)","anticoagulantes"],temp:"90°C",tempo:"10 min",dose:"3-4 fatias frescas / 300ml",freq:"conforme necessidade",tags:["digestivo","náusea","inflamação","termogênico","gripe"],momento:["manha","qualquer"],bioma:"Ásia",usos:["chá","culinária","medicinal","coquetel"],restricoes_pais:[]},
-  {id:6,n:"Chá Verde",lat:"Camellia sinensis",icon:"🍵",img:"images/produtos/matcha.png",tagline:"Energia limpa e foco natural",cat:"Estimulante",ef:"Foco, antioxidante, termogênico, metabolismo",detail:"L-teanina + cafeína: estado único de foco calmo. EGCG: antioxidante mais estudado do mundo. Tomar 30min antes de exercício potencializa queima de gordura.",safe:[],avoid:["gestantes","insônia","hipertensos sensíveis","após 16h"],temp:"75°C",tempo:"3-4 min",dose:"1 col. sopa / 200ml",freq:"1-2x manhã",tags:["foco","energia","metabolismo","antioxidante"],momento:["manha","tarde"],bioma:"Ásia",usos:["chá","culinária","suplemento","cosméticos"],restricoes_pais:[]},
-  {id:7,n:"Hibisco",lat:"Hibiscus sabdariffa",icon:"🌺",img:"images/produtos/hibisco.jpg",tagline:"Equilíbrio metabólico e vitamina C",cat:"Cardiovascular",ef:"Hipotensor, antioxidante, emagrecimento, vitamina C",detail:"Estudo JAMA: 3 xícaras/dia reduziram PA sistólica em média 7mmHg. Rico em antocianinas. Inibe amilase, reduzindo absorção de carboidratos. Vermelho intenso, sabor ácido.",safe:[],avoid:["gestantes","pressão baixa","uso com diuréticos"],temp:"90°C",tempo:"8 min",dose:"2 col. sopa / 300ml",freq:"2-3x ao dia",tags:["pressão","antioxidante","emagrecimento","vitamina C"],momento:["qualquer"],bioma:"África",usos:["chá","culinária","coquetel","medicinal"],restricoes_pais:[]},
-  {id:8,n:"Alecrim",lat:"Rosmarinus officinalis",icon:"🌿",img:"images/produtos/alecrim.png",tagline:"Foco, memória e despertar natural",cat:"Estimulante",ef:"Foco, memória, circulação, estimulante",detail:"1,8-cineol no aroma já melhora desempenho cognitivo. Estimula circulação cerebral e periférica. Excelente para manhãs lentas e concentração. Sem cafeína.",safe:["hipertensos"],avoid:["gestantes (doses altas)","epilepsia"],temp:"90°C",tempo:"5 min",dose:"1 col. sopa / 200ml",freq:"1-2x ao dia",tags:["foco","memória","energia","circulação"],momento:["manha","tarde"],bioma:"Mediterrâneo",usos:["culinária","aromaterapia","medicinal","chá"],restricoes_pais:[]},
-  {id:9,n:"Hortelã",lat:"Mentha piperita",icon:"🌿",img:"images/produtos/hortela.jpg",tagline:"Frescor digestivo e leveza",cat:"Digestivo",ef:"Digestiva, carminativa, descongestionante, fresca",detail:"Mentol relaxa musculatura lisa intestinal. Alivia IBS em estudos clínicos. Descongestionante das vias aéreas. Frio potencializa o efeito mentolado.",safe:["hipertensos","crianças (sem óleo essencial)"],avoid:["gestantes (doses altas)","bebês (óleo)","refluxo grave"],temp:"85°C",tempo:"5 min",dose:"1 col. sopa / 250ml",freq:"após refeições",tags:["digestivo","gases","congestão","frescor"],momento:["qualquer"],bioma:"Mediterrâneo",usos:["chá","culinária","aromaterapia","coquetel"],restricoes_pais:[]},
-  {id:10,n:"Erva-doce",lat:"Pimpinella anisum",icon:"🌾",img:"images/produtos/erva-doce.jpg",tagline:"Antigases e conforto abdominal",cat:"Digestivo",ef:"Carminativa, antigases, cólicas, expectorante",detail:"Carminativo clássico: relaxa musculatura intestinal e libera gases. Seguro até para bebês (muito diluído). Combina muito bem com camomila e hortelã.",safe:["hipertensos","crianças","gestantes (uso moderado)"],avoid:[],temp:"90°C",tempo:"7 min",dose:"1 col. sopa / 250ml",freq:"após refeições",tags:["gases","cólicas","digestivo","expectorante"],momento:["qualquer"],bioma:"Mediterrâneo",usos:["chá","culinária","medicinal"],restricoes_pais:[]},
-  {id:11,n:"Canela",lat:"Cinnamomum zeylanicum",icon:"🌿",img:"images/produtos/canela.png",tagline:"Termogênica e reguladora de glicemia",cat:"Metabólico",ef:"Termogênica, regula glicemia, anti-inflamatória",detail:"Regula insulina, evita pico glicêmico. Termogênica e adocicada: reduz desejo por doces. Cassia tem cumarina (limitar). Prefira canela-do-ceilão.",safe:["hipertensos"],avoid:["gestantes (doses altas)","anticoagulantes"],temp:"95°C",tempo:"10 min",dose:"1 pau ou 1 col. / 300ml",freq:"2x ao dia",tags:["metabolismo","glicemia","termogênico","digestivo"],momento:["manha","tarde"],bioma:"Ásia",usos:["culinária","chá","medicinal","coquetel"],restricoes_pais:[]},
-  {id:12,n:"Cúrcuma",lat:"Curcuma longa",icon:"🫚",img:"images/produtos/curcuma.png",tagline:"Anti-inflamatório potente e protetor hepático",cat:"Anti-inflamatório",ef:"Anti-inflamatório potente, hepático, antioxidante",detail:"Curcumina: inibe COX-2. Eficaz quanto ibuprofeno em artrite em estudos. Adicionar pimenta-do-reino aumenta absorção em 2000%. Leite dourado com leite vegetal.",safe:["hipertensos"],avoid:["gestantes (doses altas)","pedras na vesícula","anticoagulantes"],temp:"90°C",tempo:"10 min",dose:"1 col. chá + pitada pimenta / 250ml",freq:"2x ao dia",tags:["anti-inflamatório","fígado","articulações","antioxidante"],momento:["qualquer"],bioma:"Ásia",usos:["culinária","chá","medicinal","suplemento","cosméticos"],restricoes_pais:[]},
-  {id:13,n:"Alfazema",lat:"Lavandula angustifolia",icon:"💜",img:"images/produtos/lavanda.jpg",tagline:"Delicadeza floral e calma profunda",cat:"Calmante",ef:"Ansiolítica, sedativa suave, dor de cabeça",detail:"Estudo Lasea: eficaz quanto lorazepam para ansiedade leve. Reduz ondas beta cerebrais. Aroma + infusão combinados têm efeito sinérgico.",safe:["hipertensos"],avoid:["gestantes"],temp:"85°C",tempo:"8 min",dose:"1 col. sopa flores / 250ml",freq:"2x ao dia",tags:["ansiedade","sono","dor de cabeça","calmante"],momento:["tarde","noite"],bioma:"Mediterrâneo",usos:["aromaterapia","medicinal","chá","culinária","cosméticos"],restricoes_pais:[]},
-  {id:14,n:"Boldo",lat:"Peumus boldus",icon:"🍃",img:"images/produtos/boldo-espinheira-santa.png",tagline:"Recuperação e proteção digestiva",cat:"Digestivo",ef:"Hepático, digestivo, alivia peso pós-refeição",detail:"Colagogo clássico: estimula produção e fluxo de bile. Alivia sensação de peso em 20-30 min. Não usar por mais de 6 semanas seguidas.",safe:["hipertensos"],avoid:["gestantes","obstrução biliar","uso prolongado"],temp:"90°C",tempo:"5 min",dose:"1 col. sopa / 250ml",freq:"após refeição gordurosa",tags:["fígado","digestivo","bile","ressaca"],momento:["qualquer"],bioma:"América do Sul",usos:["chá","medicinal"],restricoes_pais:["Alemanha: uso máx. 6 semanas contínuas (BfArM)","Bélgica: deregistrado em 2014"]},
-  {id:15,n:"Alcachofra",lat:"Cynara scolymus",icon:"🌱",img:"images/produtos/alcachofra.png",tagline:"Detox hepático e redução de colesterol",cat:"Digestivo",ef:"Detox fígado, reduz colesterol, diurética",detail:"Cinarina: aumenta produção de bile. Colerético + detox suave e progressivo. Combina com boldo para digestão pesada.",safe:["hipertensos"],avoid:["gestantes","obstrução biliar","alergia a asteráceas"],temp:"90°C",tempo:"10 min",dose:"1-2 col. sopa / 300ml",freq:"2x ao dia",tags:["fígado","colesterol","digestivo","detox"],momento:["qualquer"],bioma:"Mediterrâneo",usos:["culinária","chá","suplemento","medicinal"],restricoes_pais:[]},
-  {id:16,n:"Guaco",lat:"Mikania glomerata",icon:"🍃",img:"images/produtos/guaco.png",tagline:"Respiração livre e alívio natural",cat:"Respiratório",ef:"Broncodilatador, expectorante, tosse, gripe",detail:"Regulamentado pela ANVISA como fitoterápico. Broncodilatador natural mais eficaz. Pode ser usado como xarope ou chá. 3-4x ao dia em crises.",safe:["hipertensos"],avoid:["gestantes","uso prolongado sem supervisão"],temp:"90°C",tempo:"10 min",dose:"2 col. sopa / 300ml",freq:"3-4x ao dia (gripe)",tags:["tosse","bronquite","gripe","expectorante"],momento:["qualquer"],bioma:"Mata Atlântica",usos:["chá","medicinal"],restricoes_pais:[]},
-  {id:17,n:"Capim-Limão",lat:"Cymbopogon citratus",icon:"🌾",img:"images/produtos/capim-limao.png",tagline:"Calmante tropical e digestivo cítrico",cat:"Calmante",ef:"Calmante, digestivo, antigripal, febre",detail:"Sabor cítrico agradável. Calmante sem sonolência intensa. Antipirétic e antigripal suave. Muito consumido no Brasil.",safe:["gestantes","hipertensos","crianças"],avoid:[],temp:"90°C",tempo:"8 min",dose:"2-3 folhas frescas / 300ml",freq:"3x ao dia",tags:["calmante","febre","digestivo","cítrico"],momento:["qualquer"],bioma:"Brasil",usos:["chá","aromaterapia","culinária","coquetel"],restricoes_pais:[]},
-  {id:18,n:"Folha de Amora",lat:"Morus nigra",icon:"🍃",img:"images/produtos/hibisco-azul-e-amora.png",tagline:"Equilíbrio hormonal e menopausa",cat:"Hormonal",ef:"Menopausa, suores noturnos, fitoestrogênios",detail:"Fitoestrogênios reduzem sintomas da menopausa. Estudo: reduz calores em 50% em 8 semanas. Hipoglicemiante suave.",safe:["hipertensos"],avoid:["gestantes","câncer hormônio-dependente"],temp:"88°C",tempo:"10 min",dose:"1-2 col. sopa / 250ml",freq:"2x ao dia",tags:["menopausa","hormônios","fitoestrogênio","hipoglicemiante"],momento:["tarde","noite"],bioma:"Ásia",usos:["chá","medicinal"],restricoes_pais:[]},
-  {id:19,n:"Erva Cidreira",lat:"Lippia alba",icon:"🍃",img:"images/produtos/erva-cidreira.png",tagline:"Calma suave para toda a família",cat:"Calmante",ef:"Calmante suave, digestiva, ansiedade",detail:"Calmante brasileiro clássico. Suave e seguro para toda a família. Ideal para estresse diário leve sem causar sedação.",safe:["gestantes","crianças","hipertensos"],avoid:[],temp:"85°C",tempo:"7 min",dose:"1-2 col. sopa / 250ml",freq:"3x ao dia",tags:["calmante","ansiedade","digestivo","família"],momento:["tarde","noite","qualquer"],bioma:"Brasil",usos:["chá","medicinal","culinária"],restricoes_pais:[]},
-  {id:20,n:"Espinheira Santa",lat:"Maytenus ilicifolia",icon:"🌿",img:"images/produtos/boldo-espinheira-santa.png",tagline:"Antiácido natural e protetor gástrico",cat:"Digestivo",ef:"Gastrite, úlcera, acidez, antiácido natural",detail:"Antiácido e cicatrizante natural da mucosa gástrica. Regulado pela ANVISA. Tomar em jejum e antes das refeições.",safe:["hipertensos"],avoid:["gestantes","amamentação"],temp:"88°C",tempo:"10 min",dose:"1 col. sopa / 250ml",freq:"3x ao dia em jejum",tags:["gastrite","úlcera","acidez","estômago"],momento:["qualquer"],bioma:"Cerrado",usos:["chá","medicinal"],restricoes_pais:["Contraindicada na gestação e amamentação"]},
-  {id:21,n:"Carqueja",lat:"Baccharis trimera",icon:"🌿",img:"images/produtos/carqueja.png",tagline:"Controle metabólico e detox hepático",cat:"Metabólico",ef:"Termogênica, digestiva, saciedade, diabetes",detail:"Termogênica e reduz absorção de gordura. Auxiliar no emagrecimento. Amargo: combinar com canela para suavizar.",safe:["hipertensos"],avoid:["gestantes"],temp:"90°C",tempo:"8 min",dose:"1 col. sopa / 250ml",freq:"antes das refeições",tags:["emagrecimento","termogênico","diabetes","fígado"],momento:["manha","tarde"],bioma:"Mata Atlântica",usos:["chá","medicinal"],restricoes_pais:[]},
-  {id:22,n:"Ginkgo Biloba",lat:"Ginkgo biloba",icon:"🍃",img:"images/produtos/ginkgo-biloba.png",tagline:"Memória e circulação cerebral",cat:"Cognitivo",ef:"Memória, circulação cerebral, concentração",detail:"Aumenta fluxo sanguíneo cerebral. Resultados em 4-6 semanas de uso contínuo. Evitar com anticoagulantes.",safe:["hipertensos"],avoid:["gestantes","anticoagulantes","antes de cirurgia"],temp:"90°C",tempo:"10 min",dose:"1 col. sopa / 250ml",freq:"2x ao dia",tags:["memória","foco","circulação","cognitivo"],momento:["manha","tarde"],bioma:"Ásia",usos:["suplemento","medicinal","chá"],restricoes_pais:["França: proibida como suplemento alimentar (ANSES 2019)","UE: regulada como medicamento em vários países"]},
-  {id:23,n:"Hibisco Azul",lat:"Clitoria ternatea",icon:"💙",img:"images/produtos/hibisco-azul-e-amora.png",tagline:"Antioxidante cerebral que muda de cor",cat:"Cognitivo",ef:"Antioxidante, memória, ansiedade, muda de cor",detail:"Muda de roxo para rosa/vermelho com limão (antocianinas sensíveis ao pH). Antioxidante cerebral. Estudos mostram melhora em testes cognitivos.",safe:["hipertensos"],avoid:["gestantes"],temp:"90°C",tempo:"5 min",dose:"1-2 col. sopa / 250ml",freq:"1-2x ao dia",tags:["cognitivo","antioxidante","memória","beleza"],momento:["tarde","qualquer"],bioma:"Ásia",usos:["chá","culinária","coquetel","cosméticos"],restricoes_pais:[]},
-  {id:24,n:"Calêndula",lat:"Calendula officinalis",icon:"🌸",img:"images/produtos/calendula.png",tagline:"Cicatrizante floral e regenerador",cat:"Pele",ef:"Cicatrizante, anti-inflamatória, antifúngica",detail:"Cicatrizante interno e externo. Anti-inflamatória da mucosa e pele. Usar também como compressa.",safe:["hipertensos"],avoid:["gestantes","alergia a asteráceas"],temp:"88°C",tempo:"8 min",dose:"1-2 col. sopa flores / 250ml",freq:"2-3x ao dia",tags:["pele","cicatrizante","anti-inflamatório","gastrite"],momento:["qualquer"],bioma:"Mediterrâneo",usos:["cosméticos","medicinal","chá","culinária"],restricoes_pais:[]},
-  {id:25,n:"Rooibos",lat:"Aspalathus linearis",icon:"🍃",img:"images/produtos/rooibos.png",tagline:"Noite sem cafeína, antioxidante único",cat:"Antioxidante",ef:"Antioxidante potente, sem cafeína, anti-aging",detail:"Antioxidante 50x mais potente que chá verde segundo alguns estudos. Sem cafeína: ideal à tarde e noite. Rico em minerais.",safe:["gestantes","crianças","hipertensos"],avoid:[],temp:"95°C",tempo:"5-7 min",dose:"1-2 col. sopa / 300ml",freq:"a qualquer hora",tags:["antioxidante","sem cafeína","anti-aging","pele"],momento:["tarde","noite","qualquer"],bioma:"África",usos:["chá"],restricoes_pais:[]},
-  {id:26,n:"Ashwagandha",lat:"Withania somnifera",icon:"🌿",img:"images/produtos/ashwagandha.png",tagline:"Adaptógeno para estresse e cognição",cat:"Adaptogênico",ef:"Reduz cortisol, estresse, energia, libido",detail:"Reduce cortisol em até 30% em estudos. Adaptogênico: acalma sob estresse, energiza sob fadiga. Resultados em 4-8 semanas.",safe:["hipertensos"],avoid:["gestantes","hipertireoidismo","doenças autoimunes"],temp:"90°C",tempo:"10 min",dose:"1 col. chá pó / 250ml",freq:"2x ao dia",tags:["adaptogênico","estresse","cortisol","libido"],momento:["tarde","noite"],bioma:"Ásia",usos:["medicinal","suplemento","chá"],restricoes_pais:["Dinamarca: proibida como suplemento alimentar (2023)","Irlanda: retirada do mercado (2023)","Nova Zelândia: restrita (Medsafe 2023)"]},
-  {id:27,n:"Guaraná",lat:"Paullinia cupana",icon:"🫐",img:"images/produtos/guarana.png",tagline:"Energia profunda sul-americana",cat:"Estimulante",ef:"Estimulante, foco, metabolismo, emagrecimento",detail:"Cafeína de liberação mais lenta que o café. Menos pico e queda. Rico em taninos e guaranina.",safe:[],avoid:["gestantes","hipertensos","insônia","crianças","após 15h"],temp:"85°C",tempo:"5 min",dose:"1/2 col. chá pó / 250ml",freq:"1x manhã",tags:["energia","foco","metabolismo","estimulante"],momento:["manha"],bioma:"Amazônia",usos:["chá","suplemento","energético","culinária"],restricoes_pais:[]},
-  {id:28,n:"Tomilho",lat:"Thymus vulgaris",icon:"🌿",img:"images/produtos/tomilho.jpg",tagline:"Antisséptico pulmonar e expectorante",cat:"Respiratório",ef:"Expectorante, antisséptico, tosse, bronquite",detail:"Timol: antisséptico pulmonar potente. Usado como xarope na Europa há séculos. Dissolve muco e desinfeta vias aéreas.",safe:["hipertensos"],avoid:["gestantes (doses altas)"],temp:"90°C",tempo:"8 min",dose:"1 col. sopa / 250ml",freq:"3x ao dia",tags:["tosse","expectorante","bronquite","antisséptico"],momento:["qualquer"],bioma:"Mediterrâneo",usos:["culinária","medicinal","aromaterapia","chá"],restricoes_pais:[]},
-  {id:29,n:"Aroeira-da-Praia",lat:"Schinus terebinthifolius Raddi",icon:"🌿",img:"images/produtos/aroeira-da-praia.jpg",cat:"Anti-inflamatório",linha:"Funcional",tagline:"Pimenta-rosa brasileira virou cicatrizante ginecológico oficial.",ef:"Anti-inflamatório tópico — monografado, Cicatrizante ginecológico, Adstringente potente",detail:"Planta caiçara com dupla identidade: tempero gourmet (pimenta-rosa) e fitoterápico monografado. Casca em decocção para uso externo ginecológico — anti-inflamatório e cicatrizante via taninos concentrados.",safe:["adultos saudáveis","hipertensos"],avoid:[],temp:"100°C",tempo:"10 min",dose:"1 g de cascas secas / 150 ml (uso externo)",freq:"banho de assento 3-4x ao dia",tags:["inflamacao","pele","ginecologico","oral"],momento:["qualquer"],bioma:"Mata Atlântica",usos:["medicinal","cosméticos","culinária"],restricoes_pais:[]},
-  {id:30,n:"Assa-Peixe",lat:"Vernonia polyanthes Less",icon:"🌿",img:"images/produtos/assa-peixe.jpg",cat:"Respiratório",linha:"Essencial",tagline:"Arbusto de pastagens brasileiras — expectorante oficial da Anvisa.",ef:"Expectorante — monografado, Anti-inflamatório, Broncodilatador leve",detail:"Arbusto pioneiro de pastagens brasileiras. Expectorante monografado pela Anvisa — saponinas estimulam secreção brônquica. Flor importante para apicultura nacional.",safe:["adultos saudáveis","hipertensos"],avoid:["gestantes","lactantes"],temp:"95°C",tempo:"10 min",dose:"3 g de folhas secas / 150 ml",freq:"1x ao dia em quadros agudos",tags:["respiratorio"],momento:["qualquer"],bioma:"Cerrado",usos:["chá","medicinal"],restricoes_pais:[]},
-  {id:31,n:"Barbatimão",lat:"Stryphnodendron adstringens (Mart.) Coville",icon:"🌿",img:"images/produtos/barbatimao.jpg",cat:"Pele",linha:"Funcional",tagline:"Árvore do cerrado com casca cicatrizante oficial da Anvisa.",ef:"Cicatrizante — monografado, Adstringente potente, Anti-inflamatório tópico",detail:"Árvore do cerrado com a maior concentração de taninos condensados entre as ervas oficiais brasileiras. Creme cicatrizante monografado — taninos formam película proteica sobre feridas. Uso externo.",safe:["adultos saudáveis","hipertensos"],avoid:[],temp:"95°C",tempo:"10 min",dose:"Creme: aplicação tópica conforme bula",freq:"2-3x ao dia",tags:["inflamacao","pele","ginecologico","oral"],momento:["qualquer"],bioma:"Cerrado",usos:["medicinal","cosméticos"],restricoes_pais:[]},
-  {id:32,n:"Boldo-Baiano",lat:"Vernonia condensata Baker",icon:"🌿",img:"images/produtos/boldo-baiano.jpg",cat:"Digestivo",linha:"Essencial",tagline:"O terceiro boldo brasileiro — folha amarga do quintal nordestino.",ef:"Antidispéptico, Hepatoativo leve, Anti-inflamatório leve",detail:"Terceira planta brasileira chamada 'boldo' — folha amarga com sesquiterpenos lactonas. Antidispéptico monografado. Tradição afro-brasileira no Nordeste.",safe:["adultos saudáveis","hipertensos"],avoid:[],temp:"95°C",tempo:"10 min",dose:"conforme monografia oficial",freq:"após refeições",tags:["digestao"],momento:["qualquer"],bioma:"Brasil",usos:["chá","medicinal"],restricoes_pais:[]},
-  {id:33,n:"Boldo-Brasileiro",lat:"Plectranthus barbatus Andrews",icon:"🌿",img:"images/produtos/boldo-brasileiro.jpg",cat:"Digestivo",linha:"Essencial",tagline:"O boldo do quintal brasileiro — planta africana naturalizada, gentil.",ef:"Antidispéptico — monografado, Colagogo leve, Hepatoativo suave",detail:"Planta africana (Plectranthus barbatus) naturalizada nos quintais brasileiros. Antidispéptico monografado, mais gentil que o boldo-do-chile. Forskolina é seu diterpeno característico.",safe:["adultos saudáveis"],avoid:["gestantes","lactantes","crianças","hipertensos"],temp:"95°C",tempo:"5 min",dose:"1 a 3 g de folhas / 150 ml (1 a 3 folhas frescas)",freq:"2-3x ao dia após refeições pesadas",tags:["digestao","hepatico"],momento:["qualquer"],bioma:"Brasil",usos:["chá","medicinal"],restricoes_pais:[]},
-  {id:34,n:"Chambá",lat:"Justicia pectoralis Jacq.",icon:"🌿",img:"images/produtos/chamba.jpg",cat:"Respiratório",linha:"Essencial",tagline:"Erva do Nordeste com aroma de baunilha e ação expectorante oficial.",ef:"Expectorante — monografado, Broncodilatador leve, Antitussígeno suave",detail:"Erva do Ceará com aroma de baunilha (cumarina). Expectorante monografado, permitido a partir dos 3 anos. Base do programa Farmácias Vivas da UFC.",safe:["adultos saudáveis","hipertensos"],avoid:["anticoagulantes"],temp:"95°C",tempo:"10 min",dose:"5 g de partes aéreas / 150 ml",freq:"2-3x ao dia em quadros de tosse",tags:["respiratorio","inflamacao"],momento:["qualquer"],bioma:"Caatinga",usos:["chá","medicinal"],restricoes_pais:["Interação com anticoagulantes (cumarina) — uso cauteloso"]},
-  {id:35,n:"Chapéu-de-Couro",lat:"Echinodorus macrophyllus (Kunth) Micheli",icon:"🌿",img:"images/produtos/chapeu-de-couro.jpg",cat:"Urinário",linha:"Funcional",tagline:"Folha larga de brejo brasileiro — diurético e anti-inflamatório oficial.",ef:"Diurético leve — monografado, Anti-inflamatório — monografado, Antidispéptico",detail:"Folha larga de brejos brasileiros. Diurético e anti-inflamatório monografado — diterpenos clerodanos. Uso tradicional em litíase urinária e gota.",safe:["adultos saudáveis"],avoid:["gestantes","lactantes","hipertensos"],temp:"95°C",tempo:"10 min",dose:"1 g de folhas / 150 ml",freq:"3x ao dia antes das refeições",tags:["urinario"],momento:["qualquer"],bioma:"Cerrado",usos:["chá","medicinal"],restricoes_pais:[]},
-  {id:36,n:"Copaíba",lat:"Copaifera spp. (C. langsdorffii · C. multijuga · C. reticulata)",icon:"🌿",img:"images/produtos/copaiba.jpg",cat:"Anti-inflamatório",linha:"Funcional",tagline:"Óleo-resina do coração da Amazônia — anti-inflamatório tópico poderoso.",ef:"Anti-inflamatório tópico — monografado, Cicatrizante, Antimicrobiano",detail:"Óleo-resina extraído do tronco de árvores amazônicas centenárias. Pomada anti-inflamatória monografada — beta-cariofileno age no receptor canabinoide CB2. Três espécies oficiais.",safe:["adultos saudáveis","hipertensos"],avoid:[],temp:"95°C",tempo:"10 min",dose:"Pomada: aplicação tópica conforme bula",freq:"2-3x ao dia em área afetada",tags:["inflamacao","pele"],momento:["qualquer"],bioma:"Amazônia",usos:["medicinal","cosméticos","aromaterapia"],restricoes_pais:[]},
-  {id:37,n:"Erva-Baleeira",lat:"Cordia verbenacea DC.",icon:"🌿",img:"images/produtos/erva-baleeira.jpg",cat:"Anti-inflamatório",linha:"Funcional",tagline:"Do litoral atlântico ao primeiro fitoterápico brasileiro patenteado (Acheflan).",ef:"Anti-inflamatório tópico — monografado, Analgésico local, Antimicrobiano tópico",detail:"Planta caiçara do litoral atlântico. Primeiro fitoterápico brasileiro com pesquisa clínica completa (Acheflan). Anti-inflamatório tópico via alfa-humuleno e trans-cariofileno.",safe:["adultos saudáveis","hipertensos"],avoid:[],temp:"95°C",tempo:"10 min",dose:"3 g de folhas / 150 ml (uso externo)",freq:"compressa 3x ao dia",tags:["inflamacao"],momento:["qualquer"],bioma:"Mata Atlântica",usos:["medicinal","cosméticos"],restricoes_pais:[]},
-  {id:38,n:"Erva-de-Bicho",lat:"Polygonum punctatum Elliot",icon:"🌿",img:"images/produtos/erva-de-bicho.jpg",cat:"Anti-inflamatório",linha:"Funcional",tagline:"Pimenteira-d'água das várzeas brasileiras — anti-hemorroidal oficial.",ef:"Anti-hemorroidal — monografado, Adstringente (taninos), Hemostático local",detail:"Planta de várzeas brasileiras com sabor picante (polygodial). Anti-hemorroidal monografado — banho de assento. Taninos adstringentes mais leve irritação local produzem efeito contração-cicatrização.",safe:["adultos saudáveis","hipertensos"],avoid:["gestantes","lactantes"],temp:"95°C",tempo:"10 min",dose:"3 g de partes aéreas / 150 ml (uso externo)",freq:"banho de assento 3x ao dia",tags:["hemorroidas"],momento:["qualquer"],bioma:"Brasil",usos:["medicinal"],restricoes_pais:[]},
-  {id:39,n:"Erva-Mate",lat:"Ilex paraguariensis A.St.-Hil.",icon:"🧉",img:"images/produtos/erva-mate.jpg",cat:"Estimulante",linha:"Essencial",tagline:"Chimarrão, tererê e chá-mate — estímulo brasileiro por excelência.",ef:"Estimulante, Antioxidante, Termogênico, Diurético leve",detail:"Xantinas (cafeína mais teobromina) e polifenóis. Ritual comunitário do Sul. Consumo muito quente associado a câncer de esôfago (IARC 2A) — evitar acima de 70°C.",safe:["hipertensos (moderado)"],avoid:["gestantes","insônia","crianças","após 16h"],temp:"70°C",tempo:"4 min",dose:"1 col. sopa / 200ml",freq:"manhã-tarde",tags:["energia","foco","termogênico","antioxidante","tradição"],momento:["manha","tarde"],bioma:"Mata Atlântica",usos:["chá","energético","culinária","coquetel"],restricoes_pais:["IARC 2A: bebidas muito quentes (>70°C) associadas a risco de câncer de esôfago"]},
-  {id:40,n:"Guaçatonga",lat:"Casearia sylvestris Sw.",icon:"🌿",img:"images/produtos/guacatonga.jpg",cat:"Digestivo",linha:"Essencial",tagline:"Erva-de-bugre da Mata Atlântica — antiulcerosa nativa brasileira.",ef:"Antidispéptico — monografado, Antiulcerogênico, Anti-inflamatório",detail:"Irmã menos famosa da espinheira-santa — antidispéptico e antiulcerogênico monografado. Casearinas (diterpenos clerodanos) com atividade antitumoral em estudos de bancada.",safe:["adultos saudáveis","hipertensos"],avoid:["gestantes","lactantes","crianças"],temp:"95°C",tempo:"5 min",dose:"2 a 4 g de folhas / 150 ml",freq:"2-3x ao dia antes das refeições",tags:["digestao","inflamacao","oral"],momento:["qualquer"],bioma:"Mata Atlântica",usos:["chá","medicinal"],restricoes_pais:[]},
-  {id:41,n:"Macela",lat:"Achyrocline satureioides (Lam.) DC.",icon:"🌿",img:"images/produtos/macela.jpg",cat:"Digestivo",linha:"Essencial",tagline:"Flor amarela do pampa — tradição gaúcha de colher na Sexta-Feira Santa.",ef:"Antidispéptico — monografado, Antiespasmódico digestivo, Anti-inflamatório",detail:"Flor amarela do pampa, tradição gaúcha colher na Sexta-Feira Santa. Antidispéptico monografado — flavonoides com ação antiespasmódica e ansiolítica leve. Travesseiros aromáticos do Sul.",safe:["adultos saudáveis","hipertensos"],avoid:["gestantes","crianças"],temp:"95°C",tempo:"5 min",dose:"1,5 g de sumidades floridas / 150 ml",freq:"2-3x ao dia após refeições",tags:["digestao","inflamacao","antiespasmodico"],momento:["noite"],bioma:"Pampas",usos:["chá","medicinal","aromaterapia"],restricoes_pais:[]},
-  {id:42,n:"Quebra-Pedra",lat:"Phyllanthus niruri L.",icon:"🌿",img:"images/produtos/quebra-pedra.jpg",cat:"Urinário",linha:"Funcional",tagline:"A erva que dissolve cálculos renais — litolítico oficial da Anvisa.",ef:"Litolítico — monografado, Diurético leve, Anti-inflamatório",detail:"Erva rasteira que reduz formação de cristais urinários. Litolítico monografado pela Anvisa — lignanas (filantina, hipofilantina) previnem nucleação de oxalato de cálcio. Manter hidratação.",safe:["adultos saudáveis","hipertensos"],avoid:["gestantes"],temp:"95°C",tempo:"10 min",dose:"3 g de partes aéreas / 150 ml",freq:"2-3x ao dia",tags:["urinario"],momento:["qualquer"],bioma:"Amazônia",usos:["chá","medicinal"],restricoes_pais:[]},
-];
+// HERBS mora em js/herbs-data.js (carregado antes deste arquivo) — o
+// prerender lê o mesmo catálogo para a ficha estática (PR 06).
 
 // ── LINHAS ──
 // Classificação comercial da erva (linha de produto).
@@ -294,11 +252,16 @@ function applyLojaState(confirmado){
 
 // "Avise-me quando a loja abrir" (home). Mesmo contrato de pausa.html:
 // fetch para newsletter-subscribe, resposta igual para novo e duplicado.
-function subscribeLojaAviso(form){
+function subscribeLojaAviso(form){ return subscribeEmail(form, 'loja', 'lp.loja.ok', 'lp.loja.err', 'erv_loja_optin'); }
+
+// Um contrato para todos os formulários de e-mail (home, ficha): o que muda
+// é a `source`, que o banco e a Edge Function conferem (D10). A resposta é
+// a mesma para e-mail novo e repetido — nada aqui diz se alguém já assinou.
+function subscribeEmail(form, source, okKey, errKey, optinKey){
   var cfg = window.ERVATORIO_CONFIG || {};
   var input = form.querySelector('input[type="email"]');
   var btn = form.querySelector('button[type="submit"]');
-  var msg = form.parentElement.querySelector('[data-loja-msg]');
+  var msg = form.parentElement.querySelector('[data-email-msg],[data-loja-msg]');
   var v = (input.value || '').trim().toLowerCase();
   var _t = typeof t === 'function' ? t : function(k, fb){ return fb; };
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ input.focus(); input.setAttribute('aria-invalid','true'); return false; }
@@ -310,16 +273,16 @@ function subscribeLojaAviso(form){
   fetch(cfg.FUNCTIONS_URL + '/newsletter-subscribe', {
     method:'POST',
     headers:{ 'Content-Type':'application/json', apikey: cfg.SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + cfg.SUPABASE_PUBLISHABLE_KEY },
-    body: JSON.stringify({ email: v, source: 'loja', locale: locale })
+    body: JSON.stringify({ email: v, source: source, locale: locale })
   }).then(function(res){
     if(!res.ok) throw new Error('HTTP ' + res.status);
     form.style.display = 'none';
-    if(msg){ msg.textContent = _t('lp.loja.ok', 'Anotado. Você será avisado primeiro.'); msg.hidden = false; }
-    try { localStorage.setItem('erv_loja_optin', '1'); } catch(e){}
+    if(msg){ msg.textContent = _t(okKey, 'Anotado. Você será avisado primeiro.'); msg.hidden = false; }
+    try { if(optinKey) localStorage.setItem(optinKey, '1'); } catch(e){}
   }).catch(function(err){
     console.error('[Loja/avise-me]', err);
     if(btn) btn.disabled = false;
-    if(msg){ msg.textContent = _t('lp.loja.err', 'Não consegui salvar agora. Tente de novo em instantes.'); msg.hidden = false; }
+    if(msg){ msg.textContent = _t(errKey, 'Não consegui salvar agora. Tente de novo em instantes.'); msg.hidden = false; }
   });
   return false;
 }
@@ -1055,7 +1018,7 @@ async function loadFichaForHerb(h){
   // 1. Tentar cache local imediatamente (sem latência)
   const ancora = _fichaAncoraForHerb(h);
   if(ancora){
-    slot.innerHTML = `<button class="ficha-cta" onclick="openFichaAncora(${JSON.stringify(ancora.slug)})">Ver ficha completa<span class="ficha-cta-arrow">→</span></button>`;
+    slot.innerHTML = `<button class="ficha-cta" onclick="openFichaAncora('${esc(ancora.slug)}')">Ver ficha completa<span class="ficha-cta-arrow">→</span></button>`;
     return;
   }
 
@@ -1064,247 +1027,25 @@ async function loadFichaForHerb(h){
   try {
     const ficha = await ervaria.loadFichaByLatin(h.lat);
     if(!ficha) return;
-    slot.innerHTML = `<button class="ficha-cta" onclick="openFicha(${JSON.stringify(ficha.slug||'')})">Ver ficha completa<span class="ficha-cta-arrow">→</span></button>`;
+    slot.innerHTML = `<button class="ficha-cta" onclick="openFicha('${esc(ficha.slug||'')}')">Ver ficha completa<span class="ficha-cta-arrow">→</span></button>`;
   } catch(_) {}
 }
 
-// Abre ficha a partir do cache local FICHAS_ANCORA
-function openFichaAncora(slug){
-  if(typeof FICHAS_ANCORA==='undefined' || !FICHAS_ANCORA[slug]){ toast('Ficha indisponível'); return; }
-  _currentFicha = FICHAS_ANCORA[slug];
-  renderFichaModal(_currentFicha);
+// Slug da ficha editorial de uma erva do catálogo (ou null).
+function fichaSlugPorId(herbId){
+  const h=HERBS.find(x=>x.id===herbId);
+  const f=h?_fichaAncoraForHerb(h):null;
+  return f&&f.slug?f.slug:null;
 }
 
-let _currentFicha = null;
-async function openFicha(slug){
-  // 1. Tentar cache local
-  if(typeof FICHAS_ANCORA!=='undefined' && FICHAS_ANCORA[slug]){
-    _currentFicha = FICHAS_ANCORA[slug];
-    renderFichaModal(_currentFicha);
-    return;
-  }
-  // 2. Supabase
-  if(typeof ervaria==='undefined'){ toast('Ficha indisponível'); return; }
-  let ficha = null;
-  try { ficha = await ervaria.loadFichaBySlug(slug); } catch(_) {}
-  if(!ficha){ toast('Ficha indisponível'); return; }
-  _currentFicha = ficha;
-  renderFichaModal(ficha);
-}
-
-function closeFicha(){
-  const ov = document.getElementById('fichaOverlay');
-  if(ov) ov.classList.remove('on');
-  _currentFicha = null;
-}
-
-function renderFichaModal(f){
-  let ov = document.getElementById('fichaOverlay');
-  if(!ov){
-    ov = document.createElement('div');
-    ov.id = 'fichaOverlay';
-    ov.className = 'ficha-overlay';
-    ov.onclick = (e)=>{ if(e.target===ov) closeFicha(); };
-    document.body.appendChild(ov);
-  }
-  const id = f.identificacao || {};
-  const car = f.caracterizacao || {};
-  const pr = f.preparo || {};
-  const ps = f.perfil_sensorial || {};
-  const ac = f.acoes_e_seguranca || {};
-  const cu = f.cultura || {};
-  const rg = f.regulacao || {};
-  const mk = f.marketplace || {};
-  const _nrm = s=>String(s||'').normalize('NFC').toLowerCase().trim();
-  let fichaHerb = HERBS.find(h=>
-    _nrm(h.n)===_nrm(f.nome_popular)||
-    (h.lat&&f.nome_cientifico&&_nrm(f.nome_cientifico).startsWith(_nrm(h.lat.split(' ').slice(0,2).join(' '))))
-  );
-  if(!fichaHerb&&f.nome_popular){
-    const _stableId=n=>{let h=5381;for(let i=0;i<n.length;i++)h=((h<<5)+h)^n.charCodeAt(i);return(h>>>0)%90000+10000;};
-    fichaHerb={id:_stableId(f.nome_popular),n:f.nome_popular,lat:f.nome_cientifico||'',icon:'🌿',cat:'',ef:'',tags:[],safe:[],avoid:[],temp:pr.temperatura_ideal||'',tempo:pr.tempo_de_infusao||'',dose:pr.quantidade||'',freq:pr.melhor_momento||'',tagline:f.tagline||''};
-    if(!HERBS.find(h=>h.id===fichaHerb.id))HERBS.push(fichaHerb);
-  }
-  const fichaHerbId = fichaHerb ? fichaHerb.id : null;
-  const listMaybe = (v) => Array.isArray(v) ? v.map(x=>`<li>${esc(x)}</li>`).join('') : (v?`<li>${esc(v)}</li>`:'');
-  const paragraphs = (v) => Array.isArray(v) ? v.map(x=>`<p>${esc(x)}</p>`).join('') : (v?`<p>${esc(v)}</p>`:'');
-  const dlList = (arr, keyA='label', keyB='texto') => Array.isArray(arr)
-    ? arr.map(x=>`<div class="ficha-kv"><dt>${esc(x[keyA])}</dt><dd>${esc(x[keyB])}</dd></div>`).join('')
-    : '';
-  const gustativo = Array.isArray(ps.gustativo) ? ps.gustativo : [];
-  const trig = Array.isArray(ps.trigeminal) ? ps.trigeminal : [];
-  const evid = Array.isArray(ac.evidencia) ? ac.evidencia : [];
-
-  ov.innerHTML = `
-    <article class="ficha-card" role="dialog" aria-label="Ficha ${esc(f.nome_popular||'')}">
-      <button class="ficha-close" onclick="closeFicha()" aria-label="Fechar">✕</button>
-
-      <header class="ficha-hero">
-        <h1 class="ficha-title">${esc(f.nome_popular||'')}</h1>
-        <div class="ficha-latin">${esc(f.nome_cientifico||'')}</div>
-        ${f.tagline?`<blockquote class="ficha-tagline">${esc(f.tagline)}</blockquote>`:''}
-        ${Array.isArray(f.destaques)&&f.destaques.length?`
-          <ul class="ficha-destaques">
-            ${f.destaques.map(d=>`<li><strong>${esc(d.label)}</strong> ${esc(d.texto)}</li>`).join('')}
-          </ul>`:''}
-        ${fichaHerbId!==null?`
-          <div class="ficha-action-row">
-            <button data-fav-herb="${fichaHerbId}" class="ficha-fav-btn${favorites.includes(fichaHerbId)?' on':''}" onclick="toggleFichaFav(${fichaHerbId})">
-              ${favorites.includes(fichaHerbId)?'♥ Favorito':'♡ Favoritar'}
-            </button>
-            <button data-blend-herb="${fichaHerbId}" class="modal-blend-toggle${blendTray.includes(fichaHerbId)?' in-tray':''}" onclick="toggleTrayModal(${fichaHerbId})" style="flex:1">
-              ${blendTray.includes(fichaHerbId)?'✓ Selecionado para blend':'＋ Selecionar para blend'}
-            </button>
-          </div>`:''}
-      </header>
-
-      ${ac.alerta_critico?`
-        <section class="ficha-alert" role="alert">
-          <div class="ficha-alert-title">⚠ ${esc(ac.alerta_critico.titulo||'Alerta crítico')}</div>
-          ${ac.alerta_critico.titulo2?`<div class="ficha-alert-sub">${esc(ac.alerta_critico.titulo2)}</div>`:''}
-          <div class="ficha-alert-body">${esc(ac.alerta_critico.corpo||'')}</div>
-        </section>`:''}
-
-      <section class="ficha-section">
-        <h2>Identificação</h2>
-        <dl class="ficha-dl">
-          ${id.nome_cientifico?`<div class="ficha-kv"><dt>Nome científico</dt><dd><em>${esc(id.nome_cientifico)}</em></dd></div>`:''}
-          ${id.familia_botanica?`<div class="ficha-kv"><dt>Família</dt><dd>${esc(id.familia_botanica)}</dd></div>`:''}
-          ${id.tipo_botanico?`<div class="ficha-kv"><dt>Tipo</dt><dd>${esc(id.tipo_botanico)}</dd></div>`:''}
-          ${id.parte_usada?`<div class="ficha-kv"><dt>Parte usada</dt><dd>${esc(id.parte_usada)}</dd></div>`:''}
-        </dl>
-        ${Array.isArray(id.sinonimos)&&id.sinonimos.length?`
-          <div class="ficha-sub">Sinônimos</div>
-          <ul class="ficha-bullets">${listMaybe(id.sinonimos)}</ul>`:''}
-      </section>
-
-      <section class="ficha-section">
-        <h2>Caracterização</h2>
-        <dl class="ficha-dl">
-          ${car.sabor_dominante?`<div class="ficha-kv"><dt>Sabor</dt><dd>${esc(car.sabor_dominante)}</dd></div>`:''}
-          ${car.aroma?`<div class="ficha-kv"><dt>Aroma</dt><dd>${esc(car.aroma)}</dd></div>`:''}
-          ${car.cor_da_infusao?`<div class="ficha-kv"><dt>Cor da infusão</dt><dd>${esc(car.cor_da_infusao)}</dd></div>`:''}
-          ${car.intensidade?`<div class="ficha-kv"><dt>Intensidade</dt><dd>${esc(car.intensidade)}</dd></div>`:''}
-          ${car.notas?`<div class="ficha-kv"><dt>Notas</dt><dd>${esc(car.notas)}</dd></div>`:''}
-          ${car.bioma_de_origem?`<div class="ficha-kv"><dt>Bioma</dt><dd>${esc(car.bioma_de_origem)}</dd></div>`:''}
-        </dl>
-        ${Array.isArray(car.distribuicao_geografica)&&car.distribuicao_geografica.length?`
-          <div class="ficha-sub">Distribuição geográfica</div>
-          <ul class="ficha-bullets">${listMaybe(car.distribuicao_geografica)}</ul>`:''}
-      </section>
-
-      <section class="ficha-section">
-        <h2>Preparo</h2>
-        <dl class="ficha-dl">
-          ${pr.temperatura_ideal?`<div class="ficha-kv"><dt>Temperatura</dt><dd>${esc(pr.temperatura_ideal)}</dd></div>`:''}
-          ${pr.tempo_de_infusao?`<div class="ficha-kv"><dt>Tempo de infusão</dt><dd>${esc(pr.tempo_de_infusao)}</dd></div>`:''}
-          ${pr.quantidade?`<div class="ficha-kv"><dt>Quantidade</dt><dd>${esc(pr.quantidade)}</dd></div>`:''}
-          ${pr.metodo?`<div class="ficha-kv"><dt>Método</dt><dd>${esc(pr.metodo)}</dd></div>`:''}
-          ${pr.reinfusoes?`<div class="ficha-kv"><dt>Reinfusões</dt><dd>${esc(pr.reinfusoes)}</dd></div>`:''}
-          ${pr.melhor_momento?`<div class="ficha-kv"><dt>Melhor momento</dt><dd>${esc(pr.melhor_momento)}</dd></div>`:''}
-          ${pr.combina_com?`<div class="ficha-kv"><dt>Combina com</dt><dd>${esc(pr.combina_com)}</dd></div>`:''}
-        </dl>
-        ${f.preparo_ritual?`
-          <div class="ficha-sub">${esc(f.preparo_ritual.titulo||'Preparo cerimonial')}</div>
-          <p>${esc(f.preparo_ritual.texto||'')}</p>`:''}
-      </section>
-
-      ${f.usos_topicos?`
-      <section class="ficha-section">
-        <h2>Usos tópicos</h2>
-        ${f.usos_topicos.evidencia?`<p><strong>Evidência:</strong> ${esc(f.usos_topicos.evidencia)}</p>`:''}
-        ${Array.isArray(f.usos_topicos.aplicacoes)?f.usos_topicos.aplicacoes.map(a=>`
-          <div class="ficha-sub">${esc(a.titulo||'')}</div>
-          <p>${esc(a.texto||'')}</p>`).join(''):''}
-        ${f.usos_topicos.contraindicacoes?`<p class="ficha-warn-inline">${esc(f.usos_topicos.contraindicacoes)}</p>`:''}
-      </section>`:''}
-
-      <section class="ficha-section">
-        <h2>Ações e segurança</h2>
-        ${Array.isArray(ac.acoes_principais)&&ac.acoes_principais.length?`
-          <div class="ficha-sub">Ações principais</div>
-          <ul class="ficha-bullets">${listMaybe(ac.acoes_principais)}</ul>`:''}
-        ${Array.isArray(ac.componentes_ativos)&&ac.componentes_ativos.length?`
-          <div class="ficha-sub">Componentes ativos</div>
-          <dl class="ficha-dl">${dlList(ac.componentes_ativos)}</dl>`:''}
-        ${evid.length?`
-          <div class="ficha-sub">Indicações com evidência</div>
-          <table class="ficha-table">
-            <caption>Evidência clínica e populacional</caption>
-            <thead><tr><th>Indicação</th><th>Evidência</th><th>População</th></tr></thead>
-            <tbody>${evid.map(e=>`<tr><td>${esc(e.indicacao)}</td><td>${esc(e.evidencia)}</td><td>${esc(e.populacao)}</td></tr>`).join('')}</tbody>
-          </table>`:''}
-        ${Array.isArray(ac.contraindicacoes)&&ac.contraindicacoes.length?`
-          <div class="ficha-sub">Contraindicações</div>
-          <ul class="ficha-bullets">${listMaybe(ac.contraindicacoes)}</ul>`:''}
-        ${Array.isArray(ac.interacoes)&&ac.interacoes.length?`
-          <div class="ficha-sub">Interações</div>
-          <dl class="ficha-dl">${dlList(ac.interacoes)}</dl>`:''}
-        ${ac.efeitos_adversos?`<div class="ficha-sub">Efeitos adversos</div><p>${esc(ac.efeitos_adversos)}</p>`:''}
-        ${ac.dose_maxima?`<div class="ficha-sub">Dose máxima</div><p>${esc(ac.dose_maxima)}</p>`:''}
-        ${Array.isArray(ac.fontes)&&ac.fontes.length?`
-          <div class="ficha-sub">Fontes</div>
-          <ul class="ficha-bullets ficha-sources">${listMaybe(ac.fontes)}</ul>`:''}
-      </section>
-
-      <section class="ficha-section">
-        <h2>Perfil sensorial</h2>
-        ${gustativo.length?`
-          <table class="ficha-table">
-            <caption>Perfil gustativo</caption>
-            <thead><tr><th>Dimensão</th><th>Intensidade</th><th>Observação</th></tr></thead>
-            <tbody>${gustativo.map(g=>`<tr><td>${esc(g.dimensao)}</td><td>${esc(g.intensidade)}</td><td>${esc(g.observacao)}</td></tr>`).join('')}</tbody>
-          </table>`:''}
-        ${ps.olfativo_familia?`<div class="ficha-sub">Olfativo — ${esc(ps.olfativo_familia)}</div>`:''}
-        ${Array.isArray(ps.olfativo_descritores)&&ps.olfativo_descritores.length?`
-          <ul class="ficha-bullets">${listMaybe(ps.olfativo_descritores)}</ul>`:''}
-        ${trig.length?`
-          <table class="ficha-table">
-            <caption>Perfil trigeminal</caption>
-            <thead><tr><th>Receptor</th><th>Ativação</th><th>Molécula</th></tr></thead>
-            <tbody>${trig.map(t=>`<tr><td>${esc(t.receptor)}</td><td>${esc(t.ativacao)}</td><td>${esc(t.molecula)}</td></tr>`).join('')}</tbody>
-          </table>`:''}
-        ${ps.tatil?`<div class="ficha-sub">Tátil</div><p>${esc(ps.tatil)}</p>`:''}
-        ${ps.descricao_integrada?`<blockquote class="ficha-pullquote">${esc(ps.descricao_integrada)}</blockquote>`:''}
-      </section>
-
-      <section class="ficha-section">
-        <h2>Cultura</h2>
-        ${cu.historia?`<div class="ficha-sub">História</div>${paragraphs(cu.historia)}`:''}
-        ${cu.cerimonial?`<div class="ficha-sub">Cerimonial</div><p>${esc(cu.cerimonial)}</p>`:''}
-        ${cu.brasil?`<div class="ficha-sub">No Brasil</div>${paragraphs(cu.brasil)}`:''}
-        ${cu.curiosidade?`<blockquote class="ficha-pullquote">${esc(cu.curiosidade)}</blockquote>`:''}
-      </section>
-
-      <section class="ficha-section">
-        <h2>Regulação e origem</h2>
-        <dl class="ficha-dl">
-          ${rg.eixo_botanico_tpc?`<div class="ficha-kv"><dt>Eixo botânico</dt><dd>${esc(rg.eixo_botanico_tpc)}</dd></div>`:''}
-          ${rg.status_anvisa?`<div class="ficha-kv"><dt>ANVISA</dt><dd>${Array.isArray(rg.status_anvisa)?rg.status_anvisa.map(esc).join(' '):esc(rg.status_anvisa)}</dd></div>`:''}
-          ${rg.status_ema?`<div class="ficha-kv"><dt>EMA</dt><dd>${esc(rg.status_ema)}</dd></div>`:''}
-          ${rg.status_fda?`<div class="ficha-kv"><dt>FDA</dt><dd>${esc(rg.status_fda)}</dd></div>`:''}
-          ${rg.certificacao_organica?`<div class="ficha-kv"><dt>Certificação orgânica</dt><dd>${Array.isArray(rg.certificacao_organica)?rg.certificacao_organica.map(esc).join(' '):esc(rg.certificacao_organica)}</dd></div>`:''}
-          ${rg.sazonalidade?`<div class="ficha-kv"><dt>Sazonalidade</dt><dd>${Array.isArray(rg.sazonalidade)?rg.sazonalidade.map(esc).join(' '):esc(rg.sazonalidade)}</dd></div>`:''}
-        </dl>
-      </section>
-
-      ${mk && (mk.fornecedores||mk.faixa_de_preco||mk.formatos)?`
-      <section class="ficha-section ficha-section-mute">
-        <h2>Marketplace</h2>
-        <p class="ficha-mute">Reservado — preencher quando o marketplace do Ervatório for ativado.</p>
-        <dl class="ficha-dl">
-          ${mk.disponivel_a_venda?`<div class="ficha-kv"><dt>Disponível</dt><dd>${esc(mk.disponivel_a_venda)}</dd></div>`:''}
-          ${mk.fornecedores?`<div class="ficha-kv"><dt>Fornecedores</dt><dd>${esc(mk.fornecedores)}</dd></div>`:''}
-          ${mk.faixa_de_preco?`<div class="ficha-kv"><dt>Faixa de preço</dt><dd>${Array.isArray(mk.faixa_de_preco)?mk.faixa_de_preco.map(esc).join(' '):esc(mk.faixa_de_preco)}</dd></div>`:''}
-          ${mk.formatos?`<div class="ficha-kv"><dt>Formatos</dt><dd>${esc(mk.formatos)}</dd></div>`:''}
-        </dl>
-      </section>`:''}
-
-      <footer class="ficha-foot">
-        <span>Ervatório · Ficha ${esc(f.nome_popular||'')} · v${esc(f.schema_version||'1.1')}</span>
-      </footer>
-    </article>`;
-  ov.classList.add('on');
+// A ficha tem UMA tela (D33): quem antes abria o overlay vai para
+// #ficha/<slug>. renderFichaPage (js/ervatorio-pages.js) lê a mesma
+// FICHAS_ANCORA primeiro, então a navegação é instantânea e funciona offline.
+function openFichaAncora(slug){ openFicha(slug); }
+function openFicha(slug){
+  if(!slug){ toast('Ficha indisponível'); return; }
+  const hm=document.getElementById('herbModal'); if(hm) hm.classList.remove('on');
+  goPage('ficha', null, String(slug));
 }
 
 function closeModal(e){
@@ -1325,8 +1066,9 @@ function toggleFav(e,id){
   renderHerbs();
   const now=favorites.includes(id);
   document.querySelectorAll(`[data-fav-herb="${id}"]`).forEach(btn=>{
-    btn.textContent=now?'♥ Favorito':'♡ Favoritar';
+    btn.textContent=now?(btn.dataset.labelOn||'♥ Favorito'):(btn.dataset.labelOff||'♡ Favoritar');
     btn.classList.toggle('on',now);
+    btn.setAttribute('aria-pressed', now?'true':'false');
   });
   toast(now?'Adicionado aos favoritos':'Removido dos favoritos');
 }
@@ -1383,8 +1125,9 @@ function toggleFichaFav(id){
   renderHerbs();
   const now=favorites.includes(id);
   document.querySelectorAll(`[data-fav-herb="${id}"]`).forEach(btn=>{
-    btn.textContent=now?'♥ Favorito':'♡ Favoritar';
+    btn.textContent=now?(btn.dataset.labelOn||'♥ Favorito'):(btn.dataset.labelOff||'♡ Favoritar');
     btn.classList.toggle('on',now);
+    btn.setAttribute('aria-pressed', now?'true':'false');
   });
   toast(now?'Adicionado aos favoritos':'Removido dos favoritos');
 }
@@ -1405,7 +1148,8 @@ function toggleTrayModal(id){
       btn.textContent=now?'✓':'＋';
       btn.classList.toggle('in-tray',now);
     } else {
-      btn.textContent=now?'✓ Selecionado para blend':'＋ Selecionar para blend';
+      btn.textContent=now?(btn.dataset.labelOn||'✓ Selecionado para blend'):(btn.dataset.labelOff||'＋ Selecionar para blend');
+      btn.setAttribute('aria-pressed', now?'true':'false');
       btn.classList.toggle('in-tray',now);
     }
   });
@@ -2433,6 +2177,73 @@ function timerNext(){
   timerState.total=timerState.remaining;
   renderTimerStep();
 }
+// ── TIMER EMBUTIDO NA FICHA (PR 06) ─────────────────────────────
+// O botão «Iniciar preparo · N min» abre uma contagem regressiva no lugar,
+// sem modal. N vem da ficha (fichaResumo().minutos); quando a ficha não diz,
+// o timer nasce em 8 min, avisa que é sugestão e deixa ajustar.
+var fichaTimerState = { total:0, remaining:0, running:false, interval:null, nome:'', sugerido:false };
+function fichaTimerToggle(btn, minutos, nome){
+  var box=document.getElementById('fichaTimer'); if(!box) return;
+  if(!box.hidden){ fichaTimerFechar(); return; }
+  var min=Number(minutos)||0;
+  clearInterval(fichaTimerState.interval);
+  fichaTimerState={ total:(min||8)*60, remaining:(min||8)*60, running:false, interval:null, nome:nome||'', sugerido:!min };
+  box.hidden=false;
+  if(btn) btn.setAttribute('aria-expanded','true');
+  fichaTimerRender();
+  var play=document.getElementById('fichaTimerPlay'); if(play) play.focus();
+}
+function fichaTimerRender(){
+  var box=document.getElementById('fichaTimer'); if(!box) return;
+  var st=fichaTimerState;
+  box.innerHTML='<div class="ficha-timer-box" role="group" aria-label="'+esc(navT('ficha.timer'))+'">'+
+    '<div class="ficha-timer-time" id="fichaTimerDisplay" aria-live="off">'+formatTime(st.remaining)+'</div>'+
+    '<div class="ficha-timer-label" id="fichaTimerLabel" aria-live="polite">'+esc(navT('ficha.timer_wait'))+'</div>'+
+    '<div class="ficha-timer-ctl">'+
+      '<button type="button" class="enc-btn" onclick="fichaTimerAjustar(-1)" aria-label="'+esc(navT('ficha.timer_less'))+'">−1 min</button>'+
+      '<button type="button" class="enc-btn enc-btn-gold" id="fichaTimerPlay" onclick="fichaTimerPlay()">'+esc(navT('ficha.timer_play'))+'</button>'+
+      '<button type="button" class="enc-btn" onclick="fichaTimerAjustar(1)" aria-label="'+esc(navT('ficha.timer_more'))+'">+1 min</button>'+
+      '<button type="button" class="enc-btn" onclick="fichaTimerReset()">'+esc(navT('ficha.timer_reset'))+'</button>'+
+    '</div>'+
+    (st.sugerido?'<p class="ficha-timer-hint">'+esc(navT('ficha.timer_hint'))+'</p>':'')+
+  '</div>';
+}
+function fichaTimerPlay(){
+  var st=fichaTimerState, play=document.getElementById('fichaTimerPlay'), lbl=document.getElementById('fichaTimerLabel');
+  if(st.running){
+    clearInterval(st.interval); st.running=false;
+    if(play) play.textContent=navT('ficha.timer_resume'); if(lbl) lbl.textContent=navT('ficha.timer_paused');
+    return;
+  }
+  if(st.remaining<=0){ fichaTimerReset(); return; }
+  st.running=true;
+  if(play) play.textContent=navT('ficha.timer_pause'); if(lbl) lbl.textContent=navT('ficha.timer_brewing');
+  st.interval=setInterval(function(){
+    st.remaining--;
+    var disp=document.getElementById('fichaTimerDisplay'); if(disp) disp.textContent=formatTime(Math.max(0,st.remaining));
+    if(st.remaining<=0){
+      clearInterval(st.interval); st.running=false;
+      var l=document.getElementById('fichaTimerLabel'); if(l) l.textContent=navT('ficha.timer_done');
+      var p=document.getElementById('fichaTimerPlay'); if(p) p.textContent=navT('ficha.timer_reset');
+      toast(navT('ficha.timer_done'));
+    }
+  },1000);
+}
+function fichaTimerAjustar(delta){
+  var st=fichaTimerState; if(st.running) return;
+  st.total=Math.max(60, st.total+delta*60); st.remaining=st.total; st.sugerido=false;
+  fichaTimerRender();
+}
+function fichaTimerReset(){
+  var st=fichaTimerState; clearInterval(st.interval); st.running=false; st.remaining=st.total;
+  fichaTimerRender();
+}
+function fichaTimerFechar(){
+  var st=fichaTimerState; clearInterval(st.interval); st.running=false;
+  var box=document.getElementById('fichaTimer'); if(box){ box.hidden=true; box.innerHTML=''; }
+  var btn=document.querySelector('.ficha-btn-preparo[aria-expanded="true"]'); if(btn) btn.setAttribute('aria-expanded','false');
+}
+
 let toastTimer;
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.onclick=null; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2500); }
 function toastLink(msg,linkLabel,cb){ const t=document.getElementById('toast'); t.innerHTML=`${esc(msg)} <span style="color:var(--gold2);text-decoration:underline;cursor:pointer">${esc(linkLabel)}</span>`; t.onclick=()=>{ t.classList.remove('show'); cb(); }; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>{t.classList.remove('show');t.onclick=null;},3500); }
@@ -2749,6 +2560,9 @@ function goPage(id,btn,slug){
   // (chips do hero da landing). Ver D8.
   var _intent = null;
   if(id==='search' && slug){ _intent=slug; slug=undefined; }
+  // #ficha/<id numérico> (receitas antigas passavam o id da erva): vira o
+  // slug da ficha antes de o hash ser gravado, para a URL não mentir.
+  if(id==='ficha' && /^\d+$/.test(String(slug||''))){ var _fs=fichaSlugPorId(Number(slug)); if(_fs) slug=_fs; }
   // Gate: quem já entrou no app (login real OU "continuar sem login") pode
   // navegar livremente entre as páginas. Features que exigem conta real
   // (sync de favoritos, salvar blend no cloud, etc.) checam ervaria.user
@@ -2804,7 +2618,7 @@ function goPage(id,btn,slug){
   if(id==='familias' && typeof initFamilias==='function') initFamilias();
   if(id==='familia' && slug && typeof initFamilia==='function') initFamilia(slug);
   if(id==='quiz' && typeof initQuiz==='function') initQuiz(slug);
-  if(id==='receitas' && typeof initReceitas==='function'){ initReceitas(); if(typeof trackAction==='function') trackAction('visit-receitas'); }
+  if(id==='receitas' && typeof initReceitas==='function'){ initReceitas(); if(slug && typeof openReceita==='function') openReceita(slug); if(typeof trackAction==='function') trackAction('visit-receitas'); }
   if(id==='caminho' && typeof initCaminho==='function') initCaminho();
   if(id==='jogo' && typeof initJogo==='function') initJogo();
 
