@@ -1803,3 +1803,63 @@ img,video,canvas,svg{max-width:100%;height:auto}
   .ficha-acoes{position:sticky;bottom:0;z-index:5;background:var(--bg);padding:.6rem 0;margin:0;border-top:1px solid var(--faint)}
   .ficha-acoes .enc-btn{flex:1 1 auto}
 }
+
+/* ── Clube Ervatório — lista de espera (PR 11) ── */
+#page-clube{max-width:1080px}
+.clube-pg{display:flex;flex-direction:column;gap:2.5rem}
+.clube-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:28px;align-items:center}
+.clube-hero-txt{min-width:0}
+.clube-hero-img{margin:0;border-radius:var(--r-lg);overflow:hidden;background:var(--bg3);aspect-ratio:4/3}
+.clube-hero-img img{width:100%;height:100%;object-fit:cover;display:block}
+.clube-badge{display:inline-block;margin:0 0 10px;padding:4px 12px;border-radius:999px;background:rgba(200,168,75,.12);border:1px solid rgba(200,168,75,.4);color:var(--gold2);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase}
+.clube-h1{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:clamp(2rem,5vw,3.2rem);line-height:1.05;color:var(--cream);margin:0 0 14px}
+.clube-h2{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:clamp(1.5rem,3.2vw,2.1rem);line-height:1.15;color:var(--cream);margin:0 0 8px}
+.clube-sub{font-size:1rem;line-height:1.65;color:var(--cream2);margin:0 0 20px;max-width:56ch}
+.clube-sec-sub{font-size:.88rem;line-height:1.6;color:var(--muted);margin:0 0 18px;max-width:62ch}
+.clube-manifesto{background:var(--bg2);border:1px solid var(--faint);border-radius:var(--r-lg);padding:1.5rem 1.6rem}
+.clube-manifesto p{font-family:'Cormorant Garamond',serif;font-size:clamp(1.25rem,2.6vw,1.7rem);line-height:1.45;color:var(--cream);margin:.35rem 0 0}
+.clube-sec{min-width:0}
+.clube-tempos{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.clube-tempo{display:flex;gap:12px;align-items:flex-start;background:var(--bg2);border:1px solid var(--faint);border-radius:var(--r-lg);padding:1rem 1.1rem}
+.clube-tempo-n{flex:0 0 36px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(200,168,75,.12);border:1px solid rgba(200,168,75,.4);color:var(--gold2);font-family:'Cormorant Garamond',serif;font-size:1.1rem}
+.clube-tempo-n2{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:1.3rem;color:var(--cream);margin:0 0 4px;line-height:1.1}
+.clube-tempo-e{font-size:.84rem;line-height:1.55;color:var(--cream2);margin:0}
+.clube-tempo-lbl{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-right:4px}
+.clube-planos{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.clube-plano{position:relative;background:var(--bg2);border:1px solid var(--faint);border-radius:var(--r-lg);padding:1.3rem 1.3rem 1.1rem;display:flex;flex-direction:column}
+.clube-plano.on{background:var(--bg3);border-color:rgba(200,168,75,.45)}
+.clube-plano-badge{position:absolute;top:-10px;left:1.3rem;padding:3px 10px;border-radius:999px;background:var(--gold);color:#1c1608;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+.clube-plano-nome{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:1.6rem;color:var(--cream);margin:0}
+.clube-plano-para{font-size:.78rem;color:var(--muted);margin:2px 0 12px}
+.clube-plano-preco{font-family:'Cormorant Garamond',serif;font-size:1.25rem;color:var(--gold2);margin:0 0 12px;padding-bottom:12px;border-bottom:1px solid var(--faint)}
+.clube-plano-preco span{font-size:.8rem;color:var(--muted);font-family:'Jost',sans-serif}
+.clube-plano-itens{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.clube-plano-itens li{font-size:.86rem;line-height:1.5;color:var(--cream2);padding-left:20px;position:relative}
+.clube-plano-itens li::before{content:'✓';position:absolute;left:0;top:0;color:var(--gold)}
+.clube-nota{font-size:.78rem;line-height:1.55;color:var(--muted);margin:14px 0 0;max-width:72ch}
+.clube-captura{background:var(--bg3);border:1px solid rgba(200,168,75,.33);border-radius:var(--r-lg);padding:1.6rem 1.6rem 1.3rem}
+.clube-captura .clube-h2{margin-top:4px}
+.clube-captura-sub{font-size:.9rem;line-height:1.6;color:var(--cream2);margin:0 0 16px;max-width:60ch}
+.clube-form{display:flex;flex-wrap:wrap;gap:10px;max-width:460px}
+.clube-form input{flex:1 1 200px;min-width:0;min-height:48px;padding:10px 16px;border-radius:999px;border:1px solid var(--faint);background:var(--bg);color:var(--cream);font-family:'Jost',sans-serif;font-size:.9rem}
+.clube-form input:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.clube-form .enc-btn{border-radius:999px;min-height:48px}
+.clube-captura-nota{font-size:.78rem;line-height:1.55;color:var(--muted);margin:12px 0 0}
+.clube-captura-nota a{color:var(--gold2)}
+.clube-onde{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.clube-onde li{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:8px 18px;padding:.7rem 0;border-bottom:1px solid var(--faint)}
+.clube-onde li:last-child{border-bottom:none}
+.clube-onde strong{font-weight:500;color:var(--cream);font-size:.9rem}
+.clube-onde span{color:var(--muted);font-size:.86rem;line-height:1.5}
+.clube-faq-item{border-bottom:1px solid var(--faint)}
+.clube-faq-item summary{cursor:pointer;list-style:none;padding:.9rem 0;min-height:44px;display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--cream);font-size:.95rem}
+.clube-faq-item summary::-webkit-details-marker,.clube-faq-item summary::marker{display:none;content:''}
+.clube-faq-item summary::after{content:'+';color:var(--gold);font-size:1.4rem;line-height:1;flex:0 0 auto}
+.clube-faq-item[open] summary::after{content:'−'}
+.clube-faq-item summary:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.clube-faq-item p{margin:0 0 1rem;font-size:.88rem;line-height:1.65;color:var(--cream2);max-width:70ch}
+@media(max-width:760px){
+  .clube-hero{grid-template-columns:1fr;gap:18px}
+  .clube-hero-img{order:-1;aspect-ratio:16/9}
+  .clube-onde li{grid-template-columns:1fr;gap:2px}
+}

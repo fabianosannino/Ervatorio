@@ -86,7 +86,7 @@ function folhaEstatica() {
   <div class="erv-sheet-groups">${grupos().map((g) => `<a class="erv-sheet-group" href="${hrefEstatico(g.pages[0])}"><span class="erv-sheet-group-name">${esc(t(g.label))}</span>${g.sub ? `<span class="erv-sheet-group-sub">${esc(t(g.sub))}</span>` : ''}</a>`).join('')}</div>
   <div class="erv-sheet-label">${esc(t('nav.account'))}</div>
   <div class="erv-sheet-grid">${visiveis(conta).filter((p) => p.id !== 'sobre').map((p) => `<a class="erv-sheet-cell" href="${hrefEstatico(p)}">${esc(t(p.label))}</a>`).join('')}</div>
-  <div class="erv-sheet-foot"><a href="/#sobre">${esc(t('footer.sobre'))}</a><span aria-hidden="true">·</span><a href="/#lp-clube">${esc(t('footer.clube'))}</a><span aria-hidden="true">·</span><a href="/pausa.html">${esc(t('footer.pausa'))}</a><span aria-hidden="true">·</span><a href="/privacidade.html">${esc(t('footer.privacidade'))}</a></div>
+  <div class="erv-sheet-foot"><a href="/#sobre">${esc(t('footer.sobre'))}</a><span aria-hidden="true">·</span><a href="/#clube">${esc(t('footer.clube'))}</a><span aria-hidden="true">·</span><a href="/pausa.html">${esc(t('footer.pausa'))}</a><span aria-hidden="true">·</span><a href="/privacidade.html">${esc(t('footer.privacidade'))}</a></div>
 </div>`;
 }
 
@@ -95,7 +95,7 @@ export function rodapeEstatico() {
   <div class="erv-footer-inner">
     <div class="erv-footer-links">
       <a href="/#sobre">${esc(t('footer.sobre'))}</a>
-      <a href="/#lp-clube">${esc(t('footer.clube'))}</a>
+      <a href="/#clube">${esc(t('footer.clube'))}</a>
       <a href="/pausa.html">${esc(t('footer.pausa'))}</a>
       <a href="/privacidade.html">${esc(t('footer.privacidade'))}</a>
       <a href="/termos.html">${esc(t('footer.termos'))}</a>

@@ -69,7 +69,7 @@ três commits** (D2).
 | 08b | Diário de infusões (`diario_infusoes`, RLS dono, interruptor `diario`) | **Terceira rodada (16/09)** — ver D19–D21. | PR `feat/diario-infusoes` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 09 | `privacidade.html`: CNPJ/DPO, dado de saúde, base legal, retenção | **Concluído** — os seis `[DEFINIR]` das duas páginas legais foram preenchidos pelo dono no mesmo dia (v1.2); ver D35. | PR `docs/privacy-update` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 10 | Páginas estáticas para receitas, blends, tipos de chá | **Nona rodada (16/09)** — ver D36. | PR `feat/static-pages-recipes-blends` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
-| 11 | Clube (lista de espera → pré-venda → Stripe) | Depois | `feat/clube-waitlist` → `feat/stripe-checkout` |
+| 11 | Clube (lista de espera → pré-venda → Stripe) | **Lista de espera na décima rodada (16/09)** — ver D37–D38. Pré-venda e Stripe dependem dos preços. | PR `feat/clube-waitlist` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) → `feat/stripe-checkout` |
 
 **Recomendação de ordem depois desta rodada:** 08 antes de 05. O dado de
 saúde já está sendo coletado hoje sem consentimento próprio; o fluxo novo é
@@ -292,6 +292,26 @@ para `mailto:`, até existir `/parceiros/`.
 - **(10) `#chas` não aceitava slug**: a página dos tipos de chá abria
   sempre no verde. Agora `#chas/<id>` abre o tipo pedido e trocar a aba
   troca o hash (`replaceState`), como as visões de Origens.
+- **(11) `#clube` também estava em `LANDING_ANCHORS`** — a terceira vez que
+  a colisão da D7 aparece (`#diario` foi a segunda, no 08b). O hash abria a
+  seção da landing e a tela nova nunca apareceria. A tela venceu; a seção
+  continua em `#lp-clube`, que é o que os links internos da landing usam.
+- **(11) O payload do handoff pede `plano_interesse`**, que a
+  `newsletter-subscribe` não aceita e `newsletter_subscribers` não tem. Um
+  campo a mais no JSON seria descartado em silêncio — pior do que não
+  mandar. Fica de fora; entra com a coluna, no PR da pré-venda, quando
+  houver plano para escolher.
+- **(11) Não existe «Guia de Preparo em PDF»**: `/biblioteca/guia-de-preparo/`
+  é página imprimível, não arquivo. A contrapartida é oferecida como «pronto
+  para imprimir», com link — prometer PDF seria prometer o que não há.
+- **(11) A landing chamava o plano de entrada de «Semente»** e o handoff, de
+  «Folha»; as descrições também divergiam. Os três cards da vitrine da
+  landing foram alinhados aos três planos do Clube — o site contradizer a si
+  mesmo sobre o próprio produto custa mais do que a edição.
+- **(11) O arquivo de copy final do Clube veio vazio no pacote**
+  (`Ervatorio_Clube_e_Pausa.data.js`, 0 byte). O texto do hero, dos planos,
+  do «Onde o Clube aparece» e do FAQ foi escrito aqui, a partir do que o
+  README do handoff descreve. Copy para revisão.
 - **(07) A sub-navegação marcava a entrada sem slug junto com a de slug**
   (`!p.slug` era verdadeiro sempre). Não aparecia porque só Blends tinha
   duas entradas na mesma tela e as duas têm slug. Com Origens/Onde beber
@@ -489,6 +509,32 @@ política lista só o que o código faz; o que ainda não faz (double opt-in,
 link de descadastro, operador de pagamento) está dito como pendente, não
 prometido.
 
+
+**D37 — O Clube é tela do app (`#clube`), não `/clube/` estático.** O handoff
+pede uma página estática. Mas o estado do Clube depende de interruptor, e
+página estática não conhece interruptor — é a régua da D23, a mesma que
+mantém Loja e Diário fora das estáticas. Uma `/clube/` gerada diria «lista
+de espera» no dia em que a pré-venda abrisse, até alguém lembrar de rodar o
+`prerender`. Quando o estado parar de mudar, a gêmea estática entra pelo
+gerador do PR 10 sem reescrever nada: o conteúdo já mora em
+`js/clube-data.js`, que o `prerender` lê sem navegador. O Clube **não** é
+item do cabeçalho por enquanto — um item permanente no menu para uma lista
+de espera promete mais do que existe; chega-se a ele pelo rodapé (do app e
+das páginas estáticas), pelo banner e pela seção da landing. O texto
+editorial é PT, como o dos tipos de chá e o das receitas; a moldura
+(títulos, botões, formulário, estado) é que passa pelo i18n.
+
+**D38 — Quem destrava os estados do Clube é o preço, não o interruptor.**
+`clubeEstado()` só sai de «espera» quando `CLUBE_PLANOS` tiver preço; só
+então `assinatura` vale por «ativo» e `clube_pre_venda` por «pré-venda».
+Ligar o interruptor sem valor e sem cobrança daria um botão de assinar que
+não leva a lugar nenhum — exatamente o defeito que o PR 02 tirou do site
+inteiro. O `clube_pre_venda` continua **não existindo** em
+`interruptores_conhecidos()` (D11): ele entra na migration do PR da
+pré-venda, junto com os preços e a Stripe, e aí o servidor precisa recusar
+cobrança fora de «ativo». O teste E2E liga os dois interruptores e exige
+que a tela continue na lista de espera.
+
 > **Fechado no mesmo dia.** O dono informou os valores e a v1.2 das duas
 > páginas os traz: controlador e operador = CNPJ 20.507.723/0001-99,
 > Alameda Campinas, 696 — São Paulo/SP; encarregado = Fabiano Sannino
@@ -654,6 +700,21 @@ npx playwright test tests/e2e/encontrar.spec.mjs   # 6 cenários
     «Descobrir › Tipos de chá»; `sitemap.xml` com 236 URLs.
 38. No app, `/#chas/preto` abre o chá preto; clicar em «Chá Branco» muda
     o hash para `#chas/branco`.
+39. `/#clube` **sem conta**: abre a tela (não a seção da landing), com o
+    selo «Lista de espera», o manifesto, os cinco tempos, três planos com
+    «Preço em definição», a captura, «Onde o Clube aparece» e o FAQ.
+    Nenhum «R$» na página.
+40. «Entrar na lista» leva ao formulário e põe o foco no campo; enviar um
+    e-mail faz `POST newsletter-subscribe` com `source: "clube"` e o
+    formulário some com «Anotado…».
+41. No devtools: `window.ERV_INTERRUPTORES = {assinatura:true,
+    clube_pre_venda:true}; renderClube()` — a tela **continua** na lista de
+    espera, sem preço e sem botão de assinar.
+42. Rodapé do app, folha do celular e rodapé das páginas estáticas levam a
+    `#clube`; a seção `#lp-clube` continua na landing, e os links internos
+    dela (banner, «A seguir») seguem funcionando.
+43. Os três planos da vitrine da landing dizem o mesmo que os do Clube
+    (Folha · Raiz · Floresta).
 
 ## 5. Rollback
 
@@ -690,3 +751,10 @@ interno) e um teste; sem migration, sem função, sem dado.
 **10.** `git revert` do commit e `npm run prerender` (as pastas `receitas/`,
 `blends/` e `chas/` somem do commit revertido; o sitemap volta a 192 URLs).
 Sem migration, sem função, sem dado.
+
+**11 (lista de espera).** `git revert` do commit e `npm run prerender` (o
+rodapé das estáticas volta a apontar para `#lp-clube`). Sem migration, sem
+função, sem dado: a `source: "clube"` já era aceita desde o PR 04. Degrau
+menor, sem revert: a tela não some sozinha — se for preciso tirá-la do ar,
+o caminho é remover o link do rodapé, porque ela não está atrás de
+interruptor (não tem o que desligar: não cobra nada).

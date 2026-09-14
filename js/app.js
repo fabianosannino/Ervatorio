@@ -171,7 +171,7 @@ function openMenuSheet(){
     }).join('')+'</div>'+
     '<div class="erv-sheet-foot">'+
       '<a href="'+pageHash('sobre')+'">'+esc(navT('footer.sobre'))+'</a><span aria-hidden="true">·</span>'+
-      '<a href="/#lp-clube">'+esc(navT('footer.clube'))+'</a><span aria-hidden="true">·</span>'+
+      '<a href="#clube">'+esc(navT('footer.clube'))+'</a><span aria-hidden="true">·</span>'+
       '<a href="/pausa.html">'+esc(navT('footer.pausa'))+'</a><span aria-hidden="true">·</span>'+
       '<a href="/privacidade.html">'+esc(navT('footer.privacidade'))+'</a>'+
       '<span class="erv-sheet-langs" id="sheetLangSwitcher"></span>'+
@@ -1990,6 +1990,119 @@ function renderPerfilRecomendacoes(){
 // ════════════════════════════════════════
 let timerState={steps:[],current:0,remaining:0,total:0,running:false,interval:null,herbName:''};
 
+// ════════════════════════════════════════
+// ── CLUBE ERVATÓRIO (PR 11 do handoff) ──
+// ════════════════════════════════════════
+// Estado do Clube: espera → pré-venda → ativo (D11 — dois booleanos, não
+// um enum). Hoje só «espera» é alcançável, e o guarda é o preço, não o
+// interruptor: ligar `assinatura` sem valor e sem cobrança daria um botão
+// que não leva a lugar nenhum, que é o defeito que o PR 02 tirou do site
+// inteiro. Quando os preços entrarem em CLUBE_PLANOS, os outros estados
+// destravam — e aí o servidor precisa recusar cobrança fora de «ativo».
+function clubeEstado(){
+  var temPreco = typeof CLUBE_PLANOS !== 'undefined' && CLUBE_PLANOS.some(function(p){ return p.preco; });
+  if(!temPreco) return 'espera';
+  if(flagLigada('assinatura')) return 'ativo';
+  if(flagLigada('clube_pre_venda')) return 'pre';
+  return 'espera';
+}
+
+function clubeIrParaCaptura(){
+  var el = document.getElementById('clubeCaptura');
+  if(!el) return;
+  el.scrollIntoView({ behavior:'smooth', block:'center' });
+  var input = document.getElementById('clubeEmail');
+  if(input) setTimeout(function(){ input.focus(); }, 320);
+}
+
+function renderClube(){
+  var el = document.getElementById('clubePageContent');
+  if(!el) return;
+  var estado = clubeEstado();
+  var T = navT;
+
+  var tempos = CLUBE_TEMPOS.map(function(t, i){
+    return '<li class="clube-tempo">'+
+      '<span class="clube-tempo-n" aria-hidden="true">'+(i+1)+'</span>'+
+      '<div><h3 class="clube-tempo-n2">'+esc(t.n)+'</h3>'+
+      '<p class="clube-tempo-e"><span class="clube-tempo-lbl">'+esc(T('clube.entrega'))+'</span> '+esc(t.entrega)+'</p></div>'+
+    '</li>';
+  }).join('');
+
+  var planos = CLUBE_PLANOS.map(function(p){
+    return '<li class="clube-plano'+(p.destaque?' on':'')+'">'+
+      (p.destaque?'<span class="clube-plano-badge">'+esc(T('clube.mais_escolhido'))+'</span>':'')+
+      '<h3 class="clube-plano-nome">'+esc(p.nome)+'</h3>'+
+      '<p class="clube-plano-para">'+esc(p.para)+'</p>'+
+      '<p class="clube-plano-preco">'+(p.preco ? esc(p.preco)+(p.periodo?'<span>/'+esc(p.periodo)+'</span>':'') : esc(T('clube.preco_definir')))+'</p>'+
+      '<ul class="clube-plano-itens">'+p.itens.map(function(i){ return '<li>'+esc(i)+'</li>'; }).join('')+'</ul>'+
+    '</li>';
+  }).join('');
+
+  var onde = CLUBE_ONDE.map(function(o){
+    return '<li><strong>'+esc(o.onde)+'</strong><span>'+esc(o.oque)+'</span></li>';
+  }).join('');
+
+  var faq = CLUBE_FAQ.map(function(f){
+    return '<details class="clube-faq-item"><summary>'+esc(f.q)+'</summary><p>'+esc(f.a)+'</p></details>';
+  }).join('');
+
+  // A captura some no estado «ativo»: quem já é membro não entra em lista.
+  var captura = estado === 'ativo' ? '' :
+    '<section class="clube-captura" id="clubeCaptura">'+
+      '<div class="enc-eyebrow">'+esc(T('clube.cap_tag'))+'</div>'+
+      '<h2 class="clube-h2">'+esc(T('clube.cap_titulo'))+'</h2>'+
+      '<p class="clube-captura-sub">'+esc(T('clube.cap_sub'))+'</p>'+
+      '<form class="clube-form" onsubmit="return subscribeEmail(this,\'clube\',\'clube.cap_ok\',\'clube.cap_err\',\'erv_clube_optin\')">'+
+        '<label class="sr-only" for="clubeEmail">'+esc(T('clube.cap_email'))+'</label>'+
+        '<input id="clubeEmail" type="email" required autocomplete="email" placeholder="voce@exemplo.com">'+
+        '<button type="submit" class="enc-btn enc-btn-gold">'+esc(T('clube.cap_btn'))+'</button>'+
+      '</form>'+
+      '<p class="clube-captura-nota" data-email-msg hidden></p>'+
+      '<p class="clube-captura-nota">'+esc(T('clube.cap_nota'))+' '+
+        '<a href="/biblioteca/guia-de-preparo/">'+esc(T('clube.cap_guia'))+'</a></p>'+
+    '</section>';
+
+  el.innerHTML =
+    '<article class="clube-pg">'+
+      '<header class="clube-hero">'+
+        '<div class="clube-hero-txt">'+
+          '<p class="enc-eyebrow">'+esc(T('clube.eyebrow'))+'</p>'+
+          (estado==='espera'?'<span class="clube-badge">'+esc(T('clube.badge_espera'))+'</span>':'')+
+          '<h1 class="clube-h1">'+esc(T('clube.titulo'))+'</h1>'+
+          '<p class="clube-sub">'+esc(T('clube.sub'))+'</p>'+
+          '<button type="button" class="enc-btn enc-btn-gold" onclick="clubeIrParaCaptura()">'+esc(T('clube.cta'))+'</button>'+
+        '</div>'+
+        '<figure class="clube-hero-img"><img src="images/pausa/pausa-momento.png" alt="" loading="lazy" onerror="this.parentNode.remove()"></figure>'+
+      '</header>'+
+      '<section class="clube-manifesto">'+
+        '<div class="enc-eyebrow">'+esc(T('clube.manifesto_tag'))+'</div>'+
+        '<p>'+esc(T('clube.manifesto'))+'</p>'+
+      '</section>'+
+      '<section class="clube-sec">'+
+        '<h2 class="clube-h2">'+esc(T('clube.ritual_titulo'))+'</h2>'+
+        '<p class="clube-sec-sub">'+esc(T('clube.ritual_sub'))+'</p>'+
+        '<ol class="clube-tempos">'+tempos+'</ol>'+
+      '</section>'+
+      '<section class="clube-sec">'+
+        '<h2 class="clube-h2">'+esc(T('clube.planos_titulo'))+'</h2>'+
+        '<p class="clube-sec-sub">'+esc(T('clube.planos_sub'))+'</p>'+
+        '<ul class="clube-planos">'+planos+'</ul>'+
+        '<p class="clube-nota">'+esc(T('clube.planos_nota'))+'</p>'+
+      '</section>'+
+      captura+
+      '<section class="clube-sec">'+
+        '<h2 class="clube-h2">'+esc(T('clube.onde_titulo'))+'</h2>'+
+        '<p class="clube-sec-sub">'+esc(T('clube.onde_sub'))+'</p>'+
+        '<ul class="clube-onde">'+onde+'</ul>'+
+      '</section>'+
+      '<section class="clube-sec">'+
+        '<h2 class="clube-h2">'+esc(T('clube.faq_titulo'))+'</h2>'+
+        faq+
+      '</section>'+
+    '</article>';
+}
+
 function openTimer(herbId){
   const h=HERBS.find(x=>x.id===herbId);
   if(!h)return;
@@ -2469,7 +2582,7 @@ function saveBlendFromCtr(){
 
 // ── override goPage to handle all pages ──
 // Pages accessible without login
-const PUBLIC_PAGES = ['search','ervatorio','ficha','blends','blend','sabores','guia-sensorial','roda','ferramentas','ferramenta','familias','familia','quiz','chas','mundo','receitas','jogo','caminho'];
+const PUBLIC_PAGES = ['search','ervatorio','ficha','clube','blends','blend','sabores','guia-sensorial','roda','ferramentas','ferramenta','familias','familia','quiz','chas','mundo','receitas','jogo','caminho'];
 
 // Esconde a landing e expõe o container do app. Idempotente.
 // Usado por goPage() e pelo hash handler para que deep links
@@ -2532,6 +2645,7 @@ function goPage(id,btn,slug){
   if(id==='roda')window.initRoda();
   if(id==='perfil')renderPerfil();
   if(id==='diario' && typeof renderDiario==='function') renderDiario();
+  if(id==='clube' && typeof renderClube==='function') renderClube();
   if(id==='search'){
     // Com intenção no hash, o fluxo abre já no passo 2 (ou 3, se o link traz
     // momento e restrição); sem, volta ao passo 1.
@@ -2607,7 +2721,9 @@ var HASH_ALIASES = {
 // nomes antigos, que ainda podem chegar por link. Nao ha pagina — o navegador rola.
 // `diario` saiu daqui no PR 08b: agora é página do app (#diario). A seção da
 // landing continua em #lp-diario, que é o que os links dela já usam.
-var LANDING_ANCHORS = { 'clube':'lp-clube', 'colecoes':'lp-colecoes', 'mapa':'lp-mapa' };
+// `clube` saiu daqui no PR 11: virou tela do app (#clube), como o `diario`
+// no 08b. Os links da landing usam `#lp-clube`, que continua sendo a seção.
+var LANDING_ANCHORS = { 'colecoes':'lp-colecoes', 'mapa':'lp-mapa' };
 
 function pageHash(id, slug){
   // Tela + slug com nome próprio (mundo/beber → #onde-beber) vem antes.
