@@ -1,5 +1,5 @@
 -- ============================================================
--- Teste do dado de saúde (20260915120000_perfil_saude.sql)
+-- Teste do dado de saúde (20260915120000_perfil_saude.sql + 20260915130000_perfil_saude_privilegios.sql)
 -- ============================================================
 -- Roda num Postgres descartável, sem tocar em Supabase nenhum. Monta um
 -- arremedo do ambiente, aplica a migration DE VERDADE via \i e prova o que
@@ -52,10 +52,17 @@ GRANT USAGE ON SCHEMA public TO authenticated, anon;
 GRANT USAGE ON SCHEMA auth TO authenticated, anon;
 GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated, anon;
 
+-- O Supabase concede ALL a anon/authenticated em toda tabela nova de public
+-- (ALTER DEFAULT PRIVILEGES). Sem reproduzir isso, o teste não vê o que a
+-- primeira versão da migration deixou passar (ver 20260915130000).
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  GRANT ALL ON TABLES TO anon, authenticated;
+
 -- ------------------------------------------------------------
--- A migration, de verdade
+-- As migrations, de verdade
 -- ------------------------------------------------------------
 \i supabase/migrations/20260915120000_perfil_saude.sql
+\i supabase/migrations/20260915130000_perfil_saude_privilegios.sql
 
 -- ------------------------------------------------------------
 -- Bloco 1 — a limpeza tirou o dado sensível e deixou a preferência real
@@ -174,4 +181,24 @@ SELECT count(*) = 0 AS bloco9_cai_com_a_conta
 -- Bloco 10 — idempotência: aplicar de novo não quebra
 -- ------------------------------------------------------------
 \i supabase/migrations/20260915120000_perfil_saude.sql
+\i supabase/migrations/20260915130000_perfil_saude_privilegios.sql
 SELECT true AS bloco10_idempotente;
+
+-- ------------------------------------------------------------
+-- Bloco 11 — privilégios de tabela: só o necessário, nominalmente
+-- ------------------------------------------------------------
+-- anon: nada. authenticated: SELECT, INSERT, DELETE e UPDATE só nas quatro
+-- colunas (user_id fica de fora). Nem TRUNCATE, nem TRIGGER, nem REFERENCES.
+SELECT
+  NOT has_table_privilege('anon', 'public.perfil_saude', 'SELECT')
+  AND NOT has_table_privilege('anon', 'public.perfil_saude', 'INSERT')
+  AND has_table_privilege('authenticated', 'public.perfil_saude', 'SELECT')
+  AND has_table_privilege('authenticated', 'public.perfil_saude', 'INSERT')
+  AND has_table_privilege('authenticated', 'public.perfil_saude', 'DELETE')
+  AND NOT has_table_privilege('authenticated', 'public.perfil_saude', 'TRUNCATE')
+  AND NOT has_table_privilege('authenticated', 'public.perfil_saude', 'TRIGGER')
+  AND NOT has_table_privilege('authenticated', 'public.perfil_saude', 'REFERENCES')
+  AND NOT has_table_privilege('authenticated', 'public.perfil_saude', 'UPDATE')          -- tabela inteira: não
+  AND has_column_privilege('authenticated', 'public.perfil_saude', 'condicoes', 'UPDATE') -- coluna: sim
+  AND NOT has_column_privilege('authenticated', 'public.perfil_saude', 'user_id', 'UPDATE')
+  AS bloco11_privilegios_minimos;

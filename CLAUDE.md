@@ -191,6 +191,14 @@ e as decisões D1–D14. As que mais mudam o jeito de trabalhar aqui:
 - **Já houve vazamento**: `user_preferences.caffeine_pref` recebia a primeira
   «condição» do perfil. A migration limpou os valores conhecidos; a
   sincronização não escreve mais ali.
+- **Tabela nova nasce com ALL para `anon` e `authenticated`** — o projeto
+  Supabase tem `ALTER DEFAULT PRIVILEGES` que concede tudo em `public`. `GRANT`
+  soma, não subtrai: a primeira migration de `perfil_saude` deu `UPDATE` por
+  coluna e deixou o `UPDATE` de tabela inteira, `TRUNCATE`, `TRIGGER` e
+  `REFERENCES` que já estavam lá (conferido em produção; corrigido em
+  `20260915130000`). Em tabela nova, **sempre `REVOKE ALL FROM anon,
+  authenticated` antes dos `GRANT`**, e o teste simula os default privileges
+  (`ALTER DEFAULT PRIVILEGES ... GRANT ALL`) para pegar isso.
 - Mexeu nisso? Rode `supabase/tests/20260915_perfil_saude_test.sql`.
 
 ## Compliance
