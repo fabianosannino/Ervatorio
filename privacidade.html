@@ -23,11 +23,14 @@
   table{border-collapse:collapse;width:100%;font-size:.9rem;margin:12px 0;background:var(--panel)}
   th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
   th{background:var(--verde);color:var(--creme);font-weight:600}
-  .review{background:#f8e8d6;border-left:4px solid #b5661a;padding:12px 16px;border-radius:0 8px 8px 0;font-size:.88rem;margin:20px 0}
+  .cta{display:inline-block;background:var(--verde);color:var(--creme);border:1px solid var(--ouro);border-radius:10px;padding:12px 22px;font:inherit;font-size:.95rem;cursor:pointer}
+code{font-size:.88em;background:var(--panel);padding:1px 5px;border-radius:4px}
+.review{background:#f8e8d6;border-left:4px solid #b5661a;padding:12px 16px;border-radius:0 8px 8px 0;font-size:.88rem;margin:20px 0}
   footer{background:var(--verde);color:#c3b89e;padding:24px 20px;font-size:.82rem;text-align:center}
   footer a{color:var(--ouro)}
 </style>
   <link rel="stylesheet" href="/css/editorial-pages.css">
+<script defer src="/js/consent.js"></script>
 <!-- erv-nav-css -->
 <link rel="stylesheet" href="/css/nav.css">
 <!-- /erv-nav-css -->
@@ -58,69 +61,92 @@
   <div class="wrap">
     <a href="/">← Voltar ao Ervatório</a>
     <h1>Política de Privacidade</h1>
-    <p class="updated">Última atualização: 16 de julho de 2026 · Versão 1.0</p>
+    <p class="updated">Última atualização: 14 de setembro de 2026 · Versão 1.1</p>
   </div>
 </header>
 <main class="wrap">
 
-  <div class="review">⚖️ <strong>Revisão jurídica pendente:</strong> este documento foi elaborado como base operacional conforme a LGPD (Lei nº 13.709/2018) e deve ser revisado por advogado(a) antes de ser considerado definitivo. Os campos marcados com [DEFINIR] precisam ser preenchidos pelo controlador.</div>
+  <div class="review"><strong>Revisão jurídica pendente:</strong> este documento é a base operacional do Ervatório conforme a LGPD (Lei nº 13.709/2018) e deve ser revisado por advogado(a) antes de ser considerado definitivo. Dois campos ainda dependem de decisão do controlador e estão marcados com <strong>[DEFINIR]</strong>: a identificação do controlador (seção 1) e o nome do encarregado (seção 2). Tudo o mais descreve o que o sistema faz hoje.</div>
 
-  <h2>1. Quem somos (Controlador)</h2>
-  <p>O <strong>Ervatório</strong> (ervatorio.com.br) é uma plataforma de curadoria botânica — enciclopédia de ervas, ferramentas de exploração e loja de chás e acessórios. O controlador dos dados pessoais tratados nesta plataforma é: <strong>[DEFINIR: razão social/nome, CNPJ/CPF, endereço]</strong>.</p>
+  <h2 id="controlador">1. Quem somos (Controlador)</h2>
+  <p>O <strong>Ervatório</strong> (ervatorio.com.br) é uma plataforma de curadoria botânica: enciclopédia de ervas, ferramentas de preparo e recomendação, conta pessoal e, quando aberta, uma loja curada de chás. O controlador dos dados pessoais tratados aqui é: <strong>[DEFINIR: razão social ou nome, CNPJ ou CPF, endereço]</strong>.</p>
 
-  <h2>2. Encarregado (DPO)</h2>
-  <p>Canal do encarregado pelo tratamento de dados pessoais: <strong>[DEFINIR: nome e e-mail do DPO, ex.: privacidade@ervatorio.com.br]</strong>. Use este canal para qualquer solicitação relacionada aos seus dados.</p>
+  <h2 id="encarregado">2. Encarregado (DPO)</h2>
+  <p>Encarregado pelo tratamento de dados pessoais: <strong>[DEFINIR: nome e e-mail do encarregado]</strong>. Enquanto o encarregado não for nomeado, o canal para qualquer pedido sobre seus dados é <a href="mailto:contato@ervatorio.com.br">contato@ervatorio.com.br</a>. Respondemos em até 15 dias.</p>
 
-  <h2>3. Quais dados coletamos e por quê</h2>
+  <h2 id="dados">3. Quais dados tratamos, para quê e com que base legal</h2>
+  <p>O princípio é a minimização: pedimos só o que a funcionalidade usa, e cada linha abaixo existe no sistema hoje.</p>
   <table>
-    <thead><tr><th>Dados</th><th>Quando</th><th>Finalidade</th><th>Base legal (LGPD art. 7º)</th></tr></thead>
+    <thead><tr><th>Dados</th><th>Quando</th><th>Finalidade</th><th>Base legal (LGPD)</th></tr></thead>
     <tbody>
-      <tr><td>Nome, e-mail, telefone, cidade/estado/país, perfil de interesse em chás</td><td>Criação de conta</td><td>Autenticação, personalização do app, comunicação sobre a conta</td><td>Execução de contrato (V) e consentimento (I)</td></tr>
-      <tr><td>Endereço de entrega e dados do pedido</td><td>Compra na loja</td><td>Processar, faturar e entregar o pedido; obrigações fiscais e de consumo</td><td>Execução de contrato (V); obrigação legal (II)</td></tr>
-      <tr><td>Dados de pagamento</td><td>Checkout</td><td>Processados diretamente pelo <strong>Mercado Pago</strong> — o Ervatório não coleta nem armazena números de cartão</td><td>Execução de contrato (V)</td></tr>
-      <tr><td>Preferências de uso (favoritos, blends, diário de degustação)</td><td>Uso do app</td><td>Funcionalidades do produto</td><td>Execução de contrato (V)</td></tr>
-      <tr><td>E-mail para newsletter</td><td>Opt-in explícito</td><td>Envio de conteúdo e novidades</td><td>Consentimento (I) — revogável a qualquer momento</td></tr>
-      <tr><td>Dados de navegação/analytics e cookies não essenciais</td><td>Somente após consentimento no banner de cookies</td><td>Métricas de uso e melhoria do produto</td><td>Consentimento (I)</td></tr>
+      <tr><td><strong>Conta:</strong> nome e e-mail</td><td>Criação de conta</td><td>Entrar, sincronizar sua estante e suas preferências entre aparelhos, comunicação sobre a conta</td><td>Execução de contrato (art. 7º, V)</td></tr>
+      <tr><td><strong>Preferências e uso:</strong> sabores e momentos preferidos, ervas salvas na estante, blends salvos, progresso da jornada e histórico da roda de sabores</td><td>Uso do app com conta</td><td>Funcionalidades do produto; sem conta, tudo isso fica só no seu aparelho (seção 5)</td><td>Execução de contrato (art. 7º, V)</td></tr>
+      <tr><td><strong>Diário de infusões:</strong> erva, horário e uma sensação de lista fechada («relaxei», «dormi bem», «energia», «foco», «digestão», «sem efeito», «não gostei»)</td><td>Só quando o recurso estiver ativo e você registrar</td><td>Seu próprio registro. Não há campo de texto livre, de propósito: um campo aberto é onde uma condição de saúde entraria sem consentimento</td><td>Execução de contrato (art. 7º, V)</td></tr>
+      <tr><td><strong>Saúde e restrições (dado sensível):</strong> condições de uma lista fechada — gestante, amamentando, hipertensão, uso de anticoagulante, criança, diabetes, alergia a asteráceas</td><td>Só se você marcar, no Perfil, o consentimento próprio para isso</td><td><strong>Uma única finalidade:</strong> esconder ervas com contraindicação para você nas recomendações e nas fichas. Não usamos para nada mais, não cruzamos com outros dados e não compartilhamos</td><td>Consentimento específico e destacado para finalidade específica (art. 11, I). Retirar o consentimento apaga o dado na hora</td></tr>
+      <tr><td><strong>Restrições informadas sem conta</strong> no «Encontre seu chá»</td><td>Ao escolher chips como «gestante» ou «hipertensão» no passo 2</td><td>Filtrar o resultado daquela busca</td><td>Não são enviadas ao servidor nem gravadas no aparelho: valem só naquela sessão do navegador</td></tr>
+      <tr><td><strong>E-mail para a Pausa e avisos:</strong> e-mail, origem do formulário (Pausa, loja, clube, ficha, receita…), idioma e data do envio</td><td>Quando você deixa o e-mail num formulário do site</td><td>Enviar a newsletter Pausa e avisar da abertura do que você pediu (loja, clube)</td><td>Consentimento (art. 7º, I), revogável a qualquer momento. A data registrada é a do envio do formulário; ainda não há confirmação por e-mail (double opt-in)</td></tr>
+      <tr><td><strong>Pedidos:</strong> nome, endereço e telefone para entrega, itens e valores</td><td>Compra na loja</td><td>Processar, faturar e entregar; obrigações fiscais e de consumo</td><td>Execução de contrato (art. 7º, V) e obrigação legal (art. 7º, II). <strong>A loja está fechada hoje</strong> e não aceita pedidos novos</td></tr>
+      <tr><td><strong>Pagamento</strong></td><td>Checkout, quando a loja abrir</td><td>Processado por um operador de pagamento; o Ervatório não coleta nem armazena números de cartão</td><td>Execução de contrato (art. 7º, V). O operador será nomeado nesta política <strong>antes</strong> da abertura da loja</td></tr>
+      <tr><td><strong>Indicação de parceiros:</strong> ao clicar em «comprar no parceiro» registramos o produto e a data/hora do clique</td><td>Clique num link de indicação</td><td>Medir o volume encaminhado a cada parceiro (recebemos comissão)</td><td>Não identifica você: sem IP, sem sessão, sem conta. A partir do clique vale a política do parceiro</td></tr>
+      <tr><td><strong>Medição de uso e marketing:</strong> Google Tag Manager/GA4, Microsoft Clarity e Meta Pixel</td><td>Somente após o seu aceite no banner de cookies</td><td>Entender o uso do site e melhorar o produto; remarketing só com a categoria «marketing» aceita</td><td>Consentimento (art. 7º, I). Nenhuma dessas ferramentas está ativa no momento; quando ativarmos, continuará valendo só com consentimento</td></tr>
+      <tr><td><strong>Registros técnicos:</strong> contadores de limite de requisições e logs das funções do servidor</td><td>Uso do site</td><td>Segurança e prevenção de abuso</td><td>Legítimo interesse (art. 7º, IX), com retenção curta (seção 6)</td></tr>
     </tbody>
   </table>
+  <p>Contas criadas antes de 15 de setembro de 2026 podem ter informado telefone, cidade e país no cadastro. Esses campos não são mais pedidos; se você os informou, eles aparecem no seu export e saem com a exclusão da conta.</p>
 
-  <h2>4. Com quem compartilhamos</h2>
-  <p>Seus dados são processados por operadores estritamente necessários à operação:</p>
+  <h2 id="compartilhamento">4. Com quem compartilhamos</h2>
+  <p>Seus dados são processados apenas por operadores necessários à operação:</p>
   <ul>
-    <li><strong>Supabase</strong> — banco de dados e autenticação (hospedagem do backend);</li>
-    <li><strong>Vercel</strong> — hospedagem do site;</li>
-    <li><strong>Mercado Pago</strong> — processamento de pagamentos;</li>
-    <li><strong>Resend</strong> — envio de e-mails transacionais (ex.: confirmação de pedido);</li>
-    <li>Transportadoras/Correios — entrega de pedidos (nome, endereço e telefone).</li>
+    <li><strong>Supabase</strong> — banco de dados, autenticação e funções do servidor (infraestrutura nos Estados Unidos);</li>
+    <li><strong>Vercel</strong> — hospedagem do site (Estados Unidos);</li>
+    <li><strong>Resend</strong> — envio de e-mails (a Pausa e, quando a loja operar, confirmações de pedido);</li>
+    <li><strong>Operador de pagamento</strong> — a ser nomeado nesta política antes da abertura da loja;</li>
+    <li><strong>Transportadoras e Correios</strong> — entrega de pedidos (nome, endereço e telefone), quando houver pedidos;</li>
+    <li><strong>Parceiros de indicação</strong> (lojas de terceiros) — recebem só o clique; nenhum dado seu sai do Ervatório para eles.</li>
   </ul>
-  <p>Não vendemos dados pessoais nem os compartilhamos para publicidade de terceiros. Alguns operadores podem processar dados fora do Brasil; nesses casos aplicam-se as salvaguardas de transferência internacional da LGPD (art. 33).</p>
+  <p>Não vendemos dados pessoais nem os compartilhamos para publicidade de terceiros. O dado de saúde não é compartilhado com ninguém. Operadores fora do Brasil estão sujeitos às salvaguardas de transferência internacional da LGPD (art. 33).</p>
 
-  <h2>5. Cookies</h2>
-  <p>Usamos cookies/armazenamento local <strong>necessários</strong> (sessão de login, carrinho, preferências) que não dependem de consentimento, e — apenas mediante seu aceite no banner — cookies de <strong>analytics</strong> e <strong>marketing</strong>. Você pode alterar ou revogar sua escolha a qualquer momento pelo link "Preferências de cookies" no rodapé.</p>
+  <h2 id="cookies">5. Cookies e o que fica no seu aparelho</h2>
+  <p>Cookies e armazenamento local <strong>necessários</strong>, que não dependem de consentimento: a sessão de login (Supabase), idioma e tema, a escolha que você fez no banner de cookies (<code>erv_consent_v1</code>), e — para quem usa o app sem conta — estante, blend em construção, blends salvos, carrinho e um cache do catálogo. O <strong>monitor de cafeína</strong> e o resultado do teste de um minuto ficam só no aparelho e nunca são enviados ao servidor.</p>
+  <p>Cookies de <strong>medição</strong> e <strong>marketing</strong> só entram com o seu aceite no banner, por categoria. Você altera ou revoga a escolha quando quiser:</p>
+  <p><button type="button" class="cta" onclick="window.__consent&&window.__consent.open()">Abrir preferências de cookies</button></p>
+  <p>O dado de saúde nunca fica no aparelho: é carregado do servidor a cada sessão e some ao sair.</p>
 
-  <h2>6. Por quanto tempo guardamos (retenção)</h2>
+  <h2 id="retencao">6. Por quanto tempo guardamos (retenção)</h2>
   <ul>
-    <li><strong>Conta e perfil:</strong> enquanto a conta existir; excluídos ou anonimizados após a exclusão da conta.</li>
-    <li><strong>Pedidos e documentos fiscais:</strong> mantidos pelo prazo legal (mínimo 5 anos — obrigações fiscais e CDC), de forma anonimizada em relação à conta excluída quando possível.</li>
-    <li><strong>Newsletter:</strong> até a revogação do consentimento (descadastro).</li>
-    <li><strong>Logs técnicos:</strong> retenção curta, gerenciada pela infraestrutura (Supabase/Vercel).</li>
+    <li><strong>Conta, preferências, estante, blends, jornada e diário:</strong> enquanto a conta existir; apagados com ela.</li>
+    <li><strong>Saúde e restrições:</strong> enquanto o consentimento durar. Retirar o consentimento no Perfil apaga o dado imediatamente; a exclusão da conta também o apaga.</li>
+    <li><strong>E-mail da Pausa e avisos:</strong> até o descadastro, ou 24 meses sem interação.</li>
+    <li><strong>Pedidos e documentos fiscais:</strong> 5 anos (obrigações fiscais e de consumo). Ao excluir a conta, o pedido fica <strong>anonimizado</strong>: sem vínculo com você, endereço reduzido a cidade/UF/país, nome substituído por «excluído a pedido do titular».</li>
+    <li><strong>Cliques de indicação:</strong> não identificam ninguém e são mantidos como estatística.</li>
+    <li><strong>Registros técnicos:</strong> contadores de requisição por cerca de um dia; logs do servidor pela retenção curta da plataforma.</li>
+    <li><strong>Backups:</strong> a exclusão não apaga cópias de segurança já feitas; elas expiram com a janela do plano (dias). Se você pedir, informamos essa janela na resposta.</li>
   </ul>
+  <p>A tabela operacional completa, por tabela do banco, está no repositório do projeto (<code>docs/compliance/retencao.md</code>) e muda junto com o código.</p>
 
-  <h2>7. Seus direitos (LGPD art. 18)</h2>
-  <p>Você pode, a qualquer momento, solicitar: confirmação de tratamento, acesso, correção, anonimização, portabilidade, informação sobre compartilhamento, revogação de consentimento e <strong>exclusão</strong> dos seus dados. Como exercer:</p>
+  <h2 id="direitos">7. Seus direitos (LGPD art. 18) e como exercer</h2>
+  <p>Você pode, a qualquer momento, pedir confirmação de tratamento, acesso, correção, anonimização, portabilidade, informação sobre compartilhamento, revogação de consentimento e exclusão. Os caminhos que existem hoje:</p>
   <ul>
-    <li>Pelo app: área da conta (exportar dados / excluir conta), quando disponível;</li>
-    <li>Pelo canal do encarregado (seção 2) — respondemos em até 15 dias.</li>
+    <li><strong>Baixar meus dados</strong> — em Meu Ervatório › Perfil › Seus dados. Gera um arquivo com tudo o que é seu, inclusive saúde, diário e pedidos.</li>
+    <li><strong>Excluir meus dados</strong> — no mesmo lugar. Apaga a conta e tudo o que é seu; pedidos ficam anonimizados pelo prazo fiscal (seção 6).</li>
+    <li><strong>Retirar o consentimento de saúde</strong> — desmarcar no Perfil; o dado é apagado na hora, e o app continua funcionando por inteiro sem ele.</li>
+    <li><strong>Sair da Pausa</strong> — os e-mails ainda não trazem link de descadastro; escreva para o canal da seção 2 e removemos em até 15 dias.</li>
+    <li><strong>Cookies</strong> — pelo botão da seção 5.</li>
+    <li><strong>Qualquer outro pedido</strong> — pelo canal da seção 2, em até 15 dias.</li>
   </ul>
 
-  <h2>8. Segurança</h2>
-  <p>Adotamos controles técnicos de proteção: criptografia em trânsito (HTTPS), controle de acesso por linha no banco de dados (RLS), segregação de credenciais, autenticação de dois fatores para administradores e processo de resposta a incidentes. Em caso de incidente de segurança com risco relevante, comunicaremos os afetados e a ANPD conforme o art. 48 da LGPD.</p>
+  <h2 id="seguranca">8. Segurança</h2>
+  <p>Criptografia em trânsito (HTTPS); controle de acesso por linha no banco de dados (RLS), de modo que cada pessoa só alcança o que é seu; dado de saúde em tabela separada, sem acesso anônimo; privilégios revogados por padrão em toda tabela nova; segredos fora do código; autenticação de dois fatores para administradores; limite de requisições nas funções do servidor; e um roteiro de resposta a incidentes. Em caso de incidente com risco relevante, comunicaremos os afetados e a ANPD (art. 48).</p>
 
-  <h2>9. Crianças e adolescentes</h2>
-  <p>A plataforma não é direcionada a menores de 18 anos e não coletamos intencionalmente dados de crianças.</p>
+  <h2 id="criancas">9. Crianças e adolescentes</h2>
+  <p>A plataforma não é direcionada a menores de 18 anos e não coletamos intencionalmente dados de crianças. «Criança» na lista de restrições de saúde refere-se a quem prepara chá para uma criança, não a um cadastro infantil.</p>
 
-  <h2>10. Alterações desta política</h2>
-  <p>Publicaremos novas versões nesta página, com data e número de versão. Mudanças relevantes serão comunicadas por e-mail ou aviso no site.</p>
+  <h2 id="alteracoes">10. Alterações desta política</h2>
+  <p>Novas versões são publicadas nesta página, com data e número. Mudanças relevantes serão comunicadas por e-mail ou aviso no site.</p>
+  <ul>
+    <li><strong>1.1 — 14 de setembro de 2026:</strong> dado de saúde com consentimento próprio (art. 11, I) e restrições de sessão; diário de infusões; indicação de parceiros; cadastro reduzido a nome e e-mail; retenção por tipo de dado; caminhos de exercício de direitos pelo app; processador de pagamento anterior retirado do texto (não será usado; o operador será nomeado antes da abertura da loja); ferramentas de medição nomeadas.</li>
+    <li><strong>1.0 — 16 de julho de 2026:</strong> versão inicial.</li>
+  </ul>
 
 </main>
 <!-- erv-rodape-estatico -->

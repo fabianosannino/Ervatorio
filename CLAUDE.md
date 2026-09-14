@@ -320,6 +320,13 @@ e as decisões D1–D14. As que mais mudam o jeito de trabalhar aqui:
 ## Compliance
 - Nenhum script de tracking (analytics, pixel) dispara antes do **consentimento** do usuário (LGPD / Consent Mode v2).
 - Dados pessoais têm base legal, política de retenção e caminho de exclusão.
+- **`privacidade.html` descreve o sistema de hoje, não o de ontem** (PR 09, D35).
+  É o resumo público de `docs/compliance/retencao.md`; **dado novo = linha nos
+  dois, no mesmo PR** que o cria. A política só afirma o que o código faz —
+  o que falta (double opt-in, link de descadastro, operador de pagamento) é
+  dito como pendente. Só CNPJ e encarregado ficam `[DEFINIR]`, por decisão
+  do dono; `tests/e2e/legal.spec.mjs` conta os placeholders e recusa
+  «Mercado Pago» nas páginas legais.
 
 ## Qualidade (Definition of Done)
 - Acessibilidade: elementos interativos são `<button>`/`<a>` reais, operáveis por teclado; modais com foco/ESC/`aria-modal`; contraste AA.

@@ -67,7 +67,7 @@ três commits** (D2).
 | 07 | Descobrir e Preparar como abas de verdade (fusão de renderizadores) | **Quinta rodada (16/09)** — Origens absorve Onde beber; hub «Como preparar» com seis cards. Ver D24–D25 para o que fica. | PR `feat/descobrir-preparar` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 08 | Meu Ervatório + `perfil_saude` (tabela própria, RLS, consentimento com timestamp); cadastro reduzido; «Excluir meus dados» | **Segunda rodada (15/09)** — ver D15–D17. O Diário fica para o 08b. | PR `feat/conta-e-consentimento` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 08b | Diário de infusões (`diario_infusoes`, RLS dono, interruptor `diario`) | **Terceira rodada (16/09)** — ver D19–D21. | PR `feat/diario-infusoes` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
-| 09 | `privacidade.html`: CNPJ/DPO, dado de saúde, base legal, retenção | Depende de decisão do dono (CNPJ/DPO) | `docs/privacy-update` |
+| 09 | `privacidade.html`: CNPJ/DPO, dado de saúde, base legal, retenção | **Oitava rodada (16/09)** — tudo, menos CNPJ e nome do encarregado, que continuam `[DEFINIR]` por decisão pendente do dono (D35). | PR `docs/privacy-update` (branch `claude/awesome-ride-gugauv`, reiniciada da `main`) |
 | 10 | Páginas estáticas para receitas, blends, tipos de chá | Mês 2–3 | `feat/static-pages-recipes-blends` |
 | 11 | Clube (lista de espera → pré-venda → Stripe) | Depois | `feat/clube-waitlist` → `feat/stripe-checkout` |
 
@@ -261,6 +261,20 @@ para `mailto:`, até existir `/parceiros/`.
   (`.enc-aviso` do 05, `.perfil-rec-saude` do 08) ficavam ilegíveis no
   tema claro, que remapeia `--cream2` para tinta escura. Trocadas por
   fundo de token (`rgba(200,168,75,.1)`), junto com as da ficha.
+- **(09) A política de julho descrevia um sistema que já não existe**: pedia
+  telefone e cidade no cadastro (saíram no 08), não sabia do dado de saúde
+  (08), do diário (08b) nem da indicação (17/08), dizia «Mercado Pago» num
+  projeto que o congelou e falava de «diário de degustação»
+  (`tasting_journal`, zero linhas). E `docs/compliance/retencao.md` tinha a
+  mesma defasagem. Os dois foram alinhados ao código; a regra que fica é
+  «dado novo = linha nos dois, no mesmo PR».
+- **(09) Não há descadastro da Pausa por link** — só pelo canal do
+  encarregado, manualmente (já documentado em `retencao.md`). A política
+  diz isso em vez de prometer um link que não existe; o link com token
+  continua na etapa 3 da newsletter.
+- **(09) `termos.html` ainda tem três `[DEFINIR]`** (NF-e, canal de
+  atendimento, foro) que não são de privacidade e ficaram fora deste PR;
+  só a cláusula de pagamento mudou, para não contradizer a política.
 - **(07) A sub-navegação marcava a entrada sem slug junto com a de slug**
   (`!p.slug` era verdadeiro sempre). Não aparecia porque só Blends tinha
   duas entradas na mesma tela e as duas têm slug. Com Origens/Onde beber
@@ -443,6 +457,21 @@ acrescentam à lateral. Se a ficha for editada no painel sem regenerar o
 pacote, o app e a estática mostram a versão do pacote — igual ao que já
 acontecia nas `/erva/`.
 
+**D35 — CNPJ e encarregado continuam `[DEFINIR]`; o resto não espera.**
+O handoff pede «nenhum placeholder». Os dois campos que faltam são decisão
+do dono (constituir a pessoa jurídica; nomear o encarregado) e não se
+inventam. Tudo o que descreve o sistema — dado de saúde com art. 11 I,
+restrições de sessão, diário, indicação, cadastro reduzido, retenção por
+tipo, direitos pelo app, medição nomeada e desativada, loja fechada e
+Mercado Pago fora — entrou, porque uma política defasada é pior do que uma
+com dois campos marcados. Enquanto o encarregado não existe, o canal é
+`contato@ervatorio.com.br`, que o rodapé já expõe. O botão «Abrir
+preferências de cookies» da seção 5 carrega `js/consent.js` na própria
+página (o script é autossuficiente) em vez de mandar para o app. A
+política lista só o que o código faz; o que ainda não faz (double opt-in,
+link de descadastro, operador de pagamento) está dito como pendente, não
+prometido.
+
 ## 4. Como testar esta rodada
 
 ```
@@ -561,6 +590,16 @@ npx playwright test tests/e2e/encontrar.spec.mjs   # 6 cenários
     `/erva/copaiba/`: «Fontes em revisão».
 30. Tema claro (☾): o aviso de saúde, as caixas de alerta e o aviso do
     passo 3 do Encontre seu chá continuam legíveis.
+31. `/privacidade.html`: versão 1.1 de 14/09; só dois `[DEFINIR]` (seções
+    1 e 2); nada de «Mercado Pago»; a seção 3 nomeia o dado de saúde com
+    art. 11 I e finalidade única, as restrições de sessão, o diário sem
+    texto livre, a indicação sem identidade e as três ferramentas de
+    medição (desativadas); a seção 6 tem retenção por tipo; a seção 7
+    diz onde ficam «Baixar meus dados» e «Excluir meus dados».
+32. Na seção 5, «Abrir preferências de cookies» abre o banner na própria
+    página, no modo de preferências.
+33. `/termos.html` não cita mais o Mercado Pago; a cláusula aponta para a
+    política.
 
 ## 5. Rollback
 
@@ -590,3 +629,6 @@ continuam iguais).
 ordem antiga). Sem migration, sem função, sem dado novo: o e-mail da ficha
 usa a `source: "ficha"` que a migration `20260914120000` já aceita. O
 `localStorage` não muda de formato.
+
+**09.** `git revert` do commit. Só texto (duas páginas HTML, um documento
+interno) e um teste; sem migration, sem função, sem dado.
