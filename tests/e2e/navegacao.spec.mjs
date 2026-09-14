@@ -57,6 +57,7 @@ test.describe('rotas por hash (D6)', () => {
     ['#encontrar',      'page-search',        '#encontrar'],
     ['#blends',         'page-blends',        '#blends'],
     ['#criar-blend',    'page-blends',        '#blends/manual'],
+    ['#criarblend',     'page-search',        '#encontrar'],
     ['#quiz',           'page-quiz',          '#quiz'],
     ['#perfil',         'page-perfil',        '#perfil'],
   ];
@@ -117,8 +118,9 @@ test.describe('rotas por hash (D6)', () => {
     await entrar(page);
     await page.goto('/#encontrar/sono', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('#page-search')).toHaveClass(/\bon\b/);
-    // A intenção "sono" filtra a categoria Sono (e o momento "noite").
-    await expect.poll(() => page.evaluate(() => activeFilters.cat), { timeout: 5000 }).toBe('Sono');
+    // A intenção "sono" abre o fluxo já no passo 2 (PR 05).
+    await expect(page.locator('#encPasso2')).toBeVisible({ timeout: 5000 });
+    await expect.poll(() => page.evaluate(() => encState.intencao), { timeout: 5000 }).toBe('sono');
   });
 
   test('âncora antiga da landing (#clube) rola para a seção com prefixo lp-', async ({ page }) => {
@@ -277,6 +279,7 @@ test.describe('cabeçalho único (PR 03 do handoff)', () => {
     expect(await page.locator('.hero-chips .hero-chip').count()).toBe(6);
     await page.locator('.hero-chips .hero-chip').first().click();
     await expect(page.locator('#page-search')).toHaveClass(/\bon\b/);
-    await expect.poll(() => page.evaluate(() => activeFilters.cat)).toBe('Sono');
+    await expect(page.locator('#encPasso2')).toBeVisible({ timeout: 5000 });
+    await expect.poll(() => page.evaluate(() => encState.intencao)).toBe('sono');
   });
 });

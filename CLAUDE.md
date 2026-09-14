@@ -201,6 +201,19 @@ e as decisões D1–D14. As que mais mudam o jeito de trabalhar aqui:
   ferramentas tinha quatro `<div onclick>` e ninguém viu. Card clicável é
   `<a>` (ou `<button>`), e o teste E2E da tela conta `[onclick]` e exige
   zero.
+- **A recomendação tem um motor só: `recomendar()`** (PR 05, D30). Intenção
+  → categorias e tags de `HERBS` (`INTENCOES`); momento pontua, não filtra;
+  restrição é a única barreira dura, pela mesma `ervaContraindicada` do
+  Perfil. Tela nova que recomende erva **chama essa função** — não
+  reimplementa o filtro. A restrição da sessão vive em `encState`, nunca em
+  `localStorage`; com conta e consentimento, o Perfil pré-marca
+  (`encRestricoesDoPerfil`). O resultado tem hash compartilhável
+  (`#encontrar/<intencao>/<momento>/<restricoes>`), e quem mexe no hash de
+  dentro da tela passa por `encSincronizarHash`, que se recusa a agir com a
+  landing por cima.
+- **O Assistente de blends não existe mais** (D29): `BLEND_DB` é o blend
+  sugerido por intenção; `#blends/assistente` e `#criarblend` caem em
+  `#encontrar`.
 
 ## Dado de saúde — tabela própria, consentimento próprio (PR 08 do handoff)
 

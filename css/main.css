@@ -1702,3 +1702,54 @@ img,video,canvas,svg{max-width:100%;height:auto}
   .diario-item{grid-template-columns:auto minmax(0,1fr) auto}
   .diario-sensacao{grid-column:1/4}
 }
+
+/* ── Encontre seu chá — três passos (PR 05) ── */
+#page-search [hidden]{display:none!important}
+.enc-head{max-width:860px;margin:0 auto 1.25rem}
+.enc-eyebrow{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin:0 0 6px}
+.enc-title{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:clamp(1.7rem,4vw,2.4rem);line-height:1.1;color:var(--cream);margin:0 0 12px}
+.enc-progress{display:flex;gap:6px}
+.enc-progress span{flex:1;height:3px;background:var(--faint);border-radius:2px}
+.enc-progress span.on{background:var(--gold)}
+#encPasso1,#encPasso2,#encPasso3{max-width:860px;margin:0 auto}
+#encPasso1 .intencoes-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+#encPasso1 .intencao-card{min-height:56px;border-radius:var(--r-md)}
+.intencao-card.on{background:var(--faint);border-color:rgba(200,168,75,.5);color:var(--cream)}
+.enc-links{display:flex;flex-direction:column;gap:6px;margin:.75rem 0 1rem;font-size:.84rem}
+.enc-links a{color:var(--gold2);text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
+.enc-links a:hover{color:var(--goldf);text-decoration:underline}
+.enc-link-btn{background:none;border:0;padding:0;margin:.5rem 0 1rem;color:var(--muted);font-family:'Jost',sans-serif;font-size:.8rem;cursor:pointer;min-height:44px;text-decoration:underline}
+.enc-link-btn:hover{color:var(--goldf)}
+.enc-chosen{font-size:.86rem;color:var(--muted);margin:0 0 1rem}
+.enc-chosen strong{color:var(--cream);font-weight:500}
+.enc-sublabel{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin:1rem 0 .5rem}
+.enc-chips{display:flex;flex-wrap:wrap;gap:8px}
+.enc-chip{min-height:44px;padding:8px 16px;border-radius:999px;border:0.5px solid var(--faint);background:transparent;color:var(--muted);font-size:.84rem;font-family:'Jost',sans-serif;cursor:pointer;transition:all .2s}
+.enc-chip.on{background:rgba(200,168,75,.12);color:var(--gold2);border-color:rgba(200,168,75,.35)}
+.enc-chip:focus-visible,.enc-btn:focus-visible,.intencao-card:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.enc-note{font-size:.8rem;color:var(--muted);line-height:1.5;margin:.75rem 0}
+.enc-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:1.25rem}
+.enc-btn{min-height:44px;padding:0 18px;border-radius:var(--r-sm);border:1px solid var(--faint);background:var(--bg);color:var(--cream2);font-family:'Jost',sans-serif;font-size:.86rem;font-weight:500;cursor:pointer;transition:border-color .2s,color .2s,background .2s}
+.enc-btn:hover{color:var(--goldf);border-color:rgba(200,168,75,.5)}
+.enc-btn-gold{background:var(--gold);border-color:var(--gold);color:#1c1608}
+.enc-btn-gold:hover{background:var(--goldf);color:#1c1608}
+.enc-btn.on{color:var(--gold2);border-color:rgba(200,168,75,.5)}
+.enc-aviso{background:#3a2a1a;border:1px solid rgba(200,168,75,.53);border-radius:var(--r-md);padding:.9rem 1.1rem;font-size:.84rem;line-height:1.55;color:var(--cream2);margin-bottom:1rem}
+.enc-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.enc-card{background:var(--bg2);border:1px solid var(--faint);border-radius:var(--r-lg);padding:1.1rem 1.2rem;display:flex;flex-direction:column;gap:6px}
+.enc-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.enc-card-nome{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:1.45rem;color:var(--cream);margin:0;line-height:1.15}
+.enc-badge{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.enc-badge.seguro{background:var(--faint);color:var(--cream2)}
+.enc-badge.cautela{background:var(--bg3);color:var(--gold2);border:1px solid rgba(200,168,75,.4)}
+.enc-card-why{font-size:.88rem;color:var(--cream2);line-height:1.5;margin:0}
+.enc-card-prep,.enc-card-avoid{font-size:.78rem;color:var(--muted);margin:0;line-height:1.45}
+.enc-card-avoid{color:var(--gold2)}
+.enc-card-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:.5rem}
+.enc-blend{margin-top:1.25rem}
+.enc-blend-box{background:var(--bg3);border:1px solid rgba(200,168,75,.33);border-radius:var(--r-lg);padding:1.1rem 1.2rem}
+.enc-blend-box .enc-sublabel{margin-top:0}
+.enc-blend-nome{font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--cream)}
+.enc-blend-ings{font-size:.86rem;color:var(--cream2);line-height:1.6;margin:.25rem 0 .5rem}
+.enc-blend-ings span{color:var(--muted);font-size:.78rem}
+@media(max-width:600px){#encPasso1 .intencoes-grid{grid-template-columns:1fr}.enc-actions .enc-btn{flex:1}}
