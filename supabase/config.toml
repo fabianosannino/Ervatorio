@@ -56,3 +56,10 @@ verify_jwt = true
 # inscrito (fecha o oráculo de enumeração que o INSERT direto abria).
 [functions.newsletter-subscribe]
 verify_jwt = false
+
+# O descadastro vem de um link de e-mail, aberto por gente que não tem
+# conta no site — não há JWT para verificar. A função aceita só POST
+# (GET é 405 de propósito: cliente de e-mail abre link para varrer) e
+# exige um token UUID que só existe na linha do próprio inscrito.
+[functions.newsletter-unsubscribe]
+verify_jwt = false

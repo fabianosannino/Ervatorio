@@ -190,6 +190,16 @@ para `mailto:`, até existir `/parceiros/`.
 
 ### Descobertas ao implementar (ficam para os próximos PRs)
 
+- **`anon` e `authenticated` tinham `TRUNCATE` em `newsletter_subscribers`**
+  (conferido em produção em 17/09, junto com DELETE, INSERT, REFERENCES,
+  SELECT, TRIGGER e UPDATE — os mesmos `ALTER DEFAULT PRIVILEGES` que já
+  tinham mordido a `perfil_saude`). A RLS segurava o resto (não há policy
+  para `anon`) e a API REST não expõe TRUNCATE, então não havia exploração
+  conhecida — mas **TRUNCATE não passa por RLS**, e é a única operação que
+  esvaziaria a lista inteira de uma vez. O `REVOKE ALL` entrou na migration
+  `20260917120000`. Vale varrer as outras tabelas antigas (`tasting_journal`
+  é a próxima, D21).
+
 - **Os selos da Jornada ainda usam emoji** (`BADGES` em `js/caminho.js`, ~25
   itens). Os níveis já são texto; os selos pedem ícones de linha
   (`svgIcon`) — entra no PR 08 junto com «Minha jornada».
@@ -558,6 +568,34 @@ nas páginas geradas (a barra de oxidação é um `<meter>`). As entradas de
 `NAV_GROUPS` ganham `estatico`, então o cabeçalho das páginas estáticas
 aponta para as gêmeas — e o `sitemap.xml` passa de 192 para 236 URLs.
 
+**D39 — O descadastro da Pausa é autoatendimento, e o link do e-mail é
+POST, não GET.** A Política de Privacidade v1.2 (D35) dizia em público que
+sair da lista era pedido ao encarregado, em até 15 dias — honesto, e ruim.
+A migration `20260917120000` dá ao inscrito a chave da própria porta:
+`token_descadastro` (um UUID por linha) vai no link de cada campanha, e a
+Edge Function `newsletter-unsubscribe` grava a saída. O link **não**
+descadastra sozinho: cliente de e-mail e antivírus corporativo abrem links
+para varrer (Outlook Safe Links, Gmail, Proofpoint), e um GET que
+descadastrasse tiraria metade da lista sem ninguém ter clicado. Então o
+e-mail abre `descadastro.html?t=<token>`, que é só HTML, e o fato só é
+gravado quando a pessoa aperta o botão — o `GET` da function é 405 de
+propósito. O token é **capacidade, não identidade**: com ele só se faz uma
+coisa, e a function nunca devolve o e-mail da linha, para um UUID sorteado
+não virar oráculo de endereço. Token inexistente recebe «link inválido», e
+não a mentira gentil de «pronto, você saiu».
+
+**D40 — `active` vira projeção; a verdade é `descadastrado_em`.** Mesmo
+padrão de `orders.status` (`pedido_eventos`) e de
+`site_settings.payments_enabled` (`interruptores`): o gatilho recalcula o
+booleano a partir da data, em INSERT e em UPDATE. Um booleano sozinho
+responde «está na lista?» e perde «desde quando saiu» — que é justamente a
+prova a ser mostrada se a inscrição for contestada. Quem descadastra
+registra a data; o resto é consequência. O backfill roda **antes** do
+gatilho, senão as linhas antigas com `active = false` e sem data voltariam
+à lista no primeiro UPDATE. Double opt-in **não** entra aqui: exige envio
+transacional e muda o que «inscrito» significa para as linhas que já
+existem — é a próxima migration, não esta.
+
 ## 4. Como testar esta rodada
 
 ```
@@ -716,6 +754,20 @@ npx playwright test tests/e2e/encontrar.spec.mjs   # 6 cenários
 43. Os três planos da vitrine da landing dizem o mesmo que os do Clube
     (Folha · Raiz · Floresta).
 
+44. `descadastro.html` **sem `?t=`**: a página diz que o link está
+    incompleto e não chama nada (aba Rede vazia).
+45. Com `?t=<token>` de uma linha real: a página só mostra o botão. Nenhuma
+    chamada acontece até o clique — é o que impede o varredor de e-mail
+    corporativo de descadastrar a pessoa.
+46. Clicar em «Sair da lista»: `POST newsletter-unsubscribe` com o token, a
+    página confirma, e no banco `descadastrado_em` fica preenchido e
+    `active` vira `false` **sem ninguém ter escrito `active`**.
+47. Clicar de novo com o mesmo link: continua confirmando (idempotente) e a
+    data original **não** muda.
+48. `?t=` com um UUID sorteado: «link inválido», sem revelar e-mail nenhum.
+    `GET` direto na function: 405.
+49. Reenviar o formulário da Pausa com o e-mail que saiu **não** o reativa.
+
 ## 5. Rollback
 
 Cada etapa é um commit; `git revert <sha>` desfaz uma sem tocar nas outras.
@@ -758,3 +810,13 @@ função, sem dado: a `source: "clube"` já era aceita desde o PR 04. Degrau
 menor, sem revert: a tela não some sozinha — se for preciso tirá-la do ar,
 o caminho é remover o link do rodapé, porque ela não está atrás de
 interruptor (não tem o que desligar: não cobra nada).
+
+**12 (descadastro da Pausa).** Degrau menor, sem revert: parar de pôr o
+link nos e-mails. A página fica de pé e ninguém chega a ela. Segundo:
+`git revert` do commit e `npm run prerender` — some a página, a function
+deixa de ser chamada e a v1.3 da privacidade volta à v1.2 (que descreve o
+caminho pelo encarregado, e continua verdadeiro). Terceiro, só se a
+migration precisar sair: o bloco ROLLBACK no cabeçalho de
+`20260917120000_newsletter_descadastro.sql` — **é ele que apaga a prova de
+quem pediu para sair**, então não se faz sem backup e sem motivo. O
+`REVOKE` da tabela fica de qualquer jeito: nada no cliente lê essa tabela.

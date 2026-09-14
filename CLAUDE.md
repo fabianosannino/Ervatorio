@@ -335,6 +335,35 @@ e as decisões D1–D14. As que mais mudam o jeito de trabalhar aqui:
   interruptores continua contando quatro porque roda sozinho.
 - Mexeu nisso? Rode `supabase/tests/20260916_diario_infusoes_test.sql`.
 
+## Newsletter — o inscrito sai sozinho, e a saída é um fato
+
+- **`descadastrado_em` é a verdade; `active` é projeção** mantida por
+  gatilho (migration `20260917120000`), como `orders.status` e
+  `site_settings.payments_enabled`. **Nunca escreva `active`** — registre a
+  data. Um booleano sozinho responde «está na lista?» e perde «desde
+  quando saiu», que é a prova a apresentar se a inscrição for contestada.
+- **O link do e-mail não descadastra sozinho.** Cliente de e-mail e
+  antivírus corporativo abrem links para varrer (Outlook Safe Links,
+  Gmail, Proofpoint); um `GET` que descadastrasse tiraria metade da lista
+  sem ninguém ter clicado. O e-mail abre `descadastro.html?t=<token>`, que
+  é só HTML, e a Edge Function `newsletter-unsubscribe` é **POST**. O 405
+  no `GET` é a proteção, não uma limitação a corrigir.
+- **`token_descadastro` é capacidade, não identidade.** Com ele só se faz
+  uma coisa: sair. A function **nunca devolve o e-mail** da linha — senão
+  um UUID sorteado viraria oráculo de endereço. Token inexistente recebe
+  «link inválido»; dizer «pronto, você saiu» a quem continua na lista é a
+  mentira pior.
+- **Todo e-mail de campanha leva o link com o token da própria linha.** A
+  consulta está em `docs/compliance/retencao.md`. Sem isso, a promessa da
+  seção 7 da `privacidade.html` (v1.3) é falsa.
+- **Tabela antiga também tinha o buraco dos default privileges**: `anon` e
+  `authenticated` tinham `TRUNCATE` aqui (TRUNCATE **não** passa por RLS).
+  A migration revoga tudo dos dois. Quem escreve é a Edge Function, como
+  `service_role`.
+- Double opt-in **ainda não existe**: `consent_at` prova o envio do
+  formulário, não a confirmação do titular. É a próxima migration.
+- Mexeu nisso? Rode `supabase/tests/20260917_newsletter_descadastro_test.sql`.
+
 ## Compliance
 - Nenhum script de tracking (analytics, pixel) dispara antes do **consentimento** do usuário (LGPD / Consent Mode v2).
 - Dados pessoais têm base legal, política de retenção e caminho de exclusão.

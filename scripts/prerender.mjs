@@ -1270,7 +1270,7 @@ for (const c of CHAS_DATA) {
 writeFileSync(join('chas', 'index.html'), moldura(chasHub(), { secao: '/chas/' }));
 
 // Páginas escritas à mão: recebem o mesmo cabeçalho pelos marcadores.
-for (const arquivo of ['pausa.html', 'privacidade.html', 'termos.html']) aplicarMarcadores(arquivo, {});
+for (const arquivo of ['pausa.html', 'privacidade.html', 'termos.html', 'descadastro.html']) aplicarMarcadores(arquivo, {});
 
 // sitemap.xml
 const staticUrls = [
