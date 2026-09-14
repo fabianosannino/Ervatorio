@@ -222,31 +222,10 @@ const ervaria = {
       // No boot, não interrompe com o overlay de perfil — apenas mantém a
       // sessão pronta. O usuário completa o perfil ao entrar de fato no app.
       if (isBoot) { this.syncFromCloud(); return; }
-      // Pre-fill from Google data
+      // Pré-preenche o que já se sabe. Só nome e perfil de chá: o cadastro
+      // pede o mínimo (handoff 14/09, PR 08); o resto vem depois, se vier.
       const meta = this.user.user_metadata || {};
       document.getElementById('pcName').value = meta.full_name || meta.name || profile?.display_name || '';
-      document.getElementById('pcEmail').value = this.user.email || '';
-      document.getElementById('pcPhone').value = profile?.phone || '';
-      document.getElementById('pcExtraEmails').value = profile?.extra_emails || '';
-      // Populate geo selects
-      populateCountries();
-      const savedCountry = profile?.country || 'Brasil';
-      document.getElementById('pcCountry').value = savedCountry;
-      onCountryChange();
-      if (profile?.state) {
-        // Try to find UF by name for select
-        const states = GEO.states[savedCountry];
-        if (states) {
-          const st = states.find(s => s.name === profile.state || s.uf === profile.state);
-          if (st) { document.getElementById('pcState').value = st.uf; onStateChange(); }
-          else { document.getElementById('pcStateText').value = profile.state; }
-        } else { document.getElementById('pcStateText').value = profile.state; }
-      }
-      if (profile?.city) {
-        const cityVal = document.getElementById('pcCity').querySelector(`option[value="${profile.city}"]`);
-        if (cityVal) { document.getElementById('pcCity').value = profile.city; }
-        else { document.getElementById('pcCityText').value = profile.city; document.getElementById('pcCityText').style.display = ''; }
-      }
       if (profile?.newsletter_optin != null) document.getElementById('pcNewsletter').checked = profile.newsletter_optin;
       if (profile?.role) {
         selectedRole = profile.role;
@@ -254,18 +233,6 @@ const ervaria = {
           b.classList.toggle('on', b.dataset.role === profile.role);
         });
         document.getElementById('pcOtherField').style.display = profile.role === 'outro' ? 'block' : 'none';
-      }
-      if (profile?.main_interest) {
-        selectedInterest = profile.main_interest;
-        document.querySelectorAll('#pcInterests .pc-role').forEach(b => {
-          b.classList.toggle('on', b.dataset.interest === profile.main_interest);
-        });
-      }
-      if (profile?.referral_source) {
-        selectedReferral = profile.referral_source;
-        document.querySelectorAll('#pcReferral .pc-role').forEach(b => {
-          b.classList.toggle('on', b.dataset.ref === profile.referral_source);
-        });
       }
       // Show profile completion
       document.getElementById('profileCompleteOverlay').classList.add('on');
@@ -285,6 +252,7 @@ const ervaria = {
   },
   onLogout() {
     this.updateAuthUI(false);
+    if (typeof resetSaudeState === 'function') resetSaudeState();
     localStorage.removeItem('erb_entered');
     localStorage.removeItem('erb_auth');
     backToLanding();
@@ -316,7 +284,9 @@ const ervaria = {
       }
       if (prefRes.data) {
         const p = prefRes.data;
-        perfilState.saude = p.caffeine_pref ? [p.caffeine_pref] : perfilState.saude;
+        // caffeine_pref já guardou condição de saúde por engano (migration
+        // 20260915120000 limpou). Não volta para o perfil: saúde mora em
+        // perfil_saude e só em memória.
         perfilState.sabores = p.flavor_pref ? [p.flavor_pref] : perfilState.sabores;
         perfilState.momentos = p.moment_pref ? [p.moment_pref] : perfilState.momentos;
         localStorage.setItem('erb_perfil', JSON.stringify(perfilState));
@@ -355,11 +325,47 @@ const ervaria = {
     try {
       await this.client.from('user_preferences').upsert({
         user_id: this.user.id,
-        caffeine_pref: perfil.saude?.[0] || null,
         flavor_pref: perfil.sabores?.[0] || null,
         moment_pref: perfil.momentos?.[0] || null
       }, { onConflict: 'user_id' });
     } catch (e) { console.error('Push perfil error:', e); }
+  },
+
+  // ── SAÚDE (dado sensível — LGPD art. 11 I) ────────────────────
+  // Tabela perfil_saude: RLS do dono; sem consentimento não há linha.
+  // Nada disto passa por localStorage: o resultado vai para saudeState
+  // (memória) e morre com a aba.
+  async saudeCarregar() {
+    if (typeof saudeState === 'undefined') return;
+    saudeState.carregado = true;
+    if (!this.client || !this.user) return;
+    try {
+      const { data, error } = await this.client.from('perfil_saude')
+        .select('condicoes, consentimento_em').eq('user_id', this.user.id).maybeSingle();
+      if (error) throw error;
+      if (data) {
+        saudeState.existente = true;
+        saudeState.consentido = !!data.consentimento_em;
+        saudeState.condicoes = Array.isArray(data.condicoes) ? data.condicoes.slice() : [];
+      } else {
+        saudeState.existente = false; saudeState.consentido = false; saudeState.condicoes = [];
+      }
+    } catch (e) { console.warn('[perfil_saude] leitura:', e.message || e); }
+  },
+  async saudeSalvar(condicoes) {
+    if (!this.client || !this.user) throw new Error('sem sessão');
+    const { error } = await this.client.from('perfil_saude').upsert({
+      user_id: this.user.id,
+      condicoes: Array.isArray(condicoes) ? condicoes : [],
+      consentimento_em: new Date().toISOString(),
+      consentimento_versao: '2026-09-15',
+    }, { onConflict: 'user_id' });
+    if (error) throw error;
+  },
+  async saudeApagar() {
+    if (!this.client || !this.user) throw new Error('sem sessão');
+    const { error } = await this.client.from('perfil_saude').delete().eq('user_id', this.user.id);
+    if (error) throw error;
   },
 
   // ── SAVED RECIPES (blends) ────────────────────────────────
@@ -852,79 +858,39 @@ toggleFav = function(e, id) {
   ervaria.pushFavorite(id, isFav);
 };
 
-// ── HOOK: Override savePerfil to sync ──
-const _origSavePerfil = savePerfil;
-savePerfil = function() {
-  _origSavePerfil();
-  ervaria.pushPerfil(perfilState);
-};
+// savePerfil (app.js) já sincroniza as preferências comuns por ervaria.pushPerfil;
+// o hook que reempurrava perfilState saiu com o PR 08.
 
 // ── PROFILE COMPLETION ──
+// Um passo: nome (pré-preenchido) e, se quiser, a relação com o chá. WhatsApp,
+// cidade, «principal interesse» e «como conheceu» saíram: pediam antes de
+// entregar e nenhum era necessário para nada que a conta faz.
 let selectedRole = '';
-let selectedInterest = '';
-let selectedReferral = '';
 
 function selectRole(btn) {
+  const jaEra = btn.classList.contains('on');
   document.querySelectorAll('#pcRoles .pc-role').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  selectedRole = btn.dataset.role;
+  selectedRole = jaEra ? '' : btn.dataset.role;
+  if (!jaEra) btn.classList.add('on');
   document.getElementById('pcOtherField').style.display = selectedRole === 'outro' ? 'block' : 'none';
-}
-function selectInterest(btn) {
-  document.querySelectorAll('#pcInterests .pc-role').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  selectedInterest = btn.dataset.interest;
-}
-function selectReferral(btn) {
-  document.querySelectorAll('#pcReferral .pc-role').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  selectedReferral = btn.dataset.ref;
-}
-function goStep2() {
-  const name = document.getElementById('pcName').value.trim();
-  const email = document.getElementById('pcEmail').value.trim();
-  const geo = getGeoValues();
-  const msg = document.getElementById('pcMsg1');
-  if (!name) { msg.textContent = 'Preencha seu nome'; msg.style.color = '#e08080'; return; }
-  if (!email) { msg.textContent = 'Preencha seu email'; msg.style.color = '#e08080'; return; }
-  if (!geo.country) { msg.textContent = 'Selecione o país'; msg.style.color = '#e08080'; return; }
-  if (!geo.state) { msg.textContent = 'Preencha o estado'; msg.style.color = '#e08080'; return; }
-  if (!geo.city) { msg.textContent = 'Preencha a cidade'; msg.style.color = '#e08080'; return; }
-  msg.textContent = '';
-  document.getElementById('pcStep1').style.display = 'none';
-  document.getElementById('pcStep2').style.display = 'block';
-  document.querySelector('.profile-complete-overlay').scrollTop = 0;
-}
-function goStep1() {
-  document.getElementById('pcStep2').style.display = 'none';
-  document.getElementById('pcStep1').style.display = 'block';
-  document.querySelector('.profile-complete-overlay').scrollTop = 0;
 }
 function skipProfile() {
   document.getElementById('profileCompleteOverlay').classList.remove('on');
   document.body.style.overflow = '';
   enterAppAfterAuth();
-  toast('Você pode completar seu perfil depois. Acesso limitado à Busca.');
+  toast('Você pode completar seu perfil depois, em Meu Ervatório.');
 }
 
 async function submitProfile() {
   const name = document.getElementById('pcName').value.trim();
-  const email = document.getElementById('pcEmail').value.trim();
-  const extraEmails = document.getElementById('pcExtraEmails').value.trim();
-  const phone = document.getElementById('pcPhone').value.trim();
-  const geo = getGeoValues();
+  const email = (ervaria.user && ervaria.user.email) || '';
   const otherRole = document.getElementById('pcOtherRole')?.value.trim();
   const newsletter = document.getElementById('pcNewsletter').checked;
   const lgpd = document.getElementById('pcLgpd').checked;
   const msg = document.getElementById('pcMsg');
 
   if (!name) { msg.textContent = 'Preencha seu nome'; msg.style.color = '#e08080'; return; }
-  if (!email) { msg.textContent = 'Preencha seu email'; msg.style.color = '#e08080'; return; }
-  if (!selectedRole) { msg.textContent = 'Selecione seu perfil'; msg.style.color = '#e08080'; return; }
-  if (!geo.country) { msg.textContent = 'Selecione o país'; msg.style.color = '#e08080'; return; }
-  if (!geo.state) { msg.textContent = 'Preencha o estado'; msg.style.color = '#e08080'; return; }
-  if (!geo.city) { msg.textContent = 'Preencha a cidade'; msg.style.color = '#e08080'; return; }
-  if (!lgpd) { msg.textContent = 'É necessário aceitar os termos da LGPD'; msg.style.color = '#e08080'; return; }
+  if (!lgpd) { msg.textContent = 'É necessário aceitar a Política de Privacidade e os Termos'; msg.style.color = '#e08080'; return; }
 
   msg.textContent = 'Salvando...'; msg.style.color = 'var(--gold)';
   document.getElementById('pcSubmit').disabled = true;
@@ -935,15 +901,8 @@ async function submitProfile() {
       .update({
         display_name: name,
         email: email,
-        extra_emails: extraEmails || null,
-        phone: phone,
-        city: geo.city,
-        state: geo.state,
-        country: geo.country,
-        role: selectedRole,
+        role: selectedRole || null,
         role_other: selectedRole === 'outro' ? otherRole : null,
-        main_interest: selectedInterest || null,
-        referral_source: selectedReferral || null,
         newsletter_optin: newsletter,
         lgpd_accepted: true,
         lgpd_accepted_at: new Date().toISOString(),

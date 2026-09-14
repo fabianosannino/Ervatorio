@@ -126,7 +126,7 @@ let blendTray = safeLoad('erb_tray', []);
 let savedRecipes = safeLoad('erb_recipes', []);
 let cart = safeLoad('erb_cart', []);
 let activeFilters = {search:'',cat:'Todos',safe:'',avoid:'',momento:'',linha:''};
-let wizState = {sintomas:[],hora:'',sabor:''};
+let wizState = {sintomas:[],hora:'',sabor:'',restricoes:[]};
 let activeSup = 'Todos';
 let currentHerb = null;
 
@@ -1277,7 +1277,9 @@ const WIZ_HORA=['Ao acordar','Manhã','Pós-refeição','Tarde','À noite','Ante
 const WIZ_SABOR=['Doce','Suave','Cítrico','Amargo','Picante','Floral'];
 
 function buildWizard(){
-  const ss=document.getElementById('wizSintomas');
+  const ss=document.getElementById('wizSintomas'); if(!ss) return;
+  // goPage('blends') chama isto a cada visita: limpa antes de montar.
+  ['wizSintomas','wizHora','wizSabor','wizRestr'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=''; });
   WIZ_SINTOMAS.forEach(s=>{
     const b=document.createElement('button');
     b.className='wizard-chip'+(wizState.sintomas.includes(s)?' on':'');
@@ -1305,6 +1307,33 @@ function buildWizard(){
     b.onclick=()=>{ wizState.sabor=s; sv.querySelectorAll('.wizard-chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); };
     sv.appendChild(b);
   });
+  // Restrição como chips (handoff 14/09): o campo livre convidava a digitar
+  // «estou grávida» num texto que nada filtrava e que era dado sensível sem
+  // lugar. Fica só nesta sessão (wizState), nunca em localStorage; com conta e
+  // consentimento, o Perfil já pré-marca.
+  const sr=document.getElementById('wizRestr');
+  if(sr){
+    const ativas=saudeCondicoesAtivas();
+    if(!wizState.restricoes.length && ativas.length) wizState.restricoes=ativas;
+    const none=document.createElement('button');
+    none.type='button'; none.className='wizard-chip'+(wizState.restricoes.length?'':' on');
+    none.textContent=navT('blend.restr_none');
+    none.onclick=()=>{ wizState.restricoes=[]; buildWizard(); };
+    sr.appendChild(none);
+    SAUDE_CONDICOES.forEach(c=>{
+      const b=document.createElement('button');
+      b.type='button'; b.dataset.condicao=c.id;
+      const on=wizState.restricoes.includes(c.id);
+      b.className='wizard-chip'+(on?' on':''); b.setAttribute('aria-pressed', on?'true':'false');
+      b.textContent=saudeLabel(c.id);
+      b.onclick=()=>{
+        if(wizState.restricoes.includes(c.id)) wizState.restricoes=wizState.restricoes.filter(x=>x!==c.id);
+        else wizState.restricoes.push(c.id);
+        buildWizard();
+      };
+      sr.appendChild(b);
+    });
+  }
 }
 
 // ── BLEND RECIPES ──
@@ -1398,15 +1427,20 @@ function getHoraAdj(hora){
 function generateBlend(){
   if(typeof trackAction==='function') trackAction('create-blend');
   const sintoma = wizState.sintomas[0]||'default';
-  const obs = document.getElementById('wizObs').value;
   const rec = BLEND_DB[sintoma]||BLEND_DB['default'];
   const saborTip = getSaborAdj(wizState.sabor, rec);
   const horaTip = getHoraAdj(wizState.hora);
-  const obsWarnings = obs.toLowerCase();
+  // Restrição como barreira: ingrediente com `avoid` que bate na condição
+  // informada é nomeado, e o blend não é apresentado como «seguro».
+  const restr = wizState.restricoes||[];
+  const contra = restr.length ? rec.ings.filter(i=>ervaContraindicada(HERBS.find(h=>h.id===i.id), restr)) : [];
   let alertBox='';
-  if(obsWarnings.includes('grávid')||obsWarnings.includes('gestante')) alertBox=`<div class="warn-box">⚠ Gestante detectada: Camomila, Erva Cidreira e Capim-Limão são seguros. Evite arruda, alfazema em doses altas e ervas estimulantes.</div>`;
-  else if(obsWarnings.includes('pressão alta')||obsWarnings.includes('hipertens')) alertBox=`<div class="warn-box">⚠ Hipertensão detectada: Evite guaraná e estimulantes fortes. Hibisco e melissa são excelentes complementos.</div>`;
-  else if(obsWarnings.includes('sem cafeína')||obsWarnings.includes('cafeina')) alertBox=`<div class="warn-box">ℹ Sem cafeína: esta combinação não contém cafeína. Você pode tomar à noite.</div>`;
+  if(restr.length){
+    const quem = restr.map(saudeLabel).join(', ');
+    alertBox = contra.length
+      ? `<div class="warn-box">${esc(navT('encontrar.safety').replace('{restrição}',quem).replace('{restriction}',quem))} <strong>${esc(contra.map(i=>i.n).join(', '))}</strong> — troque no construtor.</div>`
+      : `<div class="safe-box">${esc(quem)}: nenhum ingrediente deste blend tem contraindicação conhecida para o que você informou. ${esc(navT('health.disclaimer'))}</div>`;
+  }
 
   document.getElementById('blendResult').innerHTML=`
     ${alertBox}
@@ -1844,77 +1878,215 @@ function openTimerFromRoda(slice){
 // ════════════════════════════════════════
 // ── PERFIL ──
 // ════════════════════════════════════════
-const PERFIL_SAUDE_OPTS=['Hipertensão','Diabetes','Ansiedade','Insônia','Gastrite','Grávida','Amamentando','Criança','Sem restrições'];
+// Duas naturezas de dado, dois lugares (handoff 14/09, PR 08):
+//
+//   • dados comuns e preferências (nome, objetivos, sabores, momentos):
+//     `perfilState`, em localStorage (`erb_perfil`) e em user_preferences
+//     quando há conta. Nada aqui é sensível.
+//   • saúde e restrições: `saudeState`, SÓ EM MEMÓRIA, carregado do servidor
+//     (tabela perfil_saude, RLS do dono) quando há conta e consentimento.
+//     Nunca vai para localStorage, nunca para o cache do Service Worker
+//     (a API do Supabase é outra origem; o SW não a cacheia).
+//
+// Condição de saúde é dado sensível (LGPD art. 5º II); tratar exige
+// consentimento específico e destacado (art. 11 I). O checkbox do Perfil é
+// esse consentimento; retirá-lo apaga a linha no servidor.
 const PERFIL_OBJ_OPTS=['Melhorar sono','Reduzir ansiedade','Mais energia','Focar mais','Emagrecer','Digestão','Imunidade','Desintoxicar','Beleza da pele'];
 const PERFIL_SABOR_OPTS=['Doce','Suave','Cítrico','Amargo','Picante','Floral','Mentolado'];
 const PERFIL_MOMENTO_OPTS=['Ao acordar','Manhã','Tarde','Noite','Antes de dormir','Pós-refeição'];
 
-let perfilState = safeLoad('erb_perfil', {nome:"",saude:[],objetivos:[],sabores:[],momentos:[],restricoes:""});
+// Lista fechada: espelho de `condicoes_de_saude_conhecidas()` no banco
+// (migration 20260915120000). `avoid` são os prefixos dos valores de `avoid`
+// das fichas que cada condição bloqueia. Condição nova entra nos dois lugares.
+const SAUDE_CONDICOES=[
+  {id:'gestante',       label:'perfil.cond_gestante',       avoid:['gestantes']},
+  {id:'amamentando',    label:'perfil.cond_amamentando',    avoid:['amamentação','lactantes']},
+  {id:'hipertensao',    label:'perfil.cond_hipertensao',    avoid:['hipertensos']},
+  {id:'anticoagulante', label:'perfil.cond_anticoagulante', avoid:['anticoagulantes']},
+  {id:'crianca',        label:'perfil.cond_crianca',        avoid:['crianças']},
+  {id:'diabetes',       label:'perfil.cond_diabetes',       avoid:[]},
+  {id:'asteraceas',     label:'perfil.cond_asteraceas',     avoid:['alergia a asteráceas']},
+];
+
+let perfilState = safeLoad('erb_perfil', {nome:"",objetivos:[],sabores:[],momentos:[]});
+// Limpeza de aparelho: versões anteriores guardavam `saude` e `restricoes`
+// aqui. Some na primeira carga e não volta.
+(function(){
+  if(perfilState && (Object.prototype.hasOwnProperty.call(perfilState,'saude') || Object.prototype.hasOwnProperty.call(perfilState,'restricoes'))){
+    delete perfilState.saude; delete perfilState.restricoes;
+    try { localStorage.setItem('erb_perfil', JSON.stringify(perfilState)); } catch(e){}
+  }
+})();
+
+let saudeState = { carregado:false, consentido:false, condicoes:[], existente:false };
+function resetSaudeState(){ saudeState = { carregado:false, consentido:false, condicoes:[], existente:false }; }
+
+// O que a recomendação pode usar: só com consentimento dado.
+function saudeCondicoesAtivas(){ return saudeState.consentido ? saudeState.condicoes.slice() : []; }
+
+// Barreira: a erva tem `avoid` que bate com alguma condição informada?
+// Usada pelo Perfil e pelo assistente de blends; o motor único é o PR 05.
+function ervaContraindicada(h, condicoes){
+  if(!h || !condicoes || !condicoes.length) return false;
+  const avoid=(h.avoid||[]).map(a=>String(a).toLowerCase());
+  return condicoes.some(c=>{
+    const def=SAUDE_CONDICOES.find(x=>x.id===c);
+    return !!def && def.avoid.some(a=>avoid.some(v=>v===a || v.indexOf(a+' ')===0 || v.indexOf(a+' (')===0));
+  });
+}
+function saudeLabel(id){ const def=SAUDE_CONDICOES.find(x=>x.id===id); return def ? navT(def.label) : id; }
+
+function perfilLogado(){ return !!(window.ervaria && ervaria.user); }
 
 function renderPerfil(){
-  document.getElementById('perfilNome').value=perfilState.nome||'';
-  document.getElementById('perfilRestricoes').value=perfilState.restricoes||'';
-  renderChipGroup('perfilSaude',PERFIL_SAUDE_OPTS,'saude');
+  const nome=document.getElementById('perfilNome'); if(!nome) return;
+  nome.value=perfilState.nome||'';
+  const email=document.getElementById('perfilEmail'), hint=document.getElementById('perfilEmailHint');
+  const logado=perfilLogado();
+  if(email) email.value = logado ? (ervaria.user.email||'') : '';
+  if(hint) hint.hidden = logado;
   renderChipGroup('perfilObjetivos',PERFIL_OBJ_OPTS,'objetivos');
   renderChipGroup('perfilSabores',PERFIL_SABOR_OPTS,'sabores');
   renderChipGroup('perfilMomentos',PERFIL_MOMENTO_OPTS,'momentos');
+  renderPerfilSaude();
+  renderPerfilDados();
   renderPerfilRecomendacoes();
+  if(logado && !saudeState.carregado && typeof ervaria.saudeCarregar==='function'){
+    ervaria.saudeCarregar().then(function(){ renderPerfilSaude(); renderPerfilRecomendacoes(); });
+  }
 }
 
 function renderChipGroup(containerId, opts, key){
-  const el=document.getElementById(containerId);
+  const el=document.getElementById(containerId); if(!el) return;
   el.innerHTML='';
   opts.forEach(o=>{
     const b=document.createElement('button');
-    b.className='perfil-chip'+(perfilState[key]?.includes(o)?' on':'');
+    b.type='button';
+    const on=!!(perfilState[key]&&perfilState[key].includes(o));
+    b.className='perfil-chip'+(on?' on':'');
+    b.setAttribute('aria-pressed', on?'true':'false');
     b.textContent=o;
     b.onclick=()=>{
       if(!perfilState[key])perfilState[key]=[];
       if(perfilState[key].includes(o)) perfilState[key]=perfilState[key].filter(x=>x!==o);
       else perfilState[key].push(o);
-      b.classList.toggle('on');
+      const nowOn=perfilState[key].includes(o);
+      b.classList.toggle('on', nowOn); b.setAttribute('aria-pressed', nowOn?'true':'false');
       renderPerfilRecomendacoes();
     };
     el.appendChild(b);
   });
 }
 
+// Bloco de saúde: sem conta, explica e oferece entrar; com conta, o
+// consentimento libera os chips. Chips desabilitados não são "apagados":
+// o que estiver marcado só é gravado se o consentimento estiver dado.
+function renderPerfilSaude(){
+  const guest=document.getElementById('perfilSaudeGuest'), form=document.getElementById('perfilSaudeForm');
+  if(!guest||!form) return;
+  const logado=perfilLogado();
+  guest.hidden=logado; form.hidden=!logado;
+  if(!logado) return;
+  const consent=document.getElementById('perfilConsent');
+  consent.checked=saudeState.consentido;
+  consent.onchange=()=>{ saudeState.consentido=consent.checked; renderPerfilSaude(); renderPerfilRecomendacoes(); };
+  const el=document.getElementById('perfilCondicoes'); el.innerHTML='';
+  SAUDE_CONDICOES.forEach(c=>{
+    const b=document.createElement('button');
+    b.type='button';
+    const on=saudeState.condicoes.includes(c.id);
+    b.className='perfil-chip'+(on?' on':'');
+    b.disabled=!saudeState.consentido;
+    b.setAttribute('aria-pressed', on?'true':'false');
+    b.dataset.condicao=c.id;
+    b.textContent=saudeLabel(c.id);
+    b.onclick=()=>{
+      if(saudeState.condicoes.includes(c.id)) saudeState.condicoes=saudeState.condicoes.filter(x=>x!==c.id);
+      else saudeState.condicoes.push(c.id);
+      const nowOn=saudeState.condicoes.includes(c.id);
+      b.classList.toggle('on', nowOn); b.setAttribute('aria-pressed', nowOn?'true':'false');
+      renderPerfilRecomendacoes();
+    };
+    el.appendChild(b);
+  });
+  const w=document.getElementById('perfilSaudeWithdraw'); if(w) w.hidden=!saudeState.existente;
+}
+
+function renderPerfilDados(){
+  const g=document.getElementById('perfilDadosGuest'), a=document.getElementById('perfilDadosActions');
+  if(!g||!a) return;
+  const logado=perfilLogado();
+  g.hidden=logado; a.hidden=!logado;
+}
+
 function savePerfil(){
   perfilState.nome=document.getElementById('perfilNome').value;
-  perfilState.restricoes=document.getElementById('perfilRestricoes').value;
-  localStorage.setItem('erb_perfil',JSON.stringify(perfilState));
-  toast(`Perfil de ${perfilState.nome||'usuário'} salvo!`);
+  // Só o que não é sensível vai para o aparelho.
+  const comum={nome:perfilState.nome,objetivos:perfilState.objetivos||[],sabores:perfilState.sabores||[],momentos:perfilState.momentos||[]};
+  perfilState=comum;
+  localStorage.setItem('erb_perfil',JSON.stringify(comum));
+  if(typeof ervaria!=='undefined' && ervaria.pushPerfil) ervaria.pushPerfil(comum);
+  toast(navT('perfil.save_btn')+' ✓');
   renderPerfilRecomendacoes();
+  if(!perfilLogado() || typeof ervaria.saudeSalvar!=='function') return;
+  // Saúde: com consentimento grava (mesmo lista vazia — o consentimento em si
+  // é um fato); sem consentimento e com linha existente, apaga.
+  if(saudeState.consentido){
+    ervaria.saudeSalvar(saudeState.condicoes).then(function(){ saudeState.existente=true; renderPerfilSaude(); toast(navT('perfil.health_saved')); })
+      .catch(function(){ toast(navT('perfil.health_error')); });
+  } else if(saudeState.existente){
+    retirarConsentimentoSaude();
+  }
+}
+
+function retirarConsentimentoSaude(){
+  if(!perfilLogado() || typeof ervaria.saudeApagar!=='function') return;
+  ervaria.saudeApagar().then(function(){
+    saudeState.consentido=false; saudeState.condicoes=[]; saudeState.existente=false;
+    renderPerfilSaude(); renderPerfilRecomendacoes(); toast(navT('perfil.health_deleted'));
+  }).catch(function(){ toast(navT('perfil.health_error')); });
 }
 
 function renderPerfilRecomendacoes(){
   const el=document.getElementById('perfilRecomendacoes');
   if(!el)return;
   const obj=perfilState.objetivos||[];
-  const saude=perfilState.saude||[];
+  const saude=saudeCondicoesAtivas();
   const momentos=perfilState.momentos||[];
   if(!obj.length&&!saude.length){el.innerHTML='';return;}
 
   // Smart recs based on profile
-  const recs=[];
-  if(obj.includes('Melhorar sono')||obj.includes('Reduzir ansiedade')) recs.push({name:'Blend da Noite',herbs:'Camomila + Maracujá + Melissa',why:'Baseado nos seus objetivos de sono e ansiedade',color:'#1e3d5c'});
-  if(obj.includes('Mais energia')||obj.includes('Focar mais')) recs.push({name:'Blend do Foco',herbs:'Chá Verde + Alecrim + Ginkgo',why:'Para energia e concentração ao longo do dia',color:'#3a2d6b'});
-  if(obj.includes('Digestão')) recs.push({name:'Digestivo Diário',herbs:'Boldo + Hortelã + Erva-doce',why:'Apoio à sua digestão pós-refeição',color:'#5a3a1a'});
-  if(obj.includes('Emagrecer')) recs.push({name:'Blend Metabólico',herbs:'Chá Verde + Carqueja + Hibisco',why:'Termogênico e sacietogênico natural',color:'#2d5a2d'});
-  if(obj.includes('Imunidade')) recs.push({name:'Blend Imunidade',herbs:'Equinácea + Cúrcuma + Gengibre',why:'Para fortalecer suas defesas',color:'#2d4a3a'});
-  if(saude.includes('Hipertensão')) recs.push({name:'Hipotensor Suave',herbs:'Hibisco + Melissa + Capim-Limão',why:'Seguro para hipertensão, 3x ao dia',color:'#6b2d3a'});
-  if(saude.includes('Gastrite')) recs.push({name:'Protetor Gástrico',herbs:'Espinheira Santa + Camomila + Alcaçuz',why:'Antiácido e cicatrizante natural',color:'#5a3a1a'});
-  if(saude.includes('Grávida')) recs.push({name:'Blend Seguro Gestação',herbs:'Camomila + Erva Cidreira + Capim-Limão',why:'Ervas seguras e comprovadas na gestação',color:'#2d5a4a'});
+  let recs=[];
+  if(obj.includes('Melhorar sono')||obj.includes('Reduzir ansiedade')) recs.push({name:'Blend da Noite',ids:[1,3,4],herbs:'Camomila + Maracujá + Melissa',why:'Baseado nos seus objetivos de sono e ansiedade',color:'#1e3d5c'});
+  if(obj.includes('Mais energia')||obj.includes('Focar mais')) recs.push({name:'Blend do Foco',ids:[6,8,22],herbs:'Chá Verde + Alecrim + Ginkgo',why:'Para energia e concentração ao longo do dia',color:'#3a2d6b'});
+  if(obj.includes('Digestão')) recs.push({name:'Digestivo Diário',ids:[14,9,10],herbs:'Boldo + Hortelã + Erva-doce',why:'Apoio à sua digestão pós-refeição',color:'#5a3a1a'});
+  if(obj.includes('Emagrecer')) recs.push({name:'Blend Metabólico',ids:[6,21,7],herbs:'Chá Verde + Carqueja + Hibisco',why:'Termogênico e sacietogênico natural',color:'#2d5a2d'});
+  if(obj.includes('Imunidade')) recs.push({name:'Blend Imunidade',ids:[12,5],herbs:'Equinácea + Cúrcuma + Gengibre',why:'Para fortalecer suas defesas',color:'#2d4a3a'});
+  if(saude.includes('hipertensao')) recs.push({name:'Hipotensor Suave',ids:[7,4,17],herbs:'Hibisco + Melissa + Capim-Limão',why:'Sem estimulantes fortes; converse com quem acompanha sua pressão',color:'#6b2d3a'});
+  if(saude.includes('gestante')) recs.push({name:'Blend Seguro Gestação',ids:[1,19,17],herbs:'Camomila + Erva Cidreira + Capim-Limão',why:'Ervas com uso tradicional seguro na gestação',color:'#2d5a4a'});
+
+  // Barreira: uma recomendação com ingrediente contraindicado para a pessoa
+  // não aparece — nem com aviso. É o que o anel de segurança da Roda já fazia
+  // como filtro opcional; aqui é regra.
+  if(saude.length){
+    recs=recs.filter(r=>!(r.ids||[]).some(id=>ervaContraindicada(HERBS.find(h=>h.id===id), saude)));
+  }
 
   const warnings=[];
-  if(saude.includes('Hipertensão')) warnings.push('Evite guaraná e estimulantes fortes.');
-  if(saude.includes('Grávida')) warnings.push('Evite arruda, alfazema em doses altas e valeriana.');
-  if(saude.includes('Diabetes')) warnings.push('Prefira ervas sem açúcar. Pata de vaca e canela são aliadas.');
+  if(saude.includes('hipertensao')) warnings.push('Evite guaraná e estimulantes fortes.');
+  if(saude.includes('gestante')) warnings.push('Evite arruda, alfazema em doses altas e valeriana.');
+  if(saude.includes('amamentando')) warnings.push('Na amamentação, prefira ervas de uso tradicional consolidado e doses baixas.');
+  if(saude.includes('anticoagulante')) warnings.push('Ginkgo, cúrcuma e imburana interagem com anticoagulantes.');
+  if(saude.includes('diabetes')) warnings.push('Prefira ervas sem açúcar. Pata de vaca e canela são aliadas.');
+  if(saude.includes('asteraceas')) warnings.push('Camomila, calêndula e equinácea são asteráceas.');
+  if(saude.includes('crianca')) warnings.push('Para crianças, doses menores e sem estimulantes; confirme com o pediatra.');
 
-  const nome=perfilState.nome?`, ${perfilState.nome}`:'';
+  const quem=saude.map(saudeLabel).join(', ');
+  const nome=perfilState.nome?`, ${esc(perfilState.nome)}`:'';
   el.innerHTML=`
     <div class="perfil-rec-title">Recomendações para você${nome}</div>
-    ${warnings.length?`<div class="warn-box" style="margin-bottom:1rem">⚠ ${warnings.join(' ')}</div>`:''}
+    ${saude.length?`<div class="perfil-rec-saude">${esc(navT('encontrar.safety').replace('{restrição}', quem).replace('{restriction}', quem))}</div>`:''}
+    ${warnings.length?`<div class="warn-box" style="margin-bottom:1rem">${warnings.map(esc).join(' ')}</div>`:''}
     ${recs.map(r=>`
       <div class="perfil-rec-card">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:.4rem">
@@ -1924,7 +2096,8 @@ function renderPerfilRecomendacoes(){
         <div style="font-size:.82rem;color:var(--gold2);margin-bottom:3px;display:flex;align-items:center;gap:6px">${svgIcon('tea')} ${esc(r.herbs)}</div>
         <div style="font-size:.75rem;color:var(--muted)">${r.why}</div>
       </div>`).join('')}
-    ${momentos.length?`<div style="margin-top:.75rem;font-size:.75rem;color:var(--muted)">Momentos favoritos: ${momentos.join(', ')}</div>`:''}`;
+    ${momentos.length?`<div style="margin-top:.75rem;font-size:.75rem;color:var(--muted)">Momentos favoritos: ${momentos.map(esc).join(', ')}</div>`:''}
+    <p class="perfil-rec-aviso">${esc(navT('health.disclaimer'))}</p>`;
 }
 
 // ══��═════════════════════════════════════

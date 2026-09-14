@@ -563,6 +563,28 @@ body.light .blend-tab.on{background:var(--chip-bg);color:var(--gold2)}
 .perfil-chips{display:flex;flex-wrap:wrap;gap:6px}
 .perfil-chip{padding:6px 14px;border-radius:999px;border:0.5px solid var(--faint);background:transparent;color:var(--muted);font-size:.75rem;font-family:'Jost',sans-serif;cursor:pointer;transition:all .2s}
 .perfil-chip.on{background:rgba(200,168,75,.1);color:var(--gold2);border-color:rgba(200,168,75,.35)}
+/* Perfil (PR 08): bloco de saúde com consentimento próprio */
+.perfil-field-label{display:block;font-size:.8rem;color:var(--cream2);margin:.6rem 0 .3rem}
+.perfil-sublabel{font-size:.8rem;color:var(--cream2);margin:.75rem 0 .4rem}
+.perfil-hint{font-size:.8rem;color:var(--muted);line-height:1.5;margin:.5rem 0}
+.perfil-input[readonly]{opacity:.7}
+.perfil-saude{background:var(--bg3);border:1px solid rgba(200,168,75,.53);border-radius:var(--r-lg);padding:1.1rem 1.25rem;margin-bottom:1.25rem}
+.perfil-saude-porque{list-style:none;padding:0;margin:.25rem 0 .9rem;display:grid;gap:.35rem;font-size:.82rem;color:var(--cream2);line-height:1.5}
+.perfil-saude-porque li::before{content:'—';color:var(--gold);margin-right:.5rem}
+.perfil-consent{display:flex;gap:10px;align-items:flex-start;font-size:.86rem;line-height:1.5;color:var(--cream);cursor:pointer;margin-bottom:.9rem}
+.perfil-consent input{width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--gold)}
+.perfil-chip{min-height:36px}
+.perfil-chip:disabled{opacity:.55;cursor:not-allowed}
+.perfil-btn-ghost{min-height:44px;padding:0 14px;border-radius:var(--r-sm);border:1px solid var(--faint);background:var(--bg);color:var(--cream2);font-family:'Jost',sans-serif;font-size:.84rem;cursor:pointer;transition:border-color .2s,color .2s}
+.perfil-btn-ghost:hover{color:var(--goldf);border-color:rgba(200,168,75,.5)}
+.perfil-btn-danger{color:#e08080}
+.perfil-btn-danger:hover{color:#f0a0a0;border-color:rgba(224,128,128,.5)}
+.perfil-dados{margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--faint)}
+.perfil-dados-actions{display:flex;flex-wrap:wrap;gap:8px}
+.perfil-dados-actions[hidden],.perfil-saude [hidden],.perfil-dados [hidden]{display:none}
+.perfil-rec-saude{background:#3a2a1a;border:1px solid rgba(200,168,75,.53);border-radius:var(--r-md);padding:.75rem 1rem;font-size:.82rem;line-height:1.5;color:var(--cream2);margin-bottom:1rem}
+.perfil-rec-aviso{font-size:.76rem;color:var(--muted);line-height:1.5;margin-top:1rem}
+.safe-box{background:var(--safe-bg);border:1px solid var(--safe-b);color:var(--safe-c);border-radius:var(--r-md);padding:.75rem 1rem;font-size:.82rem;line-height:1.5;margin-bottom:1rem}
 .perfil-save-btn{width:100%;padding:13px;background:rgba(200,168,75,.1);border:0.5px solid rgba(200,168,75,.35);border-radius:var(--r-lg);color:var(--gold2);font-family:'Cormorant Garamond',serif;font-size:1rem;font-style:italic;cursor:pointer;transition:all .2s;letter-spacing:.06em;margin-bottom:1.5rem}
 .perfil-save-btn:hover{background:rgba(200,168,75,.2)}
 .perfil-recomendacoes{animation:fadeUp .3s ease}
