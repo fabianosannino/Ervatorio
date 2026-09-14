@@ -9,8 +9,15 @@
 // diferente; a página não é indexável e traz o mesmo cabeçalho estático.
 // ============================================================
 import { test, expect } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
 
-const TOKEN = '3f1c2d4e-5a6b-4c8d-9e0f-1a2b3c4d5e6f';
+// Sorteado a cada execução, de propósito: a página não pode depender de
+// um valor específico, e um UUID escrito à mão aqui é indistinguível de
+// um segredo vazado — o `secret-scan` do CI (gitleaks, regra
+// `generic-api-key`) reprovou exatamente isso. Segredo de verdade não
+// entra no repositório; segredo de mentira também não, porque ensina a
+// silenciar a varredura.
+const TOKEN = randomUUID();
 
 test.beforeEach(async ({ page }) => {
   await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net/, (r) => r.abort());
